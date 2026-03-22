@@ -6,9 +6,9 @@ Cada agente tem um papel, responsabilidades e checklists claros.
 ## IMPORTANTE: Pré-requisito para todos os agentes
 
 **Antes de implementar qualquer coisa, leia todos os ADRs:**
-- `docs/adrs/ADR-001-project-bootstrap.md` — Stack, package-by-feature, convenções
-- `docs/adrs/ADR-002-auto-registry-pattern.md` — FeatureRegistry, convenção de discovery
-- `docs/adrs/ADR-003-redator-oficial.md` — Padrão de agentes (Prompt + Resource + Tool)
+- `plan/adrs/ADR-001-project-bootstrap.md` — Stack, package-by-feature, convenções
+- `plan/adrs/ADR-002-auto-registry-pattern.md` — FeatureRegistry, convenção de discovery
+- `plan/adrs/ADR-003-redator-oficial.md` — Padrão de agentes (Prompt + Resource + Tool)
 
 Os ADRs são a fonte de verdade. Nenhuma implementação deve contradizê-los.
 
@@ -27,7 +27,7 @@ Os ADRs são a fonte de verdade. Nenhuma implementação deve contradizê-los.
   - Toda feature tem `FEATURE_META` no `__init__.py`
   - Toda feature tem `mcp: FastMCP` no `server.py`
 - Revisa PRs e valida qualidade antes do merge
-- Define prioridade de features conforme roadmap (`docs/roadmap.md`)
+- Define prioridade de features conforme roadmap (`plan/roadmap.md`)
 
 ### Checklist de review
 
@@ -49,11 +49,11 @@ Ao revisar uma nova feature ou PR, verificar:
 
 ### Referências
 
-- `docs/adrs/ADR-001-project-bootstrap.md` — Decisões de stack e organização
-- `docs/adrs/ADR-002-auto-registry-pattern.md` — Padrão de auto-discovery
-- `docs/adrs/ADR-003-redator-oficial.md` — Padrão de agentes com Prompts + Resources + Tools
-- `docs/roadmap.md` — Roadmap e prioridades
-- `docs/poc-plan.md` — Inventário de APIs e plano de implementação
+- `plan/adrs/ADR-001-project-bootstrap.md` — Decisões de stack e organização
+- `plan/adrs/ADR-002-auto-registry-pattern.md` — Padrão de auto-discovery
+- `plan/adrs/ADR-003-redator-oficial.md` — Padrão de agentes com Prompts + Resources + Tools
+- `plan/roadmap.md` — Roadmap e prioridades
+- `plan/poc-plan.md` — Inventário de APIs e plano de implementação
 
 ---
 
@@ -181,9 +181,9 @@ FEATURE_META = FeatureMeta(
 
 ### Referências
 
-- `docs/adrs/ADR-001-project-bootstrap.md` — Anatomia de uma feature (Decisão 3)
-- `docs/refs/registry/feature.py` — Código de referência do FeatureRegistry
-- `docs/refs/registry/server.py` — Código de referência do server raiz
+- `plan/adrs/ADR-001-project-bootstrap.md` — Anatomia de uma feature (Decisão 3)
+- `plan/refs/registry/feature.py` — Código de referência do FeatureRegistry
+- `plan/refs/registry/server.py` — Código de referência do server raiz
 
 ---
 

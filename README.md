@@ -114,10 +114,10 @@ Consulte `AGENTS.md` para detalhes dos padrões e templates de código.
 
 ## Documentação
 
-- `docs/adrs/` — Decisões de arquitetura
-- `docs/roadmap.md` — Roadmap técnico
-- `docs/poc-plan.md` — Plano da POC com inventário de 90+ APIs
-- `docs/research/` — Mapeamento completo de APIs públicas brasileiras
+- `plan/adrs/` — Decisões de arquitetura
+- `plan/roadmap.md` — Roadmap técnico
+- `plan/poc-plan.md` — Plano da POC com inventário de 90+ APIs
+- `plan/research/` — Mapeamento completo de APIs públicas brasileiras
 
 ## Licença
 

@@ -414,7 +414,7 @@ mcp-brasil/
 │   ├── camara/
 │   └── ...
 │
-├── docs/decisions/
+├── plan/decisions/
 │   ├── ADR-001-project-bootstrap.md
 │   └── ADR-002-auto-registry-pattern.md
 │
@@ -452,7 +452,7 @@ mcp-brasil/
 | 0.9 | `server.py` raiz (3 linhas, nunca muda) | `src/mcp_brasil/server.py` |
 | 0.10 | CI: GitHub Actions (ruff → mypy → pytest) | `.github/workflows/` |
 | 0.11 | AGENTS.md + CLAUDE.md + CONTRIBUTING.md | raiz |
-| 0.12 | ADRs commitados | `docs/decisions/` |
+| 0.12 | ADRs commitados | `plan/decisions/` |
 
 **Validação:** `fastmcp run mcp_brasil.server:mcp` roda sem features.
 

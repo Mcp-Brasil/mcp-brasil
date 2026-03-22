@@ -2,10 +2,10 @@
 
 ## IMPORTANTE: Antes de implementar qualquer coisa
 
-**Sempre leia todos os ADRs** em `docs/adrs/` antes de começar a implementar:
-- `docs/adrs/ADR-001-project-bootstrap.md` — Stack, package-by-feature, convenções
-- `docs/adrs/ADR-002-auto-registry-pattern.md` — FeatureRegistry, convenção de discovery
-- `docs/adrs/ADR-003-redator-oficial.md` — Padrão de agentes (Prompt + Resource + Tool)
+**Sempre leia todos os ADRs** em `plan/adrs/` antes de começar a implementar:
+- `plan/adrs/ADR-001-project-bootstrap.md` — Stack, package-by-feature, convenções
+- `plan/adrs/ADR-002-auto-registry-pattern.md` — FeatureRegistry, convenção de discovery
+- `plan/adrs/ADR-003-redator-oficial.md` — Padrão de agentes (Prompt + Resource + Tool)
 
 Os ADRs são a fonte de verdade para todas as decisões de arquitetura.
 
@@ -123,9 +123,9 @@ tests/{feature}/
 
 ## Documentação de referência
 
-- `docs/adrs/` — Decisões de arquitetura (ADR-001, ADR-002, ADR-003)
-- `docs/roadmap.md` — Roadmap técnico
-- `docs/poc-plan.md` — Plano da POC com inventário de APIs
-- `docs/mapa-agentes.md` — Mapa de agentes escaláveis
-- `docs/research/` — Mapeamento de APIs públicas brasileiras
-- `docs/refs/registry/` — Código de referência original (feature.py, server.py)
+- `plan/adrs/` — Decisões de arquitetura (ADR-001, ADR-002, ADR-003)
+- `plan/roadmap.md` — Roadmap técnico
+- `plan/poc-plan.md` — Plano da POC com inventário de APIs
+- `plan/mapa-agentes.md` — Mapa de agentes escaláveis
+- `plan/research/` — Mapeamento de APIs públicas brasileiras
+- `plan/refs/registry/` — Código de referência original (feature.py, server.py)
