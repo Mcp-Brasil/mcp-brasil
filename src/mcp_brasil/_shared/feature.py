@@ -29,6 +29,8 @@ import pkgutil
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+import mcp_brasil.settings  # noqa: F401 — ensure .env is loaded before checking env vars
+
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
