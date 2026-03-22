@@ -21,9 +21,7 @@ class TestAnosEleitorais:
     @pytest.mark.asyncio
     @respx.mock
     async def test_empty(self) -> None:
-        respx.get(f"{ELEICAO_URL}/anos-eleitorais").mock(
-            return_value=httpx.Response(200, json=[])
-        )
+        respx.get(f"{ELEICAO_URL}/anos-eleitorais").mock(return_value=httpx.Response(200, json=[]))
         result = await client.anos_eleitorais()
         assert result == []
 
@@ -67,9 +65,7 @@ class TestListarCargos:
                 200,
                 json={
                     "unidadeEleitoralDTO": {"sigla": "BA"},
-                    "cargos": [
-                        {"codigo": 11, "nome": "Prefeito", "titular": True, "contagem": 5}
-                    ],
+                    "cargos": [{"codigo": 11, "nome": "Prefeito", "titular": True, "contagem": 5}],
                 },
             )
         )
@@ -172,9 +168,7 @@ class TestConsultarPrestacaoContas:
                 },
             )
         )
-        result = await client.consultar_prestacao_contas(
-            2030402020, 2020, 35157, 11, 50000867342
-        )
+        result = await client.consultar_prestacao_contas(2030402020, 2020, 35157, 11, 50000867342)
         assert result is not None
         assert result.total_recebido == 100000
         assert result.total_despesas == 80000

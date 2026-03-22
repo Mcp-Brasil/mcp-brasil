@@ -18,8 +18,7 @@ def pesquisa_jurisprudencial(tema: str, tribunais: str = "stf,stj,tst") -> str:
     for t in tribs:
         t_lower = t.lower()
         steps.append(
-            f"{step_num}. Use buscar_jurisprudencia_{t_lower}"
-            f"(query='{tema}') para buscar no {t}"
+            f"{step_num}. Use buscar_jurisprudencia_{t_lower}(query='{tema}') para buscar no {t}"
         )
         step_num += 1
 
@@ -29,16 +28,13 @@ def pesquisa_jurisprudencial(tema: str, tribunais: str = "stf,stj,tst") -> str:
     )
     step_num += 1
     steps.append(
-        f"{step_num}. Use buscar_repercussao_geral(query='{tema}') "
-        "para temas de repercussão geral"
+        f"{step_num}. Use buscar_repercussao_geral(query='{tema}') para temas de repercussão geral"
     )
 
     return (
         f"Faça uma pesquisa jurisprudencial completa sobre '{tema}' "
         f"nos tribunais {', '.join(tribs)}.\n\n"
-        "Passos:\n"
-        + "\n".join(steps)
-        + "\n\n"
+        "Passos:\n" + "\n".join(steps) + "\n\n"
         "Apresente:\n"
         "- Entendimento predominante em cada tribunal\n"
         "- Súmulas aplicáveis (se houver)\n"

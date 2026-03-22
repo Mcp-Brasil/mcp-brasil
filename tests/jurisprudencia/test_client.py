@@ -38,9 +38,7 @@ class TestBuscarSTF:
     @pytest.mark.asyncio
     @respx.mock
     async def test_empty(self) -> None:
-        respx.get(STF_API_BASE).mock(
-            return_value=httpx.Response(200, json={"result": []})
-        )
+        respx.get(STF_API_BASE).mock(return_value=httpx.Response(200, json={"result": []}))
         result = await client.buscar_stf("inexistente")
         assert result == []
 
@@ -82,9 +80,7 @@ class TestBuscarSTJ:
     @pytest.mark.asyncio
     @respx.mock
     async def test_empty(self) -> None:
-        respx.get(STJ_API_BASE).mock(
-            return_value=httpx.Response(200, json={"documentos": []})
-        )
+        respx.get(STJ_API_BASE).mock(return_value=httpx.Response(200, json={"documentos": []}))
         result = await client.buscar_stj("inexistente")
         assert result == []
 

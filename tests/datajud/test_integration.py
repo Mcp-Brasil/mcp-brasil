@@ -62,9 +62,7 @@ class TestPromptsRegistered:
 class TestToolExecution:
     @pytest.mark.asyncio
     async def test_buscar_processos_e2e(self) -> None:
-        mock_data = [
-            Processo(numero="0001234", classe="Cível", tribunal="TJSP")
-        ]
+        mock_data = [Processo(numero="0001234", classe="Cível", tribunal="TJSP")]
         with patch(
             f"{CLIENT_MODULE}.buscar_processos",
             new_callable=AsyncMock,

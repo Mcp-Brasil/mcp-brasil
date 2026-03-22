@@ -94,9 +94,7 @@ def _parse_processo(hit: dict[str, Any]) -> Processo:
         classe=classe.get("nome") if isinstance(classe, dict) else str(classe),
         assunto=assunto_str,
         tribunal=source.get("tribunal"),
-        orgao_julgador=(
-            orgao.get("nome") if isinstance(orgao, dict) else str(orgao)
-        ),
+        orgao_julgador=(orgao.get("nome") if isinstance(orgao, dict) else str(orgao)),
         data_ajuizamento=source.get("dataAjuizamento"),
         data_ultima_atualizacao=source.get("dataHoraUltimaAtualizacao"),
         grau=source.get("grau"),
@@ -129,9 +127,7 @@ def _parse_processo_detalhe(hit: dict[str, Any]) -> ProcessoDetalhe:
                 comp_str = ""
                 if isinstance(complementos, list) and complementos:
                     comp_parts = [
-                        c.get("descricao", "")
-                        for c in complementos
-                        if isinstance(c, dict)
+                        c.get("descricao", "") for c in complementos if isinstance(c, dict)
                     ]
                     comp_str = "; ".join(p for p in comp_parts if p)
                 movimentacoes.append(
@@ -164,9 +160,7 @@ def _parse_processo_detalhe(hit: dict[str, Any]) -> ProcessoDetalhe:
         classe=classe.get("nome") if isinstance(classe, dict) else str(classe),
         assuntos=assuntos,
         tribunal=source.get("tribunal"),
-        orgao_julgador=(
-            orgao.get("nome") if isinstance(orgao, dict) else str(orgao)
-        ),
+        orgao_julgador=(orgao.get("nome") if isinstance(orgao, dict) else str(orgao)),
         data_ajuizamento=source.get("dataAjuizamento"),
         data_ultima_atualizacao=source.get("dataHoraUltimaAtualizacao"),
         grau=source.get("grau"),

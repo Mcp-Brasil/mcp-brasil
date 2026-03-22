@@ -216,10 +216,7 @@ async def buscar_candidato(
     candidato_id: int,
 ) -> Candidato | None:
     """Get full details for a candidate."""
-    url = (
-        f"{CANDIDATURA_URL}/buscar/{ano}/{municipio}/{eleicao_id}"
-        f"/candidato/{candidato_id}"
-    )
+    url = f"{CANDIDATURA_URL}/buscar/{ano}/{municipio}/{eleicao_id}/candidato/{candidato_id}"
     data = await _get(url)
     if isinstance(data, dict) and data.get("id"):
         return _parse_candidato(data)
@@ -234,10 +231,7 @@ async def consultar_prestacao_contas(
     candidato_id: int,
 ) -> PrestaContas | None:
     """Get campaign account information for a candidate."""
-    url = (
-        f"{PRESTADOR_URL}/consulta/{eleicao_id}/{ano}/{municipio}"
-        f"/{cargo}/90/90/{candidato_id}"
-    )
+    url = f"{PRESTADOR_URL}/consulta/{eleicao_id}/{ano}/{municipio}/{cargo}/90/90/{candidato_id}"
     data = await _get(url)
     if isinstance(data, dict):
         return _parse_presta_contas(data)

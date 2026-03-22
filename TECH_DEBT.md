@@ -74,6 +74,22 @@
 - [ ] **Súmulas search limited to STF** — Only STF súmulas are implemented. STJ and TST súmula APIs need investigation.
 - [ ] **No informativo-specific endpoint** — `buscar_informativos` currently delegates to the main search with "informativo" as query. A dedicated informativo API would give better results.
 
+## BrasilAPI Feature
+
+- [x] **Falsy `status_code=0` bug** — `status_map.get(info.status_code or -1, ...)` treated `status_code=0` as `-1` because `0` is falsy in Python. Fixed to use explicit `is not None` check.
+- [ ] **FIPE endpoints may be slow/unreliable** — BrasilAPI proxies FIPE data; upstream can be slow. No retry/fallback implemented beyond shared `http_get()` retries.
+- [ ] **CNPJ rate limiting** — BrasilAPI has aggressive rate limiting on CNPJ endpoint. Shared rate limiter not applied (uses shared `http_get()` only).
+
+## Diário Oficial Feature
+
+- [ ] **Limited to 3 tools** — Original plan called for 4 tools. The 4th (buscar por CNPJs em lote) was deferred; Querido Diário API doesn't support batch CNPJ search natively.
+- [ ] **No excerpt highlighting** — Querido Diário returns raw text excerpts with `<em>` tags. Current implementation truncates at 500 chars but doesn't strip HTML tags.
+
+## Compras Feature
+
+- [ ] **Limited to 3 tools** — Original plan called for 6 tools (including CEIS/CNEP sanctions and Comprasnet). CEIS/CNEP covered by transparência feature. Comprasnet deferred.
+- [ ] **PNCP API response format unverified** — Response parsing uses `data.resultado` fallback. Real API response shape needs validation against live PNCP endpoint.
+
 ## Known Limitations
 
 - [x] **No CONTRIBUTING.md** — Resolvido. CONTRIBUTING.md criado com getting started, estrutura, como adicionar features, convenções, testes e PR guidelines.

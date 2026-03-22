@@ -136,10 +136,7 @@ async def buscar_processos_por_classe(
         )
         for p in processos
     ]
-    header = (
-        f"Processos — {classe} — {tribunal.upper()} "
-        f"({len(processos)} resultados):\n\n"
-    )
+    header = f"Processos — {classe} — {tribunal.upper()} ({len(processos)} resultados):\n\n"
     return header + markdown_table(["Número", "Assunto", "Órgão Julgador", "Ajuizamento"], rows)
 
 
@@ -175,8 +172,7 @@ async def buscar_processos_por_assunto(
         for p in processos
     ]
     header = (
-        f"Processos — assunto: {assunto} — {tribunal.upper()} "
-        f"({len(processos)} resultados):\n\n"
+        f"Processos — assunto: {assunto} — {tribunal.upper()} ({len(processos)} resultados):\n\n"
     )
     return header + markdown_table(["Número", "Classe", "Órgão Julgador", "Ajuizamento"], rows)
 
@@ -199,14 +195,9 @@ async def buscar_processos_por_orgao(
     Returns:
         Tabela com processos do órgão informado.
     """
-    processos = await client.buscar_processos_por_orgao(
-        orgao_julgador, tribunal, tamanho
-    )
+    processos = await client.buscar_processos_por_orgao(orgao_julgador, tribunal, tamanho)
     if not processos:
-        return (
-            f"Nenhum processo encontrado no órgão '{orgao_julgador}' "
-            f"do {tribunal.upper()}."
-        )
+        return f"Nenhum processo encontrado no órgão '{orgao_julgador}' do {tribunal.upper()}."
 
     rows = [
         (
@@ -218,8 +209,7 @@ async def buscar_processos_por_orgao(
         for p in processos
     ]
     header = (
-        f"Processos — {orgao_julgador} — {tribunal.upper()} "
-        f"({len(processos)} resultados):\n\n"
+        f"Processos — {orgao_julgador} — {tribunal.upper()} ({len(processos)} resultados):\n\n"
     )
     return header + markdown_table(["Número", "Classe", "Assunto", "Ajuizamento"], rows)
 

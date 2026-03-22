@@ -49,9 +49,7 @@ class TestBuscarProcessos:
     @pytest.mark.asyncio
     @respx.mock
     async def test_empty_hits(self) -> None:
-        respx.post(TJSP_URL).mock(
-            return_value=httpx.Response(200, json={"hits": {"hits": []}})
-        )
+        respx.post(TJSP_URL).mock(return_value=httpx.Response(200, json={"hits": {"hits": []}}))
         result = await client.buscar_processos("inexistente", "tjsp")
         assert result == []
 
@@ -75,9 +73,7 @@ class TestBuscarProcessoPorNumero:
                                 "_source": {
                                     "numeroProcesso": "0001234",
                                     "classe": {"nome": "Ação Civil Pública"},
-                                    "assuntos": [
-                                        {"codigo": 1116, "nome": "Meio Ambiente"}
-                                    ],
+                                    "assuntos": [{"codigo": 1116, "nome": "Meio Ambiente"}],
                                     "tribunal": "TJSP",
                                     "orgaoJulgador": {"nome": "2ª Vara"},
                                     "dataAjuizamento": "2024-01-10",
@@ -115,9 +111,7 @@ class TestBuscarProcessoPorNumero:
     @pytest.mark.asyncio
     @respx.mock
     async def test_not_found(self) -> None:
-        respx.post(TJSP_URL).mock(
-            return_value=httpx.Response(200, json={"hits": {"hits": []}})
-        )
+        respx.post(TJSP_URL).mock(return_value=httpx.Response(200, json={"hits": {"hits": []}}))
         result = await client.buscar_processo_por_numero("9999999", "tjsp")
         assert result is None
 

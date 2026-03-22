@@ -94,18 +94,14 @@ class TestBuscarSumulas:
                 vinculante=True,
             )
         ]
-        with patch(
-            f"{MODULE}.buscar_sumulas_stf", new_callable=AsyncMock, return_value=mock_data
-        ):
+        with patch(f"{MODULE}.buscar_sumulas_stf", new_callable=AsyncMock, return_value=mock_data):
             result = await tools.buscar_sumulas("stf", "mandado de segurança")
         assert "Súmula 11" in result
         assert "VINCULANTE" in result
 
     @pytest.mark.asyncio
     async def test_empty(self) -> None:
-        with patch(
-            f"{MODULE}.buscar_sumulas_stf", new_callable=AsyncMock, return_value=[]
-        ):
+        with patch(f"{MODULE}.buscar_sumulas_stf", new_callable=AsyncMock, return_value=[]):
             result = await tools.buscar_sumulas("stf", "inexistente")
         assert "Nenhuma súmula" in result
 

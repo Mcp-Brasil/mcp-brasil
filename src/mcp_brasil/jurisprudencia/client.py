@@ -113,15 +113,18 @@ async def buscar_stj(
 ) -> list[Jurisprudencia]:
     """Search STJ jurisprudence (acórdãos via SCON)."""
     params = {
-        **{k: v for k, v in {
-            "livre": query,
-            "b": "ACOR",
-            "p": "true",
-            "tp": "T",
-            "l": str(tamanho),
-            "i": str((pagina - 1) * tamanho + 1),
-            "tipo_visualizacao": "RESUMO",
-        }.items()},
+        **{
+            k: v
+            for k, v in {
+                "livre": query,
+                "b": "ACOR",
+                "p": "true",
+                "tp": "T",
+                "l": str(tamanho),
+                "i": str((pagina - 1) * tamanho + 1),
+                "tipo_visualizacao": "RESUMO",
+            }.items()
+        },
     }
     try:
         data = await _get(STJ_API_BASE, params=params)

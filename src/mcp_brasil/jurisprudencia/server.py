@@ -27,9 +27,7 @@ mcp.tool(buscar_repercussao_geral)
 mcp.tool(buscar_informativos)
 
 # Resources
-mcp.resource("data://tribunais-superiores", mime_type="application/json")(
-    tribunais_superiores
-)
+mcp.resource("data://tribunais-superiores", mime_type="application/json")(tribunais_superiores)
 mcp.resource("data://operadores-busca", mime_type="application/json")(operadores_busca)
 mcp.resource("data://info-api", mime_type="application/json")(info_api)
 
