@@ -21,7 +21,7 @@ Pacote Python que conecta AI agents a dados governamentais (IBGE, Banco Central,
 - **HTTP:** httpx (async)
 - **Schemas:** Pydantic v2
 - **Package manager:** uv
-- **Task runner:** just (justfile)
+- **Task runner:** make (Makefile)
 - **Lint/Format:** ruff (line-length 99)
 - **Types:** mypy (strict)
 - **Testes:** pytest + pytest-asyncio + respx
@@ -29,16 +29,17 @@ Pacote Python que conecta AI agents a dados governamentais (IBGE, Banco Central,
 ## Comandos
 
 ```bash
-just install        # uv sync
-just test           # pytest -v
-just test-feature ibge  # pytest tests/ibge/ -v
-just lint           # ruff check + format check
-just fix            # ruff check --fix + format
-just types          # mypy
-just run            # fastmcp run (stdio)
-just serve          # fastmcp run (HTTP :8000)
-just inspect        # fastmcp inspect
-just ci             # lint + types + test
+make sync           # uv sync (prod only)
+make dev            # uv sync --extra dev (prod + dev)
+make test           # pytest -v
+make test-feature F=ibge  # pytest tests/ibge/ -v
+make lint           # ruff check + format check
+make ruff           # ruff check --fix + format
+make types          # mypy
+make run            # fastmcp run (stdio)
+make serve          # fastmcp run (HTTP :8000)
+make inspect        # fastmcp inspect
+make ci             # lint + types + test
 ```
 
 ## Arquitetura
