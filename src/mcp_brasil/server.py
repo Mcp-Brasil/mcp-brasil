@@ -191,19 +191,34 @@ if TOOL_SEARCH == "bm25":
     logger.info("Tool search: BM25 (search_tools + call_tool)")
 
 elif TOOL_SEARCH == "code_mode":
-    from fastmcp.experimental.transforms.code_mode import (
-        CodeMode,
-        GetSchemas,
-        GetTags,
-        Search,
-    )
-
-    mcp.add_transform(
-        CodeMode(
-            discovery_tools=[GetTags(name="get_tags"), Search(name="search"), GetSchemas()],
+    try:
+        from fastmcp.experimental.transforms.code_mode import (
+            CodeMode,
+            GetSchemas,
+            GetTags,
+            Search,
         )
-    )
-    logger.info("Tool search: CodeMode (experimental)")
+
+        mcp.add_transform(
+            CodeMode(
+                discovery_tools=[GetTags(name="get_tags"), Search(name="search"), GetSchemas()],
+            )
+        )
+        logger.info("Tool search: CodeMode (experimental)")
+    except ImportError:
+        logger.warning(
+            "CodeMode requires pydantic-monty. "
+            "Install with: pip install 'fastmcp[code-mode]'. "
+            "Falling back to BM25."
+        )
+        from fastmcp.server.transforms.search import BM25SearchTransform
+
+        mcp.add_transform(
+            BM25SearchTransform(
+                max_results=10,
+                always_visible=_always_visible,
+            )
+        )
 
 else:
     logger.info("Tool search: none (all %d+ tools visible)", len(registry.features))

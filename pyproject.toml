@@ -27,6 +27,7 @@ dependencies = [
 
 [project.optional-dependencies]
 llm = ["anthropic>=0.40"]
+code-mode = ["fastmcp[code-mode]"]
 
 [dependency-groups]
 dev = [
