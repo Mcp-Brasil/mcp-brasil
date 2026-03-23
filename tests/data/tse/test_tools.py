@@ -13,6 +13,7 @@ from mcp_brasil.data.tse.schemas import (
     CandidatoResumo,
     Cargo,
     Eleicao,
+    MunicipioEleitoral,
     PrestaContas,
     ResultadoCandidato,
     ResultadoCDN,
@@ -464,3 +465,123 @@ class TestApuracaoStatus:
         ):
             result = await tools.apuracao_status(2022, "presidente", ctx)
         assert "não encontrados" in result.lower()
+
+
+class TestListarMunicipiosEleitoraisTool:
+    @pytest.mark.asyncio
+    async def test_formats_table(self) -> None:
+        ctx = _mock_ctx()
+        mock_data = [
+            MunicipioEleitoral(
+                codigo_tse="71072",
+                codigo_ibge="3550308",
+                nome="SÃO PAULO",
+                capital=True,
+                uf="SP",
+            ),
+            MunicipioEleitoral(
+                codigo_tse="62910",
+                codigo_ibge="3509502",
+                nome="CAMPINAS",
+                capital=False,
+                uf="SP",
+            ),
+        ]
+        with patch(
+            f"{MODULE}.listar_municipios_eleitorais",
+            new_callable=AsyncMock,
+            return_value=mock_data,
+        ):
+            result = await tools.listar_municipios_eleitorais(2024, "SP", ctx, 1)
+        assert "SÃO PAULO" in result
+        assert "71072" in result
+        assert "3550308" in result
+        assert "CAMPINAS" in result
+        assert "2 " in result or "(2)" in result
+
+    @pytest.mark.asyncio
+    async def test_empty(self) -> None:
+        ctx = _mock_ctx()
+        with patch(
+            f"{MODULE}.listar_municipios_eleitorais",
+            new_callable=AsyncMock,
+            return_value=[],
+        ):
+            result = await tools.listar_municipios_eleitorais(2024, "AM", ctx)
+        assert "Nenhum município" in result
+
+    @pytest.mark.asyncio
+    async def test_invalid_election(self) -> None:
+        ctx = _mock_ctx()
+        with patch(
+            f"{MODULE}.listar_municipios_eleitorais",
+            new_callable=AsyncMock,
+            side_effect=ValueError("Eleição 1990 turno 1 não mapeada"),
+        ):
+            result = await tools.listar_municipios_eleitorais(1990, "SP", ctx)
+        assert "não mapeada" in result
+
+
+class TestResultadoPorMunicipio:
+    @pytest.mark.asyncio
+    async def test_formats_result(self) -> None:
+        ctx = _mock_ctx()
+        resultado = ResultadoRegiao(
+            codigo="71072",
+            tipo="mu",
+            uf="71072",
+            pct_apurado="100.00",
+            total_eleitores=8000000,
+            candidatos=[
+                ResultadoCDN(
+                    nome="CANDIDATO A",
+                    numero="15",
+                    votos=3500000,
+                    percentual="53.85",
+                    eleito=True,
+                    situacao="Eleito",
+                ),
+                ResultadoCDN(
+                    nome="CANDIDATO B",
+                    numero="13",
+                    votos=3000000,
+                    percentual="46.15",
+                    eleito=False,
+                    situacao="Não eleito",
+                ),
+            ],
+        )
+        with patch(
+            f"{MODULE}.resultado_municipio",
+            new_callable=AsyncMock,
+            return_value=resultado,
+        ):
+            result = await tools.resultado_por_municipio(2024, "prefeito", "SP", "71072", ctx, 1)
+        assert "71072" in result
+        assert "SP" in result
+        assert "Prefeito" in result
+        assert "CANDIDATO A" in result
+        assert "CANDIDATO B" in result
+        assert "100.00%" in result
+
+    @pytest.mark.asyncio
+    async def test_not_found(self) -> None:
+        ctx = _mock_ctx()
+        with patch(
+            f"{MODULE}.resultado_municipio",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            result = await tools.resultado_por_municipio(2024, "prefeito", "SP", "99999", ctx)
+        assert "não encontrado" in result.lower()
+
+    @pytest.mark.asyncio
+    async def test_invalid_election(self) -> None:
+        ctx = _mock_ctx()
+        with patch(
+            f"{MODULE}.resultado_municipio",
+            new_callable=AsyncMock,
+            side_effect=ValueError("Eleição 1990 turno 1 não mapeada"),
+        ):
+            result = await tools.resultado_por_municipio(1990, "prefeito", "SP", "71072", ctx)
+        assert "não mapeada" in result

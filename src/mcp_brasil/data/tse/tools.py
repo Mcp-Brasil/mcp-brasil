@@ -520,6 +520,118 @@ async def mapa_resultado_estados(
     )
 
 
+async def listar_municipios_eleitorais(
+    ano: int,
+    uf: str,
+    ctx: Context,
+    turno: int = 1,
+) -> str:
+    """Lista municípios eleitorais de uma UF com códigos TSE e IBGE.
+
+    Retorna os municípios disponíveis para consulta de resultados por município.
+    Disponível apenas para eleições municipais (2024).
+
+    Use o codigo_tse retornado como parâmetro para resultado_por_municipio().
+
+    Args:
+        ano: Ano da eleição (ex: 2024).
+        uf: Sigla do estado (ex: "SP", "RJ").
+        turno: Turno da eleição (1 ou 2). Default: 1.
+
+    Returns:
+        Tabela com municípios e seus códigos TSE/IBGE.
+    """
+    await ctx.info(f"Buscando municípios eleitorais de {uf.upper()} {ano}...")
+
+    try:
+        municipios = await client.listar_municipios_eleitorais(ano, uf, turno)
+    except ValueError as e:
+        return str(e)
+
+    if not municipios:
+        return f"Nenhum município encontrado para {uf.upper()} {ano} turno {turno}."
+
+    rows = [
+        (
+            m.codigo_tse or "—",
+            m.codigo_ibge or "—",
+            (m.nome or "—")[:30],
+            "Sim" if m.capital else "Não",
+        )
+        for m in municipios
+    ]
+    return f"Municípios eleitorais {uf.upper()} {ano} ({len(municipios)}):\n\n" + markdown_table(
+        ["Cód. TSE", "Cód. IBGE", "Nome", "Capital"], rows
+    )
+
+
+async def resultado_por_municipio(
+    ano: int,
+    cargo: str,
+    uf: str,
+    cod_tse: str,
+    ctx: Context,
+    turno: int = 1,
+) -> str:
+    """Mostra o resultado de uma eleição em um município específico.
+
+    Retorna a totalização de votos de cada candidato no município.
+    Disponível apenas para eleições municipais (2024 — prefeito, vereador).
+
+    Use listar_municipios_eleitorais() para obter o código TSE do município.
+
+    Cargos disponíveis: prefeito, vereador.
+    Eleições disponíveis: 2024 (municipal).
+
+    Args:
+        ano: Ano da eleição (ex: 2024).
+        cargo: Nome do cargo (ex: "prefeito", "vereador").
+        uf: Sigla do estado (ex: "SP", "RJ").
+        cod_tse: Código TSE do município (5 dígitos, ex: "71072" para São Paulo).
+        turno: Turno da eleição (1 ou 2). Default: 1.
+
+    Returns:
+        Tabela com ranking de candidatos por votos no município.
+    """
+    await ctx.info(f"Buscando resultado {cargo} {ano} em {uf.upper()} (município {cod_tse})...")
+
+    try:
+        resultado = await client.resultado_municipio(ano, cargo, uf, cod_tse, turno)
+    except ValueError as e:
+        return str(e)
+
+    if resultado is None or not resultado.candidatos:
+        return (
+            f"Resultado não encontrado para {cargo} {ano} T{turno} "
+            f"em {uf.upper()} município {cod_tse}."
+        )
+
+    header_lines = [
+        f"**Resultado Município {cod_tse} ({uf.upper()}) — "
+        f"{cargo.replace('_', ' ').title()} {ano} (T{turno})**\n",
+        f"Apuração: {resultado.pct_apurado}% das seções",
+    ]
+    if resultado.total_eleitores:
+        header_lines.append(f"Eleitores: {format_number_br(resultado.total_eleitores, 0)}")
+
+    rows = [
+        (
+            str(i),
+            (c.nome or "—")[:25],
+            c.numero or "—",
+            format_number_br(c.votos, 0) if c.votos else "—",
+            f"{c.percentual}%" if c.percentual else "—",
+        )
+        for i, c in enumerate(resultado.candidatos, 1)
+    ]
+
+    return (
+        "\n".join(header_lines)
+        + "\n\n"
+        + markdown_table(["#", "Candidato", "Nº", "Votos", "%"], rows)
+    )
+
+
 async def apuracao_status(
     ano: int,
     cargo: str,

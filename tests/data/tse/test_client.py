@@ -381,9 +381,16 @@ CDN_RESULT_JSON = {
 
 class TestResolveEleicao:
     def test_known_election(self) -> None:
-        ciclo, eleicao = client._resolve_eleicao(2022, 1)
+        ciclo, padded, unpadded = client._resolve_eleicao(2022, 1)
         assert ciclo == "ele2022"
-        assert eleicao == "000544"
+        assert padded == "000544"
+        assert unpadded == "544"
+
+    def test_known_election_2024(self) -> None:
+        ciclo, padded, unpadded = client._resolve_eleicao(2024, 1)
+        assert ciclo == "ele2024"
+        assert padded == "000619"
+        assert unpadded == "619"
 
     def test_unknown_election_raises(self) -> None:
         with pytest.raises(ValueError, match="não mapeada"):
@@ -435,9 +442,7 @@ class TestResultadoSimplificado:
     @pytest.mark.asyncio
     @respx.mock
     async def test_returns_parsed_result(self) -> None:
-        url = (
-            f"{RESULTADOS_CDN_BASE}/ele2022/000544/dados-simplificados/sp/sp-c0001-e000544-r.json"
-        )
+        url = f"{RESULTADOS_CDN_BASE}/ele2022/544/dados-simplificados/sp/sp-c0001-e000544-r.json"
         respx.get(url).mock(return_value=httpx.Response(200, json=CDN_RESULT_JSON))
         result = await client.resultado_simplificado(2022, "presidente", "sp", 1)
         assert result is not None
@@ -447,9 +452,7 @@ class TestResultadoSimplificado:
     @pytest.mark.asyncio
     @respx.mock
     async def test_returns_none_on_404(self) -> None:
-        url = (
-            f"{RESULTADOS_CDN_BASE}/ele2022/000544/dados-simplificados/xx/xx-c0001-e000544-r.json"
-        )
+        url = f"{RESULTADOS_CDN_BASE}/ele2022/544/dados-simplificados/xx/xx-c0001-e000544-r.json"
         respx.get(url).mock(return_value=httpx.Response(404))
         result = await client.resultado_simplificado(2022, "presidente", "xx", 1)
         assert result is None
@@ -457,9 +460,7 @@ class TestResultadoSimplificado:
     @pytest.mark.asyncio
     @respx.mock
     async def test_nacional(self) -> None:
-        url = (
-            f"{RESULTADOS_CDN_BASE}/ele2022/000544/dados-simplificados/br/br-c0001-e000544-r.json"
-        )
+        url = f"{RESULTADOS_CDN_BASE}/ele2022/544/dados-simplificados/br/br-c0001-e000544-r.json"
         br_json = {**CDN_RESULT_JSON, "cdabr": "BR", "tpabr": "br"}
         respx.get(url).mock(return_value=httpx.Response(200, json=br_json))
         result = await client.resultado_simplificado(2022, "presidente", "br", 1)
@@ -473,10 +474,10 @@ class TestResultadoTodosEstados:
     async def test_returns_list(self) -> None:
         # Mock SP and RJ only, rest 404
         sp_url = (
-            f"{RESULTADOS_CDN_BASE}/ele2022/000544/dados-simplificados/sp/sp-c0001-e000544-r.json"
+            f"{RESULTADOS_CDN_BASE}/ele2022/544/dados-simplificados/sp/sp-c0001-e000544-r.json"
         )
         rj_url = (
-            f"{RESULTADOS_CDN_BASE}/ele2022/000544/dados-simplificados/rj/rj-c0001-e000544-r.json"
+            f"{RESULTADOS_CDN_BASE}/ele2022/544/dados-simplificados/rj/rj-c0001-e000544-r.json"
         )
         sp_json = {**CDN_RESULT_JSON, "cdabr": "SP"}
         rj_json = {**CDN_RESULT_JSON, "cdabr": "RJ"}
@@ -491,3 +492,162 @@ class TestResultadoTodosEstados:
         ufs = {r.uf for r in result}
         assert "SP" in ufs
         assert "RJ" in ufs
+
+
+# --- Município (CDN formato unificado -u.json) ---
+
+CDN_UNIFIED_JSON = {
+    "cdabr": "71072",
+    "tpabr": "mu",
+    "dt": "06/10/2024",
+    "s": {"ts": 15000, "pst": "100.00"},
+    "e": {"te": 8000000, "c": 6500000, "a": 1500000},
+    "carg": [
+        {
+            "cd": "0011",
+            "agr": [
+                {
+                    "par": [
+                        {
+                            "cand": [
+                                {
+                                    "seq": "0001",
+                                    "n": "15",
+                                    "nm": "CANDIDATO PREFEITO A",
+                                    "nmu": "CAND A",
+                                    "cc": "MDB",
+                                    "e": "s",
+                                    "st": "Eleito",
+                                    "dvt": "Válido",
+                                    "vap": "3500000",
+                                    "pvap": "53.85",
+                                },
+                            ]
+                        },
+                        {
+                            "cand": [
+                                {
+                                    "seq": "0002",
+                                    "n": "13",
+                                    "nm": "CANDIDATO PREFEITO B",
+                                    "nmu": "CAND B",
+                                    "cc": "PT",
+                                    "e": "n",
+                                    "st": "Não eleito",
+                                    "dvt": "Válido",
+                                    "vap": "3000000",
+                                    "pvap": "46.15",
+                                },
+                            ]
+                        },
+                    ]
+                }
+            ],
+        }
+    ],
+}
+
+CDN_MUN_CONFIG_JSON = {
+    "dg": "06/10/2024",
+    "hg": "20:00:00",
+    "abr": [
+        {
+            "cd": "SP",
+            "mu": [
+                {"cd": "71072", "cdi": "3550308", "nm": "SÃO PAULO", "c": "S"},
+                {"cd": "62910", "cdi": "3509502", "nm": "CAMPINAS", "c": "N"},
+            ],
+        },
+        {
+            "cd": "RJ",
+            "mu": [
+                {"cd": "60011", "cdi": "3304557", "nm": "RIO DE JANEIRO", "c": "S"},
+            ],
+        },
+    ],
+}
+
+
+class TestParseResultadoUnificado:
+    def test_parses_unified_format(self) -> None:
+        result = client._parse_resultado_unificado(CDN_UNIFIED_JSON)
+        assert result.codigo == "71072"
+        assert result.tipo == "mu"
+        assert result.total_secoes == 15000
+        assert result.pct_apurado == "100.00"
+        assert result.total_eleitores == 8000000
+        assert result.total_comparecimento == 6500000
+        assert result.total_abstencoes == 1500000
+        assert len(result.candidatos) == 2
+        # Sorted by votes descending
+        assert result.candidatos[0].nome == "CANDIDATO PREFEITO A"
+        assert result.candidatos[0].votos == 3500000
+        assert result.candidatos[1].nome == "CANDIDATO PREFEITO B"
+        assert result.candidatos[1].votos == 3000000
+
+    def test_empty_carg(self) -> None:
+        result = client._parse_resultado_unificado({"s": {}, "e": {}})
+        assert result.candidatos == []
+        assert result.total_secoes is None
+
+
+class TestListarMunicipiosEleitorais:
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_returns_municipios_for_uf(self) -> None:
+        url = f"{RESULTADOS_CDN_BASE}/ele2024/619/config/mun-e000619-cm.json"
+        respx.get(url).mock(return_value=httpx.Response(200, json=CDN_MUN_CONFIG_JSON))
+        result = await client.listar_municipios_eleitorais(2024, "SP", 1)
+        assert len(result) == 2
+        assert result[0].codigo_tse == "71072"
+        assert result[0].codigo_ibge == "3550308"
+        assert result[0].nome == "SÃO PAULO"
+        assert result[0].capital is True
+        assert result[0].uf == "SP"
+        assert result[1].codigo_tse == "62910"
+        assert result[1].capital is False
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_case_insensitive_uf(self) -> None:
+        url = f"{RESULTADOS_CDN_BASE}/ele2024/619/config/mun-e000619-cm.json"
+        respx.get(url).mock(return_value=httpx.Response(200, json=CDN_MUN_CONFIG_JSON))
+        result = await client.listar_municipios_eleitorais(2024, "sp", 1)
+        assert len(result) == 2
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_uf_not_found(self) -> None:
+        url = f"{RESULTADOS_CDN_BASE}/ele2024/619/config/mun-e000619-cm.json"
+        respx.get(url).mock(return_value=httpx.Response(200, json=CDN_MUN_CONFIG_JSON))
+        result = await client.listar_municipios_eleitorais(2024, "AM", 1)
+        assert result == []
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_returns_empty_on_404(self) -> None:
+        url = f"{RESULTADOS_CDN_BASE}/ele2024/619/config/mun-e000619-cm.json"
+        respx.get(url).mock(return_value=httpx.Response(404))
+        result = await client.listar_municipios_eleitorais(2024, "SP", 1)
+        assert result == []
+
+
+class TestResultadoMunicipio:
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_returns_parsed_result(self) -> None:
+        url = f"{RESULTADOS_CDN_BASE}/ele2024/619/dados/sp/sp71072-c0011-e000619-u.json"
+        respx.get(url).mock(return_value=httpx.Response(200, json=CDN_UNIFIED_JSON))
+        result = await client.resultado_municipio(2024, "prefeito", "SP", "71072", 1)
+        assert result is not None
+        assert result.codigo == "71072"
+        assert len(result.candidatos) == 2
+        assert result.candidatos[0].votos == 3500000
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_returns_none_on_404(self) -> None:
+        url = f"{RESULTADOS_CDN_BASE}/ele2024/619/dados/sp/sp99999-c0011-e000619-u.json"
+        respx.get(url).mock(return_value=httpx.Response(404))
+        result = await client.resultado_municipio(2024, "prefeito", "SP", "99999", 1)
+        assert result is None

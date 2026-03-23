@@ -26,6 +26,7 @@ from .schemas import (
     CandidatoResumo,
     Cargo,
     Eleicao,
+    MunicipioEleitoral,
     PrestaContas,
     ResultadoCandidato,
     ResultadoCDN,
@@ -277,11 +278,13 @@ async def resultado_eleicao(
 # --- CDN de Resultados (resultados.tse.jus.br) ---
 
 
-def _resolve_eleicao(ano: int, turno: int = 1) -> tuple[str, str]:
-    """Resolve ano+turno em ciclo+codigo_eleicao.
+def _resolve_eleicao(ano: int, turno: int = 1) -> tuple[str, str, str]:
+    """Resolve ano+turno em ciclo+padded+unpadded.
 
     Returns:
-        (ciclo, codigo_eleicao) ex: ("ele2022", "000544")
+        (ciclo, padded, unpadded) ex: ("ele2022", "000544", "544")
+        - padded: usado em filenames (e000544)
+        - unpadded: usado em paths do CDN (/544/)
 
     Raises:
         ValueError: se a eleição não está mapeada.
@@ -361,13 +364,13 @@ async def resultado_simplificado(
     Returns:
         ResultadoRegiao com candidatos rankeados por votos, ou None se 404.
     """
-    ciclo, eleicao = _resolve_eleicao(ano, turno)
+    ciclo, padded, unpadded = _resolve_eleicao(ano, turno)
     cargo_code = _resolve_cargo(cargo)
     uf_lower = uf.lower().strip()
 
     url = (
-        f"{RESULTADOS_CDN_BASE}/{ciclo}/{eleicao}/"
-        f"dados-simplificados/{uf_lower}/{uf_lower}-c{cargo_code}-e{eleicao}-r.json"
+        f"{RESULTADOS_CDN_BASE}/{ciclo}/{unpadded}/"
+        f"dados-simplificados/{uf_lower}/{uf_lower}-c{cargo_code}-e{padded}-r.json"
     )
 
     try:
@@ -400,6 +403,129 @@ async def resultado_todos_estados(ano: int, cargo: str, turno: int = 1) -> list[
     tasks = [resultado_simplificado(ano, cargo, uf, turno) for uf in UFS_BRASIL]
     results = await asyncio.gather(*tasks)
     return [r for r in results if r is not None]
+
+
+async def listar_municipios_eleitorais(
+    ano: int, uf: str, turno: int = 1
+) -> list[MunicipioEleitoral]:
+    """Lista municípios eleitorais de uma UF com códigos TSE e IBGE.
+
+    Args:
+        ano: Ano da eleição (ex: 2024).
+        uf: Sigla da UF (ex: "SP").
+        turno: Turno da eleição (1 ou 2).
+
+    Returns:
+        Lista de MunicipioEleitoral com códigos TSE e IBGE.
+    """
+    ciclo, padded, unpadded = _resolve_eleicao(ano, turno)
+    url = f"{RESULTADOS_CDN_BASE}/{ciclo}/{unpadded}/config/mun-e{padded}-cm.json"
+
+    try:
+        data = await _get(url)
+    except Exception:
+        logger.warning("CDN config municípios indisponível: %s", url)
+        return []
+
+    if not isinstance(data, dict):
+        return []
+
+    uf_upper = uf.upper().strip()
+    municipios: list[MunicipioEleitoral] = []
+
+    # Format: {"abr": [{"cd": "SP", "mu": [{"cd": "71072", ...}]}]}
+    for estado in data.get("abr", []):
+        if estado.get("cd", "").upper() != uf_upper:
+            continue
+        for mun in estado.get("mu", []):
+            municipios.append(
+                MunicipioEleitoral(
+                    codigo_tse=mun.get("cd"),
+                    codigo_ibge=mun.get("cdi"),
+                    nome=mun.get("nm"),
+                    capital=mun.get("c", "N") == "S",
+                    uf=uf_upper,
+                )
+            )
+        break
+
+    return municipios
+
+
+def _parse_resultado_unificado(data: dict[str, Any]) -> ResultadoRegiao:
+    """Parse do formato unificado (-u.json) do CDN de resultados.
+
+    Formato: {"carg": [{"agr": [{"par": [{"cand": [...]}]}]}]}
+    Stats de seções em s:{ts, pst}, eleitores em e:{te, c, a}.
+    """
+    candidatos: list[ResultadoCDN] = []
+
+    for cargo in data.get("carg", []):
+        for agr in cargo.get("agr", []):
+            for partido in agr.get("par", []):
+                for cand in partido.get("cand", []):
+                    candidatos.append(_parse_resultado_cdn(cand))
+
+    candidatos.sort(key=lambda c: c.votos or 0, reverse=True)
+
+    # Stats
+    secoes = data.get("s", {})
+    eleitores = data.get("e", {})
+
+    return ResultadoRegiao(
+        codigo=data.get("cdabr"),
+        tipo=data.get("tpabr"),
+        uf=data.get("cdabr"),
+        data_eleicao=data.get("dt"),
+        total_secoes=_safe_int(secoes.get("ts") if isinstance(secoes, dict) else secoes),
+        pct_apurado=(secoes.get("pst") if isinstance(secoes, dict) else None),
+        total_eleitores=_safe_int(
+            eleitores.get("te") if isinstance(eleitores, dict) else eleitores
+        ),
+        total_comparecimento=_safe_int(
+            eleitores.get("c") if isinstance(eleitores, dict) else None
+        ),
+        total_abstencoes=_safe_int(eleitores.get("a") if isinstance(eleitores, dict) else None),
+        candidatos=candidatos,
+    )
+
+
+async def resultado_municipio(
+    ano: int, cargo: str, uf: str, cod_tse: str, turno: int = 1
+) -> ResultadoRegiao | None:
+    """Busca resultado de um cargo em um município específico.
+
+    Disponível apenas para eleições municipais (2024).
+
+    Args:
+        ano: Ano da eleição (ex: 2024).
+        cargo: Nome do cargo (ex: "prefeito", "vereador").
+        uf: Sigla da UF (ex: "SP").
+        cod_tse: Código TSE do município (5 dígitos, ex: "71072").
+        turno: Turno da eleição (1 ou 2).
+
+    Returns:
+        ResultadoRegiao com candidatos rankeados por votos, ou None se 404.
+    """
+    ciclo, padded, unpadded = _resolve_eleicao(ano, turno)
+    cargo_code = _resolve_cargo(cargo)
+    uf_lower = uf.lower().strip()
+
+    url = (
+        f"{RESULTADOS_CDN_BASE}/{ciclo}/{unpadded}/"
+        f"dados/{uf_lower}/{uf_lower}{cod_tse}-c{cargo_code}-e{padded}-u.json"
+    )
+
+    try:
+        data = await _get(url)
+    except Exception:
+        logger.warning("CDN resultado município indisponível: %s", url)
+        return None
+
+    if not isinstance(data, dict) or "carg" not in data:
+        return None
+
+    return _parse_resultado_unificado(data)
 
 
 async def consultar_prestacao_contas(

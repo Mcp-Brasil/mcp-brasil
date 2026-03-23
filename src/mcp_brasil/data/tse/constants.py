@@ -65,12 +65,14 @@ UFS_BRASIL = [
 ]
 
 # Mapeamento ano+turno → ciclo+eleição (cache manual para eleições conhecidas)
-# Formato: (ano, turno) → (ciclo, codigo_eleicao)
-ELEICOES_CDN: dict[tuple[int, int], tuple[str, str]] = {
-    (2022, 1): ("ele2022", "000544"),
-    (2022, 2): ("ele2022", "000545"),
-    (2024, 1): ("ele2024", "000619"),
-    (2024, 2): ("ele2024", "000620"),
+# Formato: (ano, turno) → (ciclo, eleicao_padded, eleicao_unpadded)
+# - padded: usado em filenames (e000544)
+# - unpadded: usado em paths do CDN (/544/)
+ELEICOES_CDN: dict[tuple[int, int], tuple[str, str, str]] = {
+    (2022, 1): ("ele2022", "000544", "544"),
+    (2022, 2): ("ele2022", "000545", "545"),
+    (2024, 1): ("ele2024", "000619", "619"),
+    (2024, 2): ("ele2024", "000620", "620"),
 }
 
 # Códigos de cargos eleitorais

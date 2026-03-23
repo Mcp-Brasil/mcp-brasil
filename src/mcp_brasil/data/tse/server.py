@@ -17,10 +17,12 @@ from .tools import (
     listar_eleicoes,
     listar_eleicoes_suplementares,
     listar_estados_suplementares,
+    listar_municipios_eleitorais,
     mapa_resultado_estados,
     resultado_eleicao,
     resultado_nacional,
     resultado_por_estado,
+    resultado_por_municipio,
 )
 
 mcp = FastMCP("mcp-brasil-tse")
@@ -36,11 +38,13 @@ mcp.tool(buscar_candidato)
 mcp.tool(resultado_eleicao)
 mcp.tool(consultar_prestacao_contas)
 
-# Tools — CDN de Resultados (4)
+# Tools — CDN de Resultados (6)
 mcp.tool(resultado_nacional)
 mcp.tool(resultado_por_estado)
+mcp.tool(resultado_por_municipio)
 mcp.tool(mapa_resultado_estados)
 mcp.tool(apuracao_status)
+mcp.tool(listar_municipios_eleitorais)
 
 # Resources
 mcp.resource("data://cargos-eleitorais", mime_type="application/json")(cargos_eleitorais)

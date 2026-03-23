@@ -124,6 +124,16 @@ class ResultadoRegiao(BaseModel):
     candidatos: list[ResultadoCDN] = []
 
 
+class MunicipioEleitoral(BaseModel):
+    """Município com códigos eleitorais TSE e IBGE."""
+
+    codigo_tse: str | None = None
+    codigo_ibge: str | None = None
+    nome: str | None = None
+    capital: bool = False
+    uf: str | None = None
+
+
 class PrestaContas(BaseModel):
     """Resumo da prestação de contas de campanha."""
 
