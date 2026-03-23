@@ -33,6 +33,8 @@
 - [x] **Rate limiting not enforced client-side** — Resolvido. Adicionado `_shared/rate_limiter.py` (sliding window 80 req/min) aplicado via `_get()`. `buscar_sancoes` refatorado para usar `_get()` ao invés de `http_get()` direto.
 - [x] **Pagination not automatic** — Resolvido. Adicionado `_pagination_hint()` em tools.py que mostra "Use pagina=N+1" quando resultados >= DEFAULT_PAGE_SIZE e "Última página" quando < PAGE_SIZE em pagina > 1.
 - [x] **Pre-existing mypy errors in lifespan.py and ibge/client.py** — Resolvido. mypy passa limpo em todos os 35+ arquivos.
+- [x] **Cobertura limitada a 8 tools** — Expandido de 8 para 18 tools. Adicionados: convênios, cartões corporativos, PEP, acordos de leniência, notas fiscais, benefícios sociais, consulta CPF/CNPJ, detalhe de contrato/servidor. Resource `categorias-beneficios` adicionada. 148 testes passam.
+- [ ] **API endpoints unverified against production** — 10 novos endpoints adicionados baseados na documentação da API. Os nomes de parâmetros e shapes de resposta precisam ser validados contra a API real do Portal da Transparência.
 
 ## Câmara Feature
 
@@ -91,10 +93,16 @@
 - [ ] **Limited to 3 tools** — Original plan called for 6 tools (including CEIS/CNEP sanctions and Comprasnet). CEIS/CNEP covered by transparência feature. Comprasnet deferred.
 - [ ] **PNCP API response format unverified** — Response parsing uses `data.resultado` fallback. Real API response shape needs validation against live PNCP endpoint.
 
+## TransfereGov Feature
+
+- [x] **Feature criada do zero** — 5 tools (buscar_emendas_pix, buscar_emenda_por_autor, detalhe_emenda, emendas_por_municipio, resumo_emendas_ano) + resource + prompt + 36 testes. API PostgREST pública sem auth.
+- [ ] **API endpoints unverified against production** — TransfereGov PostgREST API pode ter colunas/nomes diferentes dos usados. Precisa validação com API real.
+- [ ] **Sem agregação server-side** — `resumo_emendas_ano` retorna registros individuais paginados, não um resumo agregado. PostgREST suporta RPC functions para agregação, mas não as usamos.
+
 ## Known Limitations
 
 - [x] **No CONTRIBUTING.md** — Resolvido. CONTRIBUTING.md criado com getting started, estrutura, como adicionar features, convenções, testes e PR guidelines.
 
 ---
 
-*Last updated: 2026-03-23*
+*Last updated: 2026-03-22*

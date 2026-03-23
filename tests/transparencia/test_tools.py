@@ -10,14 +10,24 @@ import pytest
 from mcp_brasil.transparencia import tools
 from mcp_brasil.transparencia.constants import DEFAULT_PAGE_SIZE
 from mcp_brasil.transparencia.schemas import (
+    AcordoLeniencia,
+    BeneficioSocial,
     BolsaFamiliaMunicipio,
     BolsaFamiliaSacado,
+    CartaoPagamento,
+    ContratoDetalhe,
     ContratoFornecedor,
+    Convenio,
     Emenda,
     Licitacao,
+    NotaFiscal,
+    PessoaExpostaPoliticamente,
+    PessoaFisicaVinculos,
+    PessoaJuridicaVinculos,
     RecursoRecebido,
     Sancao,
     Servidor,
+    ServidorDetalhe,
     Viagem,
 )
 
@@ -382,3 +392,332 @@ class TestPaginationHints:
         with patch(f"{MODULE}.consultar_viagens", new_callable=AsyncMock, return_value=data):
             result = await tools.consultar_viagens("12345678900")
         assert "pagina=2" in result
+
+
+# ---------------------------------------------------------------------------
+# buscar_convenios
+# ---------------------------------------------------------------------------
+
+
+class TestBuscarConvenios:
+    @pytest.mark.asyncio
+    async def test_formats_table(self) -> None:
+        mock_data = [
+            Convenio(
+                numero="CV-001",
+                objeto="Construção de escola",
+                situacao="Vigente",
+                valor_convenio=500000.0,
+                valor_liberado=250000.0,
+                orgao="MEC",
+                convenente="Prefeitura de Teresina",
+            )
+        ]
+        with patch(f"{MODULE}.buscar_convenios", new_callable=AsyncMock, return_value=mock_data):
+            result = await tools.buscar_convenios()
+        assert "CV-001" in result
+        assert "R$ 500.000,00" in result
+
+    @pytest.mark.asyncio
+    async def test_empty(self) -> None:
+        with patch(f"{MODULE}.buscar_convenios", new_callable=AsyncMock, return_value=[]):
+            result = await tools.buscar_convenios()
+        assert "Nenhum convênio" in result
+
+
+# ---------------------------------------------------------------------------
+# buscar_cartoes_pagamento
+# ---------------------------------------------------------------------------
+
+
+class TestBuscarCartoesPagamento:
+    @pytest.mark.asyncio
+    async def test_formats_table(self) -> None:
+        mock_data = [
+            CartaoPagamento(
+                portador="João Silva",
+                orgao="MRE",
+                valor=1500.0,
+                data="15/03/2024",
+                tipo="Suprimento",
+                estabelecimento="Hotel Central",
+            )
+        ]
+        with patch(
+            f"{MODULE}.buscar_cartoes_pagamento",
+            new_callable=AsyncMock,
+            return_value=mock_data,
+        ):
+            result = await tools.buscar_cartoes_pagamento()
+        assert "João Silva" in result
+        assert "R$ 1.500,00" in result
+
+    @pytest.mark.asyncio
+    async def test_empty(self) -> None:
+        with patch(f"{MODULE}.buscar_cartoes_pagamento", new_callable=AsyncMock, return_value=[]):
+            result = await tools.buscar_cartoes_pagamento()
+        assert "Nenhum pagamento" in result
+
+
+# ---------------------------------------------------------------------------
+# buscar_pep
+# ---------------------------------------------------------------------------
+
+
+class TestBuscarPep:
+    @pytest.mark.asyncio
+    async def test_formats_table(self) -> None:
+        mock_data = [
+            PessoaExpostaPoliticamente(
+                cpf="***123***",
+                nome="Maria Política",
+                orgao="Senado Federal",
+                funcao="Senadora",
+                data_inicio="01/02/2023",
+            )
+        ]
+        with patch(f"{MODULE}.buscar_pep", new_callable=AsyncMock, return_value=mock_data):
+            result = await tools.buscar_pep(nome="Maria")
+        assert "Maria Política" in result
+        assert "Senadora" in result
+
+    @pytest.mark.asyncio
+    async def test_no_params(self) -> None:
+        result = await tools.buscar_pep()
+        assert "Informe CPF ou nome" in result
+
+    @pytest.mark.asyncio
+    async def test_empty(self) -> None:
+        with patch(f"{MODULE}.buscar_pep", new_callable=AsyncMock, return_value=[]):
+            result = await tools.buscar_pep(nome="Inexistente")
+        assert "Nenhuma PEP" in result
+
+
+# ---------------------------------------------------------------------------
+# buscar_acordos_leniencia
+# ---------------------------------------------------------------------------
+
+
+class TestBuscarAcordosLeniencia:
+    @pytest.mark.asyncio
+    async def test_formats_table(self) -> None:
+        mock_data = [
+            AcordoLeniencia(
+                empresa="Construtora XYZ",
+                cnpj="12345678000190",
+                orgao="CGU",
+                situacao="Vigente",
+                data_inicio="01/06/2020",
+                valor=10000000.0,
+            )
+        ]
+        with patch(
+            f"{MODULE}.buscar_acordos_leniencia",
+            new_callable=AsyncMock,
+            return_value=mock_data,
+        ):
+            result = await tools.buscar_acordos_leniencia()
+        assert "Construtora XYZ" in result
+        assert "R$ 10.000.000,00" in result
+
+    @pytest.mark.asyncio
+    async def test_empty(self) -> None:
+        with patch(f"{MODULE}.buscar_acordos_leniencia", new_callable=AsyncMock, return_value=[]):
+            result = await tools.buscar_acordos_leniencia()
+        assert "Nenhum acordo" in result
+
+
+# ---------------------------------------------------------------------------
+# buscar_notas_fiscais
+# ---------------------------------------------------------------------------
+
+
+class TestBuscarNotasFiscais:
+    @pytest.mark.asyncio
+    async def test_formats_table(self) -> None:
+        mock_data = [
+            NotaFiscal(
+                numero="NF-001",
+                serie="1",
+                emitente="Fornecedor ABC",
+                cnpj_emitente="99888777000111",
+                valor=5000.0,
+                data_emissao="10/03/2024",
+            )
+        ]
+        with patch(
+            f"{MODULE}.buscar_notas_fiscais", new_callable=AsyncMock, return_value=mock_data
+        ):
+            result = await tools.buscar_notas_fiscais()
+        assert "NF-001" in result
+        assert "R$ 5.000,00" in result
+
+    @pytest.mark.asyncio
+    async def test_empty(self) -> None:
+        with patch(f"{MODULE}.buscar_notas_fiscais", new_callable=AsyncMock, return_value=[]):
+            result = await tools.buscar_notas_fiscais()
+        assert "Nenhuma nota fiscal" in result
+
+
+# ---------------------------------------------------------------------------
+# consultar_beneficio_social
+# ---------------------------------------------------------------------------
+
+
+class TestConsultarBeneficioSocial:
+    @pytest.mark.asyncio
+    async def test_formats_table(self) -> None:
+        mock_data = [
+            BeneficioSocial(
+                tipo="BPC",
+                nome_beneficiario="José Lima",
+                valor=1412.0,
+                mes_referencia="202401",
+                municipio="Teresina",
+                uf="PI",
+            )
+        ]
+        with patch(
+            f"{MODULE}.consultar_beneficio_social",
+            new_callable=AsyncMock,
+            return_value=mock_data,
+        ):
+            result = await tools.consultar_beneficio_social(cpf="12345678900")
+        assert "BPC" in result
+        assert "R$ 1.412,00" in result
+
+    @pytest.mark.asyncio
+    async def test_no_params(self) -> None:
+        result = await tools.consultar_beneficio_social()
+        assert "Informe CPF ou NIS" in result
+
+    @pytest.mark.asyncio
+    async def test_empty(self) -> None:
+        with patch(
+            f"{MODULE}.consultar_beneficio_social", new_callable=AsyncMock, return_value=[]
+        ):
+            result = await tools.consultar_beneficio_social(cpf="00000000000")
+        assert "Nenhum benefício" in result
+
+
+# ---------------------------------------------------------------------------
+# consultar_cpf
+# ---------------------------------------------------------------------------
+
+
+class TestConsultarCpf:
+    @pytest.mark.asyncio
+    async def test_formats_results(self) -> None:
+        mock_data = [
+            PessoaFisicaVinculos(
+                cpf="***123***",
+                nome="Ana Souza",
+                tipo_vinculo="Servidor",
+                orgao="INSS",
+            )
+        ]
+        with patch(f"{MODULE}.consultar_cpf", new_callable=AsyncMock, return_value=mock_data):
+            result = await tools.consultar_cpf("12345678900")
+        assert "Ana Souza" in result
+        assert "Servidor" in result
+
+    @pytest.mark.asyncio
+    async def test_empty(self) -> None:
+        with patch(f"{MODULE}.consultar_cpf", new_callable=AsyncMock, return_value=[]):
+            result = await tools.consultar_cpf("00000000000")
+        assert "Nenhum vínculo" in result
+
+
+# ---------------------------------------------------------------------------
+# consultar_cnpj
+# ---------------------------------------------------------------------------
+
+
+class TestConsultarCnpj:
+    @pytest.mark.asyncio
+    async def test_formats_results(self) -> None:
+        mock_data = [
+            PessoaJuridicaVinculos(
+                cnpj="12345678000190",
+                razao_social="Empresa Teste LTDA",
+                sancoes="Nenhuma",
+                contratos="3 contratos ativos",
+            )
+        ]
+        with patch(f"{MODULE}.consultar_cnpj", new_callable=AsyncMock, return_value=mock_data):
+            result = await tools.consultar_cnpj("12345678000190")
+        assert "Empresa Teste" in result
+        assert "3 contratos" in result
+
+    @pytest.mark.asyncio
+    async def test_empty(self) -> None:
+        with patch(f"{MODULE}.consultar_cnpj", new_callable=AsyncMock, return_value=[]):
+            result = await tools.consultar_cnpj("00000000000000")
+        assert "Nenhum vínculo" in result
+
+
+# ---------------------------------------------------------------------------
+# detalhar_contrato
+# ---------------------------------------------------------------------------
+
+
+class TestDetalharContrato:
+    @pytest.mark.asyncio
+    async def test_formats_detail(self) -> None:
+        mock_data = ContratoDetalhe(
+            id=123,
+            numero="CT-DETAIL",
+            objeto="Serviço completo",
+            valor_inicial=100000.0,
+            valor_final=150000.0,
+            data_inicio="01/01/2024",
+            data_fim="31/12/2024",
+            orgao="MEC",
+            fornecedor="Fornecedor Detail",
+            modalidade="Pregão",
+            situacao="Ativo",
+        )
+        with patch(f"{MODULE}.detalhar_contrato", new_callable=AsyncMock, return_value=mock_data):
+            result = await tools.detalhar_contrato(123)
+        assert "CT-DETAIL" in result
+        assert "R$ 150.000,00" in result
+        assert "Pregão" in result
+
+    @pytest.mark.asyncio
+    async def test_not_found(self) -> None:
+        with patch(f"{MODULE}.detalhar_contrato", new_callable=AsyncMock, return_value=None):
+            result = await tools.detalhar_contrato(999)
+        assert "não encontrado" in result
+
+
+# ---------------------------------------------------------------------------
+# detalhar_servidor
+# ---------------------------------------------------------------------------
+
+
+class TestDetalharServidor:
+    @pytest.mark.asyncio
+    async def test_formats_detail(self) -> None:
+        mock_data = ServidorDetalhe(
+            id=42,
+            cpf="***123***",
+            nome="Servidor Completo",
+            tipo_servidor="Civil",
+            situacao="Ativo",
+            orgao="INSS",
+            cargo="Analista",
+            funcao="Coordenador",
+            remuneracao_basica=12000.0,
+            remuneracao_apos_deducoes=9500.0,
+        )
+        with patch(f"{MODULE}.detalhar_servidor", new_callable=AsyncMock, return_value=mock_data):
+            result = await tools.detalhar_servidor(42)
+        assert "Servidor Completo" in result
+        assert "R$ 12.000,00" in result
+        assert "Coordenador" in result
+
+    @pytest.mark.asyncio
+    async def test_not_found(self) -> None:
+        with patch(f"{MODULE}.detalhar_servidor", new_callable=AsyncMock, return_value=None):
+            result = await tools.detalhar_servidor(999)
+        assert "não encontrado" in result

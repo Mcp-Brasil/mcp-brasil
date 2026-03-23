@@ -60,6 +60,62 @@ def endpoints_disponiveis() -> str:
             "descricao": "Sanções em bases federais (inidôneas, punidas, impedidas, expulsos)",
             "parametros": ["codigoSancionado", "nomeSancionado", "pagina"],
         },
+        {
+            "endpoint": "convenios",
+            "descricao": "Convênios e transferências voluntárias",
+            "parametros": ["codigoOrgao", "convenente", "pagina"],
+        },
+        {
+            "endpoint": "cartoes",
+            "descricao": "Cartão corporativo / suprimento de fundos",
+            "parametros": [
+                "cpfPortador",
+                "codigoOrgao",
+                "mesExtratoInicio",
+                "mesExtratoFim",
+                "pagina",
+            ],
+        },
+        {
+            "endpoint": "pep",
+            "descricao": "Pessoas Expostas Politicamente",
+            "parametros": ["cpf", "nome", "pagina"],
+        },
+        {
+            "endpoint": "acordos-leniencia",
+            "descricao": "Acordos de leniência (anticorrupção)",
+            "parametros": ["nomeEmpresa", "cnpj", "pagina"],
+        },
+        {
+            "endpoint": "notas-fiscais",
+            "descricao": "Notas fiscais eletrônicas",
+            "parametros": ["cnpjEmitente", "dataEmissaoDe", "dataEmissaoAte", "pagina"],
+        },
+        {
+            "endpoint": "beneficios-cidadao",
+            "descricao": "Benefícios sociais (BPC, seguro-desemprego, etc.)",
+            "parametros": ["cpf", "nis", "mesAno", "pagina"],
+        },
+        {
+            "endpoint": "pessoas-fisicas",
+            "descricao": "Vínculos e benefícios por CPF",
+            "parametros": ["cpf", "pagina"],
+        },
+        {
+            "endpoint": "pessoas-juridicas",
+            "descricao": "Sanções e contratos por CNPJ",
+            "parametros": ["cnpj", "pagina"],
+        },
+        {
+            "endpoint": "contratos/id/{id}",
+            "descricao": "Detalhe de um contrato específico",
+            "parametros": ["id"],
+        },
+        {
+            "endpoint": "servidores/{id}",
+            "descricao": "Detalhe completo de servidor com remuneração",
+            "parametros": ["id"],
+        },
     ]
     return json.dumps(data, ensure_ascii=False)
 
@@ -75,6 +131,19 @@ def bases_sancoes() -> str:
             "parametro_nome": db["param_nome"],
         }
         for key, db in SANCOES_DATABASES.items()
+    ]
+    return json.dumps(data, ensure_ascii=False)
+
+
+def categorias_beneficios() -> str:
+    """Lista de tipos de benefícios sociais disponíveis para consulta."""
+    data = [
+        {"tipo": "BPC", "descricao": "Benefício de Prestação Continuada (LOAS)"},
+        {"tipo": "seguro-desemprego", "descricao": "Seguro-Desemprego"},
+        {"tipo": "abono-salarial", "descricao": "Abono Salarial PIS/PASEP"},
+        {"tipo": "garantia-safra", "descricao": "Garantia-Safra"},
+        {"tipo": "peti", "descricao": "Programa de Erradicação do Trabalho Infantil"},
+        {"tipo": "bolsa-familia", "descricao": "Novo Bolsa Família (endpoint dedicado)"},
     ]
     return json.dumps(data, ensure_ascii=False)
 

@@ -21,7 +21,7 @@ def _set_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
 
 class TestToolsRegistered:
     @pytest.mark.asyncio
-    async def test_all_8_tools_registered(self) -> None:
+    async def test_all_18_tools_registered(self) -> None:
         async with Client(mcp) as c:
             tool_list = await c.list_tools()
             names = {t.name for t in tool_list}
@@ -34,6 +34,16 @@ class TestToolsRegistered:
                 "buscar_sancoes",
                 "buscar_emendas",
                 "consultar_viagens",
+                "buscar_convenios",
+                "buscar_cartoes_pagamento",
+                "buscar_pep",
+                "buscar_acordos_leniencia",
+                "buscar_notas_fiscais",
+                "consultar_beneficio_social",
+                "consultar_cpf",
+                "consultar_cnpj",
+                "detalhar_contrato",
+                "detalhar_servidor",
             }
             assert expected.issubset(names), f"Missing: {expected - names}"
 
@@ -47,11 +57,16 @@ class TestToolsRegistered:
 
 class TestResourcesRegistered:
     @pytest.mark.asyncio
-    async def test_all_3_resources_registered(self) -> None:
+    async def test_all_4_resources_registered(self) -> None:
         async with Client(mcp) as c:
             resources = await c.list_resources()
             uris = {str(r.uri) for r in resources}
-            expected = {"data://endpoints", "data://bases-sancoes", "data://info-api"}
+            expected = {
+                "data://endpoints",
+                "data://bases-sancoes",
+                "data://info-api",
+                "data://categorias-beneficios",
+            }
             assert expected.issubset(uris), f"Missing: {expected - uris}"
 
 
