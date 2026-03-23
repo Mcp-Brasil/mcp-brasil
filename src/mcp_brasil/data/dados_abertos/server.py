@@ -12,10 +12,10 @@ from .tools import buscar_conjuntos, buscar_recursos, detalhar_conjunto, listar_
 mcp = FastMCP("mcp-brasil-dados-abertos")
 
 # Tools
-mcp.tool(buscar_conjuntos)
-mcp.tool(detalhar_conjunto)
-mcp.tool(listar_organizacoes)
-mcp.tool(buscar_recursos)
+mcp.tool(buscar_conjuntos, tags={"busca", "datasets", "dados-abertos"})
+mcp.tool(detalhar_conjunto, tags={"detalhe", "datasets", "dados-abertos"})
+mcp.tool(listar_organizacoes, tags={"listagem", "organizacoes", "dados-abertos"})
+mcp.tool(buscar_recursos, tags={"busca", "recursos", "downloads"})
 
 # Resources
 mcp.resource("data://formatos", mime_type="application/json")(formatos_disponiveis)

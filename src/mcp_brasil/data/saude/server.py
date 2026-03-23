@@ -17,10 +17,10 @@ from .tools import (
 mcp = FastMCP("mcp-brasil-saude")
 
 # Tools (4)
-mcp.tool(buscar_estabelecimentos)
-mcp.tool(buscar_profissionais)
-mcp.tool(listar_tipos_estabelecimento)
-mcp.tool(consultar_leitos)
+mcp.tool(buscar_estabelecimentos, tags={"busca", "estabelecimentos", "cnes", "sus"})
+mcp.tool(buscar_profissionais, tags={"busca", "profissionais", "cnes"})
+mcp.tool(listar_tipos_estabelecimento, tags={"listagem", "estabelecimentos", "tipos"})
+mcp.tool(consultar_leitos, tags={"consulta", "leitos", "hospitalares"})
 
 # Resources (URIs without namespace prefix — mount adds "saude/" automatically)
 mcp.resource("data://codigos-uf", mime_type="application/json")(codigos_uf_cnes)

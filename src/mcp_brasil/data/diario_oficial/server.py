@@ -12,10 +12,10 @@ from .tools import buscar_cidades, buscar_diarios, buscar_trechos, listar_territ
 mcp = FastMCP("mcp-brasil-diario-oficial")
 
 # Tools
-mcp.tool(buscar_diarios)
-mcp.tool(buscar_trechos)
-mcp.tool(buscar_cidades)
-mcp.tool(listar_territorios)
+mcp.tool(buscar_diarios, tags={"busca", "diarios-oficiais", "publicacoes"})
+mcp.tool(buscar_trechos, tags={"busca", "trechos", "diarios-oficiais"})
+mcp.tool(buscar_cidades, tags={"busca", "municipios", "cobertura"})
+mcp.tool(listar_territorios, tags={"listagem", "municipios", "cobertura"})
 
 # Resources
 mcp.resource("data://capitais-cobertas", mime_type="application/json")(capitais_cobertas)
