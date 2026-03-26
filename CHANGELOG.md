@@ -2,6 +2,12 @@
 
 Todas as mudanças notáveis do mcp-brasil estão documentadas neste arquivo.
 
+## [0.3.4] - 2026-03-26
+
+### Features
+
+- **camara:** Add detalhar_proposicao tool and improve buscar_proposicao
+
 ## [0.3.3] - 2026-03-26
 
 ### Bug Fixes
