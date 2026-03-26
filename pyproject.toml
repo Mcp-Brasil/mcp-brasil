@@ -1,6 +1,6 @@
 [project]
 name = "mcp-brasil"
-version = "0.3.1"
+version = "0.3.2"
 description = "MCP servers para APIs públicas brasileiras"
 readme = "README.md"
 license = "MIT"

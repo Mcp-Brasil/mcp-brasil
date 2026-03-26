@@ -2,6 +2,12 @@
 
 Todas as mudanças notáveis do mcp-brasil estão documentadas neste arquivo.
 
+## [0.3.2] - 2026-03-26
+
+### Miscellaneous
+
+- Add PyPI keywords and classifiers
+
 ## [0.3.1] - 2026-03-26
 
 ### Bug Fixes
