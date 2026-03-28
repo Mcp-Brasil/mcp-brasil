@@ -20,14 +20,13 @@ from .constants import (
     ESTABELECIMENTOS_URL,
     LEITOS_URL,
     MAX_LIMIT,
-    PROFISSIONAIS_URL,
+    MAX_LIMIT_LEITOS,
     TIPOS_URL,
 )
 from .schemas import (
     Estabelecimento,
     EstabelecimentoDetalhe,
     Leito,
-    Profissional,
     TipoEstabelecimento,
 )
 
@@ -66,43 +65,32 @@ def _parse_estabelecimento(raw: dict[str, Any]) -> Estabelecimento:
         codigo_cnes=str(raw.get("codigo_cnes", "") or ""),
         nome_fantasia=raw.get("nome_fantasia"),
         nome_razao_social=raw.get("nome_razao_social"),
-        natureza_organizacao=raw.get("natureza_organizacao"),
+        natureza_organizacao=raw.get("natureza_organizacao_entidade"),
         tipo_gestao=raw.get("tipo_gestao"),
-        codigo_tipo=str(raw.get("codigo_tipo_estabelecimento", "") or ""),
-        descricao_tipo=raw.get("descricao_tipo_estabelecimento"),
+        codigo_tipo=str(raw.get("codigo_tipo_unidade", "") or ""),
+        descricao_tipo=raw.get("descricao_turno_atendimento"),
         codigo_municipio=str(raw.get("codigo_municipio", "") or ""),
         codigo_uf=str(raw.get("codigo_uf", "") or ""),
-        endereco=raw.get("endereco"),
-    )
-
-
-def _parse_profissional(raw: dict[str, Any]) -> Profissional:
-    """Parse a raw professional dict into a Profissional model."""
-    return Profissional(
-        codigo_cnes=str(raw.get("codigo_cnes", "") or ""),
-        nome=raw.get("nome"),
-        cns=raw.get("cns"),
-        cbo=raw.get("cbo"),
-        descricao_cbo=raw.get("descricao_cbo"),
+        endereco=raw.get("endereco_estabelecimento"),
     )
 
 
 def _parse_tipo(raw: dict[str, Any]) -> TipoEstabelecimento:
     """Parse a raw type dict into a TipoEstabelecimento model."""
     return TipoEstabelecimento(
-        codigo=str(raw.get("codigo_tipo_estabelecimento", "") or ""),
-        descricao=raw.get("descricao_tipo_estabelecimento"),
+        codigo=str(raw.get("codigo_tipo_unidade", "") or ""),
+        descricao=raw.get("descricao_tipo_unidade"),
     )
 
 
 def _parse_leito(raw: dict[str, Any]) -> Leito:
-    """Parse a raw bed dict into a Leito model."""
+    """Parse a raw hospital/bed dict from hospitais-e-leitos endpoint."""
     return Leito(
-        codigo_cnes=str(raw.get("codigo_cnes", "") or ""),
-        tipo_leito=raw.get("tipo_leito"),
-        especialidade=raw.get("especialidade"),
-        existente=raw.get("existente"),
-        sus=raw.get("sus"),
+        codigo_cnes=str(raw.get("nome_do_hospital", "") or ""),
+        tipo_leito=raw.get("descricao_do_tipo_da_unidade"),
+        especialidade=raw.get("descricao_da_natureza_juridica_do_hosptial"),
+        existente=raw.get("quantidade_total_de_leitos_do_hosptial"),
+        sus=raw.get("quantidade_total_de_leitos_sus_do_hosptial"),
     )
 
 
@@ -141,37 +129,6 @@ async def buscar_estabelecimentos(
     return [_parse_estabelecimento(item) for item in data]
 
 
-async def buscar_profissionais(
-    *,
-    codigo_municipio: str | None = None,
-    cnes: str | None = None,
-    limit: int = DEFAULT_LIMIT,
-    offset: int = 0,
-) -> list[Profissional]:
-    """Search health professionals from CNES.
-
-    API: GET /profissionais
-
-    Args:
-        codigo_municipio: IBGE municipality code.
-        cnes: CNES establishment code.
-        limit: Max results per page.
-        offset: Pagination offset.
-    """
-    params: dict[str, Any] = {
-        "limit": min(limit, MAX_LIMIT),
-        "offset": offset,
-    }
-    if codigo_municipio:
-        params["codigo_municipio"] = codigo_municipio
-    if cnes:
-        params["cnes"] = cnes
-
-    raw = await http_get(PROFISSIONAIS_URL, params=params)
-    data = _ensure_list(raw, PROFISSIONAIS_URL)
-    return [_parse_profissional(item) for item in data]
-
-
 async def listar_tipos_estabelecimento() -> list[TipoEstabelecimento]:
     """Fetch all establishment types from CNES.
 
@@ -184,29 +141,21 @@ async def listar_tipos_estabelecimento() -> list[TipoEstabelecimento]:
 
 async def consultar_leitos(
     *,
-    codigo_municipio: str | None = None,
-    cnes: str | None = None,
     limit: int = DEFAULT_LIMIT,
     offset: int = 0,
 ) -> list[Leito]:
-    """Search hospital beds from CNES.
+    """Search hospitals and beds from DataSUS.
 
-    API: GET /leitos
+    API: GET /assistencia-a-saude/hospitais-e-leitos
 
     Args:
-        codigo_municipio: IBGE municipality code.
-        cnes: CNES establishment code.
-        limit: Max results per page.
+        limit: Max results per page (max 1000).
         offset: Pagination offset.
     """
     params: dict[str, Any] = {
-        "limit": min(limit, MAX_LIMIT),
+        "limit": min(limit, MAX_LIMIT_LEITOS),
         "offset": offset,
     }
-    if codigo_municipio:
-        params["codigo_municipio"] = codigo_municipio
-    if cnes:
-        params["cnes"] = cnes
 
     raw = await http_get(LEITOS_URL, params=params)
     data = _ensure_list(raw, LEITOS_URL)
@@ -219,19 +168,19 @@ def _parse_estabelecimento_detalhe(raw: dict[str, Any]) -> EstabelecimentoDetalh
         codigo_cnes=str(raw.get("codigo_cnes", "") or ""),
         nome_fantasia=raw.get("nome_fantasia"),
         nome_razao_social=raw.get("nome_razao_social"),
-        natureza_organizacao=raw.get("natureza_organizacao"),
+        natureza_organizacao=raw.get("natureza_organizacao_entidade"),
         tipo_gestao=raw.get("tipo_gestao"),
-        codigo_tipo=str(raw.get("codigo_tipo_estabelecimento", "") or ""),
-        descricao_tipo=raw.get("descricao_tipo_estabelecimento"),
+        codigo_tipo=str(raw.get("codigo_tipo_unidade", "") or ""),
+        descricao_tipo=raw.get("descricao_turno_atendimento"),
         codigo_municipio=str(raw.get("codigo_municipio", "") or ""),
         codigo_uf=str(raw.get("codigo_uf", "") or ""),
-        endereco=raw.get("endereco"),
-        bairro=raw.get("bairro"),
-        cep=raw.get("cep"),
-        telefone=raw.get("telefone"),
-        latitude=raw.get("latitude"),
-        longitude=raw.get("longitude"),
-        cnpj=raw.get("cnpj"),
+        endereco=raw.get("endereco_estabelecimento"),
+        bairro=raw.get("bairro_estabelecimento"),
+        cep=raw.get("codigo_cep_estabelecimento"),
+        telefone=raw.get("numero_telefone_estabelecimento"),
+        latitude=raw.get("latitude_estabelecimento_decimo_grau"),
+        longitude=raw.get("longitude_estabelecimento_decimo_grau"),
+        cnpj=raw.get("numero_cnpj"),
         data_atualizacao=raw.get("data_atualizacao"),
     )
 
@@ -274,7 +223,7 @@ async def buscar_estabelecimentos_por_tipo(
         offset: Pagination offset.
     """
     params: dict[str, Any] = {
-        "codigo_tipo_estabelecimento": codigo_tipo,
+        "codigo_tipo_unidade": codigo_tipo,
         "status": status,
         "limit": min(limit, MAX_LIMIT),
         "offset": offset,

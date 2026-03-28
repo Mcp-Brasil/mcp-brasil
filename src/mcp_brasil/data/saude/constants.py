@@ -1,14 +1,15 @@
 """Constants for the Saúde feature."""
 
-CNES_API_BASE = "https://apidadosabertos.saude.gov.br/cnes"
+SAUDE_API_BASE = "https://apidadosabertos.saude.gov.br"
+CNES_API_BASE = f"{SAUDE_API_BASE}/cnes"
 
 ESTABELECIMENTOS_URL = f"{CNES_API_BASE}/estabelecimentos"
-PROFISSIONAIS_URL = f"{CNES_API_BASE}/profissionais"
-TIPOS_URL = f"{CNES_API_BASE}/tipodeestabelecimento"
-LEITOS_URL = f"{CNES_API_BASE}/leitos"
+TIPOS_URL = f"{CNES_API_BASE}/tipounidades"
+LEITOS_URL = f"{SAUDE_API_BASE}/assistencia-a-saude/hospitais-e-leitos"
 
 DEFAULT_LIMIT = 20
-MAX_LIMIT = 100
+MAX_LIMIT = 20  # API enforces max 20 for estabelecimentos
+MAX_LIMIT_LEITOS = 1000  # API allows up to 1000 for hospitais-e-leitos
 
 # Códigos de tipo de unidade para urgência/emergência (CNES)
 TIPOS_URGENCIA: dict[str, str] = {

@@ -1,5 +1,7 @@
 """Tests for the DOU (federal) HTTP client."""
 
+import json
+
 import httpx
 import pytest
 import respx
@@ -9,7 +11,7 @@ from mcp_brasil.data.diario_oficial.constants import DOU_ARTICLE_URL, DOU_SEARCH
 
 
 def _mock_search_response(total: int = 1, items: list | None = None) -> dict:
-    """Build a mock DOU search API response."""
+    """Build a mock DOU search API response (JSON payload)."""
     if items is None:
         items = [
             {
@@ -30,6 +32,19 @@ def _mock_search_response(total: int = 1, items: list | None = None) -> dict:
     return {"jsonArray": items, "total": total}
 
 
+def _wrap_in_html(payload: dict) -> str:
+    """Wrap a JSON payload in HTML mimicking the DOU search page."""
+    tag_id = "_br_com_seatecnologia_in_buscadou_BuscaDouPortlet_params"
+    json_str = json.dumps(payload, ensure_ascii=False)
+    return (
+        "<html><body>"
+        f'<script id="{tag_id}" type="application/json">'
+        f"{json_str}"
+        "</script>"
+        "</body></html>"
+    )
+
+
 # ---------------------------------------------------------------------------
 # buscar_dou
 # ---------------------------------------------------------------------------
@@ -39,8 +54,11 @@ class TestBuscarDou:
     @pytest.mark.asyncio
     @respx.mock
     async def test_returns_parsed_results(self) -> None:
+        html = _wrap_in_html(_mock_search_response())
         respx.get(DOU_SEARCH_URL).mock(
-            return_value=httpx.Response(200, json=_mock_search_response())
+            return_value=httpx.Response(
+                200, text=html, headers={"content-type": "text/html; charset=UTF-8"}
+            )
         )
         result = await client_dou.buscar_dou(termo="portaria")
         assert result.total == 1
@@ -55,19 +73,26 @@ class TestBuscarDou:
     @pytest.mark.asyncio
     @respx.mock
     async def test_search_params_sent(self) -> None:
+        html = _wrap_in_html(_mock_search_response(0, []))
         route = respx.get(DOU_SEARCH_URL).mock(
-            return_value=httpx.Response(200, json=_mock_search_response(0, []))
+            return_value=httpx.Response(
+                200, text=html, headers={"content-type": "text/html; charset=UTF-8"}
+            )
         )
         await client_dou.buscar_dou(termo="decreto", secao="SECAO_1", periodo="SEMANA")
         req_url = str(route.calls[0].request.url)
         assert "q=decreto" in req_url
-        assert "s=SECAO_1" in req_url
+        # Section names are mapped to DOU codes
+        assert "s=do1" in req_url
 
     @pytest.mark.asyncio
     @respx.mock
     async def test_orgao_filter(self) -> None:
+        html = _wrap_in_html(_mock_search_response(0, []))
         route = respx.get(DOU_SEARCH_URL).mock(
-            return_value=httpx.Response(200, json=_mock_search_response(0, []))
+            return_value=httpx.Response(
+                200, text=html, headers={"content-type": "text/html; charset=UTF-8"}
+            )
         )
         await client_dou.buscar_dou(termo="teste", orgao="IBAMA")
         req_url = str(route.calls[0].request.url)
@@ -76,8 +101,11 @@ class TestBuscarDou:
     @pytest.mark.asyncio
     @respx.mock
     async def test_date_range_params(self) -> None:
+        html = _wrap_in_html(_mock_search_response(0, []))
         route = respx.get(DOU_SEARCH_URL).mock(
-            return_value=httpx.Response(200, json=_mock_search_response(0, []))
+            return_value=httpx.Response(
+                200, text=html, headers={"content-type": "text/html; charset=UTF-8"}
+            )
         )
         await client_dou.buscar_dou(
             termo="teste",
@@ -85,14 +113,18 @@ class TestBuscarDou:
             data_fim="2024-01-31",
         )
         req_url = str(route.calls[0].request.url)
-        assert "publishFrom=2024-01-01" in req_url
-        assert "publishTo=2024-01-31" in req_url
+        # Dates are converted to dd-mm-yyyy format for the DOU API
+        assert "publishFrom=01-01-2024" in req_url
+        assert "publishTo=31-01-2024" in req_url
 
     @pytest.mark.asyncio
     @respx.mock
     async def test_empty_response(self) -> None:
+        html = _wrap_in_html({"jsonArray": [], "total": 0})
         respx.get(DOU_SEARCH_URL).mock(
-            return_value=httpx.Response(200, json={"jsonArray": [], "total": 0})
+            return_value=httpx.Response(
+                200, text=html, headers={"content-type": "text/html; charset=UTF-8"}
+            )
         )
         result = await client_dou.buscar_dou(termo="inexistente")
         assert result.total == 0
@@ -101,12 +133,30 @@ class TestBuscarDou:
     @pytest.mark.asyncio
     @respx.mock
     async def test_tipo_publicacao_filter(self) -> None:
+        html = _wrap_in_html(_mock_search_response(0, []))
         route = respx.get(DOU_SEARCH_URL).mock(
-            return_value=httpx.Response(200, json=_mock_search_response(0, []))
+            return_value=httpx.Response(
+                200, text=html, headers={"content-type": "text/html; charset=UTF-8"}
+            )
         )
         await client_dou.buscar_dou(termo="teste", tipo_publicacao="Decreto")
         req_url = str(route.calls[0].request.url)
         assert "artType=Decreto" in req_url
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_missing_script_tag_returns_empty(self) -> None:
+        """When the HTML has no script tag, return empty result."""
+        respx.get(DOU_SEARCH_URL).mock(
+            return_value=httpx.Response(
+                200,
+                text="<html><body></body></html>",
+                headers={"content-type": "text/html; charset=UTF-8"},
+            )
+        )
+        result = await client_dou.buscar_dou(termo="teste")
+        assert result.total == 0
+        assert result.publicacoes == []
 
 
 # ---------------------------------------------------------------------------

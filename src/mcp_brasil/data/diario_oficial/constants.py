@@ -47,7 +47,7 @@ UFS_COBERTAS = sorted({v.split("/")[1] for v in CAPITAIS_COBERTAS.values()})
 # =============================================================================
 
 DOU_API_BASE = "https://www.in.gov.br"
-DOU_SEARCH_URL = f"{DOU_API_BASE}/consulta/-/buscar"
+DOU_SEARCH_URL = f"{DOU_API_BASE}/consulta/-/buscar/dou"
 DOU_ARTICLE_URL = f"{DOU_API_BASE}/en/web/dou/-"
 
 DOU_SECTIONS = {

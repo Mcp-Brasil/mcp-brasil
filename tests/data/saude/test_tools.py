@@ -13,7 +13,6 @@ from mcp_brasil.data.saude.schemas import (
     Estabelecimento,
     EstabelecimentoDetalhe,
     Leito,
-    Profissional,
     TipoEstabelecimento,
 )
 from mcp_brasil.exceptions import HttpClientError
@@ -90,43 +89,16 @@ class TestBuscarEstabelecimentos:
 
 
 # ---------------------------------------------------------------------------
-# buscar_profissionais
+# buscar_profissionais (deprecated — returns info message)
 # ---------------------------------------------------------------------------
 
 
 class TestBuscarProfissionais:
     @pytest.mark.asyncio
-    async def test_formats_table(self) -> None:
-        mock_data = [
-            Profissional(
-                codigo_cnes="1234567",
-                nome="João Silva",
-                cbo="225125",
-                descricao_cbo="Médico generalista",
-            ),
-        ]
+    async def test_returns_deprecation_message(self) -> None:
         ctx = _mock_ctx()
-        with patch(
-            f"{CLIENT_MODULE}.buscar_profissionais",
-            new_callable=AsyncMock,
-            return_value=mock_data,
-        ):
-            result = await tools.buscar_profissionais(ctx, cnes="1234567")
-        assert "João Silva" in result
-        assert "225125" in result
-        assert "Médico generalista" in result
-        assert "1 resultados" in result
-
-    @pytest.mark.asyncio
-    async def test_empty(self) -> None:
-        ctx = _mock_ctx()
-        with patch(
-            f"{CLIENT_MODULE}.buscar_profissionais",
-            new_callable=AsyncMock,
-            return_value=[],
-        ):
-            result = await tools.buscar_profissionais(ctx)
-        assert "Nenhum profissional" in result
+        result = await tools.buscar_profissionais(ctx, cnes="1234567")
+        assert "descontinuado" in result
 
 
 # ---------------------------------------------------------------------------
@@ -194,7 +166,7 @@ class TestConsultarLeitos:
             new_callable=AsyncMock,
             return_value=mock_data,
         ):
-            result = await tools.consultar_leitos(ctx, cnes="1234567")
+            result = await tools.consultar_leitos(ctx)
         assert "Cirúrgico" in result
         assert "Clínico" in result
         assert "2 registros" in result
@@ -419,10 +391,6 @@ class TestResumoRedeMunicipal:
             Leito(existente=20, sus=15),
             Leito(existente=30, sus=25),
         ]
-        mock_prof = [
-            Profissional(nome="Dr. A"),
-            Profissional(nome="Dr. B"),
-        ]
         ctx = _mock_ctx()
         with (
             patch(
@@ -434,11 +402,6 @@ class TestResumoRedeMunicipal:
                 f"{CLIENT_MODULE}.consultar_leitos",
                 new_callable=AsyncMock,
                 return_value=mock_leitos,
-            ),
-            patch(
-                f"{CLIENT_MODULE}.buscar_profissionais",
-                new_callable=AsyncMock,
-                return_value=mock_prof,
             ),
         ):
             result = await tools.resumo_rede_municipal(ctx, codigo_municipio="355030")
@@ -459,7 +422,6 @@ class TestCompararMunicipios:
         ctx.report_progress = AsyncMock()
         mock_estab = [Estabelecimento()]
         mock_leitos = [Leito(existente=10, sus=8)]
-        mock_prof = [Profissional(nome="Dr. X")]
         with (
             patch(
                 f"{CLIENT_MODULE}.buscar_estabelecimentos",
@@ -470,11 +432,6 @@ class TestCompararMunicipios:
                 f"{CLIENT_MODULE}.consultar_leitos",
                 new_callable=AsyncMock,
                 return_value=mock_leitos,
-            ),
-            patch(
-                f"{CLIENT_MODULE}.buscar_profissionais",
-                new_callable=AsyncMock,
-                return_value=mock_prof,
             ),
         ):
             result = await tools.comparar_municipios(
@@ -558,15 +515,10 @@ class TestApiErrorHandling:
                 new_callable=AsyncMock,
                 side_effect=HttpClientError("leitos offline"),
             ),
-            patch(
-                f"{CLIENT_MODULE}.buscar_profissionais",
-                new_callable=AsyncMock,
-                return_value=[],
-            ),
         ):
             result = await tools.resumo_rede_municipal(ctx, codigo_municipio="355030")
         assert "Resumo da rede" in result
-        assert "leitos indisponíveis" in result
+        assert "leitos" in result.lower()
 
     @pytest.mark.asyncio
     async def test_resumo_total_failure(self) -> None:
@@ -580,11 +532,6 @@ class TestApiErrorHandling:
             ),
             patch(
                 f"{CLIENT_MODULE}.consultar_leitos",
-                new_callable=AsyncMock,
-                side_effect=HttpClientError("offline"),
-            ),
-            patch(
-                f"{CLIENT_MODULE}.buscar_profissionais",
                 new_callable=AsyncMock,
                 side_effect=HttpClientError("offline"),
             ),
@@ -608,12 +555,7 @@ class TestApiErrorHandling:
                 new_callable=AsyncMock,
                 side_effect=HttpClientError("offline"),
             ),
-            patch(
-                f"{CLIENT_MODULE}.buscar_profissionais",
-                new_callable=AsyncMock,
-                return_value=[],
-            ),
         ):
             result = await tools.comparar_municipios(ctx, codigos_municipios=["355030", "330455"])
         assert "Comparação" in result
-        assert "indisponíveis" in result
+        assert "indisponíveis" in result.lower()

@@ -17,7 +17,7 @@ from mcp_brasil.exceptions import HttpClientError
 
 from . import client
 from .constants import TIPOS_URGENCIA
-from .schemas import Estabelecimento, Leito, Profissional, ResumoRedeMunicipal
+from .schemas import Estabelecimento, Leito, ResumoRedeMunicipal
 
 logger = logging.getLogger(__name__)
 
@@ -93,8 +93,8 @@ async def buscar_profissionais(
 ) -> str:
     """Busca profissionais de saúde cadastrados no CNES/DataSUS.
 
-    Consulta profissionais vinculados a estabelecimentos de saúde.
-    Filtre por município ou código CNES do estabelecimento.
+    **Nota:** O endpoint /cnes/profissionais foi descontinuado pela API do DataSUS.
+    Esta tool retorna uma mensagem informativa.
 
     Args:
         codigo_municipio: Código IBGE do município (ex: "355030").
@@ -103,37 +103,14 @@ async def buscar_profissionais(
         offset: Deslocamento para paginação (padrão: 0).
 
     Returns:
-        Tabela com profissionais encontrados.
+        Mensagem informando que o endpoint foi descontinuado.
     """
-    filtro = cnes or codigo_municipio or "Brasil"
-    await ctx.info(f"Buscando profissionais de saúde em {filtro}...")
-
-    try:
-        resultados = await client.buscar_profissionais(
-            codigo_municipio=codigo_municipio,
-            cnes=cnes,
-            limit=limit,
-            offset=offset,
-        )
-    except HttpClientError as exc:
-        logger.warning("buscar_profissionais failed: %s", exc)
-        return _API_INDISPONIVEL
-
-    if not resultados:
-        return "Nenhum profissional encontrado para os filtros informados."
-
-    rows = [
-        (
-            p.codigo_cnes or "—",
-            p.nome or "—",
-            p.cbo or "—",
-            p.descricao_cbo or "—",
-        )
-        for p in resultados
-    ]
-
-    header = f"**Profissionais de saúde** ({len(resultados)} resultados)\n\n"
-    return header + markdown_table(["CNES", "Nome", "CBO", "Ocupação"], rows)
+    return (
+        "O endpoint de profissionais (/cnes/profissionais) foi descontinuado "
+        "pela API do DataSUS. Para dados de profissionais, consulte o endpoint "
+        "/atencao-primaria/pmmb-profissionais-ativos ou os microdados do CNES "
+        "disponíveis em https://opendatasus.saude.gov.br."
+    )
 
 
 async def listar_tipos_estabelecimento(ctx: Context) -> str:
@@ -164,33 +141,26 @@ async def listar_tipos_estabelecimento(ctx: Context) -> str:
 
 async def consultar_leitos(
     ctx: Context,
-    codigo_municipio: str | None = None,
-    cnes: str | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> str:
-    """Consulta leitos hospitalares cadastrados no CNES/DataSUS.
+    """Consulta hospitais e leitos cadastrados no DataSUS.
 
-    Retorna dados sobre leitos existentes e leitos SUS por estabelecimento,
-    incluindo tipo de leito e especialidade. Útil para análise de capacidade
-    hospitalar de uma região.
+    Retorna dados sobre leitos existentes e leitos SUS por hospital,
+    incluindo tipo de unidade e natureza jurídica. Útil para análise de
+    capacidade hospitalar.
 
     Args:
-        codigo_municipio: Código IBGE do município (ex: "355030").
-        cnes: Código CNES do estabelecimento (ex: "1234567").
-        limit: Número máximo de resultados (padrão: 20, máximo: 100).
+        limit: Número máximo de resultados (padrão: 20, máximo: 1000).
         offset: Deslocamento para paginação (padrão: 0).
 
     Returns:
-        Tabela com leitos hospitalares encontrados.
+        Tabela com hospitais e leitos encontrados.
     """
-    filtro = cnes or codigo_municipio or "Brasil"
-    await ctx.info(f"Consultando leitos hospitalares em {filtro}...")
+    await ctx.info("Consultando hospitais e leitos...")
 
     try:
         resultados = await client.consultar_leitos(
-            codigo_municipio=codigo_municipio,
-            cnes=cnes,
             limit=limit,
             offset=offset,
         )
@@ -477,38 +447,27 @@ async def resumo_rede_municipal(
 
     estabelecimentos: list[Estabelecimento] = []
     leitos: list[Leito] = []
-    profissionais: list[Profissional] = []
     avisos: list[str] = []
 
     try:
         estabelecimentos = await client.buscar_estabelecimentos(
             codigo_municipio=codigo_municipio,
             status=1,
-            limit=100,
+            limit=20,
         )
     except HttpClientError as exc:
         logger.warning("resumo_rede_municipal: estabelecimentos failed: %s", exc)
         avisos.append("Dados de estabelecimentos indisponíveis")
 
     try:
-        leitos = await client.consultar_leitos(
-            codigo_municipio=codigo_municipio,
-            limit=100,
-        )
+        leitos = await client.consultar_leitos(limit=100)
     except HttpClientError as exc:
         logger.warning("resumo_rede_municipal: leitos failed: %s", exc)
         avisos.append("Dados de leitos indisponíveis")
 
-    try:
-        profissionais = await client.buscar_profissionais(
-            codigo_municipio=codigo_municipio,
-            limit=100,
-        )
-    except HttpClientError as exc:
-        logger.warning("resumo_rede_municipal: profissionais failed: %s", exc)
-        avisos.append("Dados de profissionais indisponíveis")
+    avisos.append("Dados de profissionais indisponíveis (endpoint descontinuado)")
 
-    if not estabelecimentos and not leitos and not profissionais:
+    if not estabelecimentos and not leitos:
         return _API_INDISPONIVEL
 
     por_tipo: dict[str, int] = {}
@@ -525,7 +484,7 @@ async def resumo_rede_municipal(
         por_tipo=por_tipo,
         total_leitos_existentes=total_leitos_existentes,
         total_leitos_sus=total_leitos_sus,
-        total_profissionais=len(profissionais),
+        total_profissionais=0,
     )
 
     lines = [
@@ -598,22 +557,10 @@ async def comparar_municipios(
             avisos.append(f"Estabelecimentos indisponíveis para {codigo}")
 
         try:
-            leitos = await client.consultar_leitos(
-                codigo_municipio=codigo,
-                limit=100,
-            )
+            leitos = await client.consultar_leitos(limit=100)
         except HttpClientError:
             leitos = []
             avisos.append(f"Leitos indisponíveis para {codigo}")
-
-        try:
-            profissionais = await client.buscar_profissionais(
-                codigo_municipio=codigo,
-                limit=100,
-            )
-        except HttpClientError:
-            profissionais = []
-            avisos.append(f"Profissionais indisponíveis para {codigo}")
 
         total_leitos_ex = sum(lt.existente or 0 for lt in leitos)
         total_leitos_sus = sum(lt.sus or 0 for lt in leitos)
@@ -624,7 +571,6 @@ async def comparar_municipios(
                 format_number_br(float(len(estabelecimentos)), 0),
                 format_number_br(float(total_leitos_ex), 0),
                 format_number_br(float(total_leitos_sus), 0),
-                format_number_br(float(len(profissionais)), 0),
             )
         )
 
@@ -635,7 +581,6 @@ async def comparar_municipios(
             "Estabelecimentos",
             "Leitos Existentes",
             "Leitos SUS",
-            "Profissionais",
         ],
         rows,
     )

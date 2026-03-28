@@ -8,7 +8,6 @@ from mcp_brasil.data.saude import client
 from mcp_brasil.data.saude.constants import (
     ESTABELECIMENTOS_URL,
     LEITOS_URL,
-    PROFISSIONAIS_URL,
     TIPOS_URL,
 )
 from mcp_brasil.exceptions import HttpClientError
@@ -30,13 +29,13 @@ class TestBuscarEstabelecimentos:
                         "codigo_cnes": "1234567",
                         "nome_fantasia": "UBS Central",
                         "nome_razao_social": "Unidade Básica de Saúde Central",
-                        "natureza_organizacao": "Administração Pública",
+                        "natureza_organizacao_entidade": "Administração Pública",
                         "tipo_gestao": "Municipal",
-                        "codigo_tipo_estabelecimento": "01",
-                        "descricao_tipo_estabelecimento": "Central de Regulação",
+                        "codigo_tipo_unidade": "01",
+                        "descricao_turno_atendimento": "Central de Regulação",
                         "codigo_municipio": "355030",
                         "codigo_uf": "35",
-                        "endereco": "Rua ABC, 123",
+                        "endereco_estabelecimento": "Rua ABC, 123",
                     }
                 ],
             )
@@ -74,56 +73,7 @@ class TestBuscarEstabelecimentos:
         route = respx.get(ESTABELECIMENTOS_URL).mock(return_value=httpx.Response(200, json=[]))
         await client.buscar_estabelecimentos(limit=999)
         req_url = str(route.calls[0].request.url)
-        assert "limit=100" in req_url
-
-
-# ---------------------------------------------------------------------------
-# buscar_profissionais
-# ---------------------------------------------------------------------------
-
-
-class TestBuscarProfissionais:
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_returns_parsed_professionals(self) -> None:
-        respx.get(PROFISSIONAIS_URL).mock(
-            return_value=httpx.Response(
-                200,
-                json=[
-                    {
-                        "codigo_cnes": "1234567",
-                        "nome": "João Silva",
-                        "cns": "123456789012345",
-                        "cbo": "225125",
-                        "descricao_cbo": "Médico generalista",
-                    }
-                ],
-            )
-        )
-        result = await client.buscar_profissionais(cnes="1234567")
-        assert len(result) == 1
-        assert result[0].nome == "João Silva"
-        assert result[0].cbo == "225125"
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_empty_response(self) -> None:
-        respx.get(PROFISSIONAIS_URL).mock(return_value=httpx.Response(200, json=[]))
-        result = await client.buscar_profissionais()
-        assert result == []
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_sends_query_params(self) -> None:
-        route = respx.get(PROFISSIONAIS_URL).mock(return_value=httpx.Response(200, json=[]))
-        await client.buscar_profissionais(
-            codigo_municipio="355030", cnes="1234567", limit=10, offset=5
-        )
-        req_url = str(route.calls[0].request.url)
-        assert "codigo_municipio=355030" in req_url
-        assert "cnes=1234567" in req_url
-        assert "limit=10" in req_url
-        assert "offset=5" in req_url
+        assert "limit=20" in req_url
 
 
 # ---------------------------------------------------------------------------
@@ -140,12 +90,12 @@ class TestListarTiposEstabelecimento:
                 200,
                 json=[
                     {
-                        "codigo_tipo_estabelecimento": "01",
-                        "descricao_tipo_estabelecimento": "Central de Regulação",
+                        "codigo_tipo_unidade": "01",
+                        "descricao_tipo_unidade": "Central de Regulação",
                     },
                     {
-                        "codigo_tipo_estabelecimento": "02",
-                        "descricao_tipo_estabelecimento": "Hospital Geral",
+                        "codigo_tipo_unidade": "02",
+                        "descricao_tipo_unidade": "Hospital Geral",
                     },
                 ],
             )
@@ -178,16 +128,16 @@ class TestConsultarLeitos:
                 200,
                 json=[
                     {
-                        "codigo_cnes": "1234567",
-                        "tipo_leito": "Cirúrgico",
-                        "especialidade": "Cirurgia Geral",
-                        "existente": 20,
-                        "sus": 15,
+                        "nome_do_hospital": "Hospital Central",
+                        "descricao_do_tipo_da_unidade": "Cirúrgico",
+                        "descricao_da_natureza_juridica_do_hosptial": "Cirurgia Geral",
+                        "quantidade_total_de_leitos_do_hosptial": 20,
+                        "quantidade_total_de_leitos_sus_do_hosptial": 15,
                     }
                 ],
             )
         )
-        result = await client.consultar_leitos(cnes="1234567")
+        result = await client.consultar_leitos()
         assert len(result) == 1
         assert result[0].tipo_leito == "Cirúrgico"
         assert result[0].existente == 20
@@ -204,12 +154,8 @@ class TestConsultarLeitos:
     @respx.mock
     async def test_sends_query_params(self) -> None:
         route = respx.get(LEITOS_URL).mock(return_value=httpx.Response(200, json=[]))
-        await client.consultar_leitos(
-            codigo_municipio="355030", cnes="1234567", limit=50, offset=10
-        )
+        await client.consultar_leitos(limit=50, offset=10)
         req_url = str(route.calls[0].request.url)
-        assert "codigo_municipio=355030" in req_url
-        assert "cnes=1234567" in req_url
         assert "limit=50" in req_url
         assert "offset=10" in req_url
 
@@ -232,13 +178,6 @@ class TestParseEstabelecimento:
         assert result.codigo_cnes == "1234567"
         assert result.codigo_municipio == "355030"
         assert result.codigo_uf == "35"
-
-
-class TestParseProfissional:
-    def test_handles_missing_fields(self) -> None:
-        result = client._parse_profissional({})
-        assert result.codigo_cnes == ""
-        assert result.nome is None
 
 
 class TestParseTipo:
@@ -272,19 +211,19 @@ class TestBuscarEstabelecimentoPorCnes:
                     "codigo_cnes": "1234567",
                     "nome_fantasia": "Hospital São Paulo",
                     "nome_razao_social": "Hospital São Paulo Ltda",
-                    "natureza_organizacao": "Administração Pública",
+                    "natureza_organizacao_entidade": "Administração Pública",
                     "tipo_gestao": "Estadual",
-                    "codigo_tipo_estabelecimento": "05",
-                    "descricao_tipo_estabelecimento": "Hospital Geral",
+                    "codigo_tipo_unidade": "05",
+                    "descricao_turno_atendimento": "Hospital Geral",
                     "codigo_municipio": "355030",
                     "codigo_uf": "35",
-                    "endereco": "Rua Napoleão de Barros, 715",
-                    "bairro": "Vila Clementino",
-                    "cep": "04024-002",
-                    "telefone": "(11) 5576-4000",
-                    "latitude": -23.5989,
-                    "longitude": -46.6423,
-                    "cnpj": "12.345.678/0001-90",
+                    "endereco_estabelecimento": "Rua Napoleão de Barros, 715",
+                    "bairro_estabelecimento": "Vila Clementino",
+                    "codigo_cep_estabelecimento": "04024-002",
+                    "numero_telefone_estabelecimento": "(11) 5576-4000",
+                    "latitude_estabelecimento_decimo_grau": -23.5989,
+                    "longitude_estabelecimento_decimo_grau": -46.6423,
+                    "numero_cnpj": "12.345.678/0001-90",
                     "data_atualizacao": "2024-01-15",
                 },
             )
@@ -321,7 +260,7 @@ class TestBuscarEstabelecimentosPorTipo:
             codigo_municipio="355030",
         )
         req_url = str(route.calls[0].request.url)
-        assert "codigo_tipo_estabelecimento=73" in req_url
+        assert "codigo_tipo_unidade=73" in req_url
         assert "codigo_municipio=355030" in req_url
         assert "status=1" in req_url
 
@@ -335,8 +274,8 @@ class TestBuscarEstabelecimentosPorTipo:
                     {
                         "codigo_cnes": "9876543",
                         "nome_fantasia": "UPA 24h",
-                        "codigo_tipo_estabelecimento": "73",
-                        "descricao_tipo_estabelecimento": "Pronto Atendimento",
+                        "codigo_tipo_unidade": "73",
+                        "descricao_turno_atendimento": "Pronto Atendimento",
                         "codigo_municipio": "220040",
                         "codigo_uf": "22",
                     }
@@ -366,12 +305,12 @@ class TestParseEstabelecimentoDetalhe:
             {
                 "codigo_cnes": 1234567,
                 "nome_fantasia": "Hospital X",
-                "bairro": "Centro",
-                "cep": "01000-000",
-                "telefone": "1199999999",
-                "latitude": -23.55,
-                "longitude": -46.63,
-                "cnpj": "12345678000190",
+                "bairro_estabelecimento": "Centro",
+                "codigo_cep_estabelecimento": "01000-000",
+                "numero_telefone_estabelecimento": "1199999999",
+                "latitude_estabelecimento_decimo_grau": -23.55,
+                "longitude_estabelecimento_decimo_grau": -46.63,
+                "numero_cnpj": "12345678000190",
                 "data_atualizacao": "2024-06-01",
             }
         )
@@ -413,13 +352,6 @@ class TestMalformedResponses:
         respx.get(LEITOS_URL).mock(return_value=httpx.Response(200, json="404 Not Found"))
         with pytest.raises(HttpClientError, match="expected list"):
             await client.consultar_leitos()
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_profissionais_string_response(self) -> None:
-        respx.get(PROFISSIONAIS_URL).mock(return_value=httpx.Response(200, json="error"))
-        with pytest.raises(HttpClientError, match="expected list"):
-            await client.buscar_profissionais()
 
     @pytest.mark.asyncio
     @respx.mock

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 from typing import Any
+from urllib.parse import quote
 
 from mcp_brasil._shared.http_client import http_get
 
@@ -128,6 +129,19 @@ async def buscar_indicadores_atuais() -> list[dict[str, Any]]:
     return list(await asyncio.gather(*[_fetch_one(ind) for ind in INDICADORES_CHAVE]))
 
 
+def _build_odata_url(base: str, params: dict[str, str]) -> str:
+    """Build an OData URL with literal single quotes in query parameters.
+
+    httpx percent-encodes single quotes (``'`` -> ``%27``) in query parameter
+    values, but the BCB OData API requires literal single quotes to delimit
+    string values in ``$filter`` expressions.  This helper assembles the query
+    string manually, encoding spaces as ``%20`` while preserving quotes.
+    """
+    safe = "'"
+    parts = [f"{k}={quote(v, safe=safe)}" for k, v in params.items()]
+    return f"{base}?{'&'.join(parts)}"
+
+
 async def buscar_expectativas_focus(
     indicador: str = "IPCA",
     data_inicio: str | None = None,
@@ -151,14 +165,17 @@ async def buscar_expectativas_focus(
     if data_inicio:
         odata_filter += f" and Data ge '{data_inicio}'"
 
-    params: dict[str, str] = {
+    odata_params: dict[str, str] = {
         "$filter": odata_filter,
         "$top": str(limite),
         "$format": "json",
         "$orderby": "Data desc",
     }
 
-    data: dict[str, Any] = await http_get(FOCUS_ENDPOINT, params=params)
+    # Build URL manually to preserve literal single quotes required by OData.
+    # httpx would percent-encode them (%27) causing a 400 error from the BCB API.
+    url = _build_odata_url(FOCUS_ENDPOINT, odata_params)
+    data: dict[str, Any] = await http_get(url)
     items = data.get("value", [])
     if not isinstance(items, list):
         return []

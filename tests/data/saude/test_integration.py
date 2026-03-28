@@ -12,7 +12,6 @@ from mcp_brasil.data.saude.schemas import (
     Estabelecimento,
     EstabelecimentoDetalhe,
     Leito,
-    Profissional,
     TipoEstabelecimento,
 )
 from mcp_brasil.data.saude.server import mcp
@@ -93,22 +92,10 @@ class TestToolExecution:
 
     @pytest.mark.asyncio
     async def test_buscar_profissionais_e2e(self) -> None:
-        mock_data = [
-            Profissional(
-                codigo_cnes="1234567",
-                nome="João Silva",
-                cbo="225125",
-                descricao_cbo="Médico generalista",
-            )
-        ]
-        with patch(
-            f"{CLIENT_MODULE}.buscar_profissionais",
-            new_callable=AsyncMock,
-            return_value=mock_data,
-        ):
-            async with Client(mcp) as c:
-                result = await c.call_tool("buscar_profissionais", {"cnes": "1234567"})
-                assert "João Silva" in result.data
+        """buscar_profissionais now returns a deprecation message (no mock needed)."""
+        async with Client(mcp) as c:
+            result = await c.call_tool("buscar_profissionais", {"cnes": "1234567"})
+            assert "descontinuado" in result.data
 
     @pytest.mark.asyncio
     async def test_listar_tipos_e2e(self) -> None:
@@ -141,7 +128,7 @@ class TestToolExecution:
             return_value=mock_data,
         ):
             async with Client(mcp) as c:
-                result = await c.call_tool("consultar_leitos", {"cnes": "1234567"})
+                result = await c.call_tool("consultar_leitos", {})
                 assert "Cirúrgico" in result.data
                 assert "Cirurgia Geral" in result.data
 
@@ -224,11 +211,6 @@ class TestToolExecution:
                 new_callable=AsyncMock,
                 return_value=[Leito(existente=10, sus=8)],
             ),
-            patch(
-                f"{CLIENT_MODULE}.buscar_profissionais",
-                new_callable=AsyncMock,
-                return_value=[Profissional(nome="Dr. A")],
-            ),
         ):
             async with Client(mcp) as c:
                 result = await c.call_tool("resumo_rede_municipal", {"codigo_municipio": "355030"})
@@ -247,11 +229,6 @@ class TestToolExecution:
                 f"{CLIENT_MODULE}.consultar_leitos",
                 new_callable=AsyncMock,
                 return_value=[Leito(existente=5, sus=3)],
-            ),
-            patch(
-                f"{CLIENT_MODULE}.buscar_profissionais",
-                new_callable=AsyncMock,
-                return_value=[],
             ),
         ):
             async with Client(mcp) as c:
