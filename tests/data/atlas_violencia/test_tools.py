@@ -32,7 +32,9 @@ class TestListarTemasViolencia:
             Tema(id=5, titulo="Obitos por Armas de Fogo"),
         ]
         ctx = _mock_ctx()
-        with patch(f"{CLIENT_MODULE}.listar_temas", new_callable=AsyncMock, return_value=mock_data):
+        with patch(
+            f"{CLIENT_MODULE}.listar_temas", new_callable=AsyncMock, return_value=mock_data
+        ):
             result = await tools.listar_temas_violencia(ctx)
         assert "2 temas" in result
         assert "Homicidios" in result
@@ -95,9 +97,7 @@ class TestConsultarValoresViolencia:
     @pytest.mark.asyncio
     async def test_empty(self) -> None:
         ctx = _mock_ctx()
-        with patch(
-            f"{CLIENT_MODULE}.consultar_valores", new_callable=AsyncMock, return_value=[]
-        ):
+        with patch(f"{CLIENT_MODULE}.consultar_valores", new_callable=AsyncMock, return_value=[]):
             result = await tools.consultar_valores_violencia(328, ctx)
         assert "Nenhum dado" in result
 
@@ -146,9 +146,7 @@ class TestConsultarSerieViolencia:
     @pytest.mark.asyncio
     async def test_not_found(self) -> None:
         ctx = _mock_ctx()
-        with patch(
-            f"{CLIENT_MODULE}.consultar_serie", new_callable=AsyncMock, return_value=None
-        ):
+        with patch(f"{CLIENT_MODULE}.consultar_serie", new_callable=AsyncMock, return_value=None):
             result = await tools.consultar_serie_violencia(999, ctx)
         assert "não encontrada" in result
 

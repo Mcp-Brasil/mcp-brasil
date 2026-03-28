@@ -135,8 +135,7 @@ async def consultar_valores_por_regiao(
 
     rows = [(v.sigla, v.periodo or "N/A", v.valor or "N/A") for v in valores]
     header = (
-        f"**Série {serie_id}** — Regiões: {regioes} ({scope_name}, "
-        f"{len(valores)} registros):\n\n"
+        f"**Série {serie_id}** — Regiões: {regioes} ({scope_name}, {len(valores)} registros):\n\n"
     )
     return header + markdown_table(["Local", "Período", "Valor"], rows)
 

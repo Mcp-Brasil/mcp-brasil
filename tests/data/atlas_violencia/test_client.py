@@ -57,9 +57,7 @@ class TestListarSeries:
     @pytest.mark.asyncio
     @respx.mock
     async def test_empty_series(self) -> None:
-        respx.get(f"{SERIES_URL}/99").mock(
-            return_value=httpx.Response(200, json=[])
-        )
+        respx.get(f"{SERIES_URL}/99").mock(return_value=httpx.Response(200, json=[]))
         series = await client.listar_series(99)
         assert series == []
 
