@@ -54,7 +54,8 @@ Adicione ao `claude_desktop_config.json`:
       "args": ["--from", "mcp-brasil", "python", "-m", "mcp_brasil.server"],
       "env": {
         "TRANSPARENCIA_API_KEY": "sua-chave-aqui",
-        "DATAJUD_API_KEY": "sua-chave-aqui"
+        "DATAJUD_API_KEY": "sua-chave-aqui",
+        "META_ACCESS_TOKEN": "seu-token-aqui"
       }
     }
   }
@@ -75,7 +76,8 @@ Crie `.vscode/mcp.json` na raiz do projeto:
       "args": ["--from", "mcp-brasil", "python", "-m", "mcp_brasil.server"],
       "env": {
         "TRANSPARENCIA_API_KEY": "sua-chave-aqui",
-        "DATAJUD_API_KEY": "sua-chave-aqui"
+        "DATAJUD_API_KEY": "sua-chave-aqui",
+        "META_ACCESS_TOKEN": "seu-token-aqui"
       }
     }
   }
@@ -138,13 +140,13 @@ Conecte o server e faça perguntas em linguagem natural:
 | Feature | Fonte | Tools |
 |---------|-------|:-----:|
 | `transparencia` | Portal da Transparência — contratos, despesas, servidores, sanções | 18 |
-| `tcu` | Tribunal de Contas da União — acórdãos, inidôneos, pautas | 9 |
+| `tcu` | Tribunal de Contas da União — acórdãos, inidôneos, débitos, pautas | 9 |
 | `tce_sp` | TCE-SP — despesas e receitas de 645 municípios paulistas | 3 |
-| `tce_rj` | TCE-RJ — licitações, contratos, obras, penalidades | 7 |
+| `tce_rj` | TCE-RJ — licitações, contratos, obras, penalidades, concessões | 7 |
 | `tce_rs` | TCE-RS — educação, saúde, gestão fiscal (LRF) | 5 |
 | `tce_pe` | TCE-PE — licitações, contratos, despesas, fornecedores | 5 |
 | `tce_ce` | TCE-CE — licitações, contratos, empenhos | 4 |
-| `tce_es` | TCE-ES — licitações, contratos, despesas | 4 |
+| `tce_es` | TCE-ES — licitações, contratos, obras públicas | 4 |
 | `tce_rn` | TCE-RN — jurisdicionados, licitações, contratos | 5 |
 | `tce_pi` | TCE-PI — prefeituras, despesas, receitas | 5 |
 | `tce_sc` | TCE-SC — municípios e unidades gestoras | 2 |
@@ -162,13 +164,13 @@ Conecte o server e faça perguntas em linguagem natural:
 | Feature | Fonte | Tools |
 |---------|-------|:-----:|
 | `tse` | TSE — eleições, candidatos, prestação de contas | 15 |
-| `anuncios_eleitorais` | Anúncios eleitorais — propaganda eleitoral na internet | 6 |
+| `anuncios_eleitorais` | Biblioteca de Anúncios da Meta — propaganda eleitoral na internet | 6 |
 
 ### Meio Ambiente
 
 | Feature | Fonte | Tools |
 |---------|-------|:-----:|
-| `inpe` | INPE — focos de queimadas e desmatamento | 4 |
+| `inpe` | INPE — focos de queimadas, desmatamento DETER/PRODES | 4 |
 | `ana` | ANA — estações hidrológicas, telemetria, reservatórios | 3 |
 
 ### Saúde
@@ -176,12 +178,13 @@ Conecte o server e faça perguntas em linguagem natural:
 | Feature | Fonte | Tools |
 |---------|-------|:-----:|
 | `saude` | CNES/DataSUS — estabelecimentos, profissionais, leitos | 10 |
-| `opendatasus` | OpenDataSUS — datasets de saúde pública | 7 |
-| `anvisa` | ANVISA — medicamentos, cosméticos, saneantes | 10 |
+| `opendatasus` | OpenDataSUS — datasets de saúde pública (CKAN) | 7 |
+| `anvisa` | ANVISA — bulário, medicamentos, preços CMED, registros | 10 |
 | `denasus` | DENASUS — auditorias do SUS | 5 |
-| `imunizacao` | Imunização — vacinação e SRAG | 10 |
-| `bps` | BPS — preços de referência em saúde | 3 |
-| `farmacia_popular` | Farmácia Popular — medicamentos, farmácias, municípios | 8 |
+| `imunizacao` | SI-PNI — vacinação, calendário, cobertura vacinal, SRAG | 10 |
+| `bps` | BPS — preços de medicamentos e dispositivos médicos no SUS | 3 |
+| `farmacia_popular` | Farmácia Popular — medicamentos gratuitos, farmácias credenciadas | 8 |
+| `rename` | RENAME — medicamentos essenciais do SUS por princípio ativo | 5 |
 
 ### Segurança Pública
 
@@ -193,22 +196,16 @@ Conecte o server e faça perguntas em linguagem natural:
 
 | Feature | Fonte | Tools |
 |---------|-------|:-----:|
-| `compras` | PNCP + ComprasNet/SIASG — licitações e contratos públicos | 29 |
+| `compras` | PNCP + ComprasNet/SIASG — licitações, contratos, pregões, CATMAT | 29 |
 | `transferegov` | TransfereGov — emendas parlamentares PIX | 5 |
-
-### Educação
-
-| Feature | Fonte | Tools |
-|---------|-------|:-----:|
-| `rename` | RENAME — Relação Nacional de Medicamentos Essenciais | 5 |
 
 ### Dados Abertos e Utilidades
 
 | Feature | Fonte | Tools |
 |---------|-------|:-----:|
 | `brasilapi` | BrasilAPI — CEP, CNPJ, DDD, bancos, câmbio, FIPE, PIX | 16 |
-| `dados_abertos` | Dados Abertos (dados.gov.br) — catálogo de datasets | 4 |
-| `diario_oficial` | Querido Diário — diários oficiais de 5.000+ cidades | 11 |
+| `dados_abertos` | Dados Abertos (dados.gov.br) — catálogo de datasets federais | 4 |
+| `diario_oficial` | Querido Diário + DOU — diários oficiais de 5.000+ cidades e da União | 11 |
 | `tabua_mares` | Tábua de Marés — previsão de marés para portos do litoral | 7 |
 
 > O server raiz também expõe 4 meta-tools: `listar_features`, `recomendar_tools`, `planejar_consulta` e `executar_lote`.
@@ -219,7 +216,7 @@ Conecte o server e faça perguntas em linguagem natural:
 |-----|-------------|------------|
 | Portal da Transparência | Opcional | [Cadastro gratuito](https://portaldatransparencia.gov.br/api-de-dados/cadastrar-email) |
 | DataJud/CNJ | Opcional | [Cadastro gratuito](https://datajud-wiki.cnj.jus.br/api-publica/acesso) |
-| Anúncios Eleitorais | Opcional | [Cadastro gratuito](https://dados.tse.jus.br/) |
+| Anúncios Eleitorais (Meta) | Opcional | [Meta Ad Library API](https://www.facebook.com/ads/library/api/) |
 | Todas as outras (36) | Nenhuma chave | — |
 
 Configure via variáveis de ambiente ou `.env`:
@@ -227,6 +224,7 @@ Configure via variáveis de ambiente ou `.env`:
 ```bash
 TRANSPARENCIA_API_KEY=sua-chave
 DATAJUD_API_KEY=sua-chave
+META_ACCESS_TOKEN=seu-token
 ```
 
 ## Configuração
@@ -235,6 +233,7 @@ DATAJUD_API_KEY=sua-chave
 |----------|---------|-----------|
 | `TRANSPARENCIA_API_KEY` | — | Chave do Portal da Transparência |
 | `DATAJUD_API_KEY` | — | Chave do DataJud/CNJ |
+| `META_ACCESS_TOKEN` | — | Token da [Meta Ad Library API](https://www.facebook.com/ads/library/api/) |
 | `MCP_BRASIL_TOOL_SEARCH` | `bm25` | Modo de discovery: `bm25`, `code_mode` ou `none` |
 | `MCP_BRASIL_HTTP_TIMEOUT` | `30.0` | Timeout HTTP em segundos |
 | `MCP_BRASIL_HTTP_MAX_RETRIES` | `3` | Máximo de retentativas HTTP |
@@ -249,6 +248,7 @@ DATAJUD_API_KEY=sua-chave
 | [Smart Tools](docs/reference/smart-tools.md) | Meta-tools: planner, batch, discovery |
 | [Adicionando Features](docs/guide/adding-features.md) | Guia para contribuir com novas APIs |
 | [Configuração](docs/reference/configuration.md) | Variáveis de ambiente e opções |
+| [Meta Ad Library API](docs/reference/meta-ad-library-api.md) | Referência da API de anúncios eleitorais da Meta |
 | [Desenvolvimento](docs/guide/development.md) | Setup de dev, testes, lint, CI |
 
 ## Casos de Uso
