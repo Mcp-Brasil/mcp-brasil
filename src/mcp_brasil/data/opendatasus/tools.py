@@ -104,9 +104,7 @@ async def detalhar_dataset(ctx: Context, dataset_id: str) -> str:
             )
             for r in ds.recursos[:20]
         ]
-        lines.append(
-            markdown_table(["ID", "Nome", "Formato", "URL"], rec_rows)
-        )
+        lines.append(markdown_table(["ID", "Nome", "Formato", "URL"], rec_rows))
 
     return "\n".join(lines)
 
@@ -148,15 +146,9 @@ async def consultar_datastore(
     first = records[0].campos
     cols = list(first.keys())[:8]  # Limit columns for readability
 
-    rows = [
-        tuple(str(r.campos.get(c, "—"))[:40] for c in cols)
-        for r in records[:50]
-    ]
+    rows = [tuple(str(r.campos.get(c, "—"))[:40] for c in cols) for r in records[:50]]
 
-    header = (
-        f"**DataStore** — {len(records)} registros "
-        f"(total: {total}, offset: {offset})\n\n"
-    )
+    header = f"**DataStore** — {len(records)} registros (total: {total}, offset: {offset})\n\n"
     return header + markdown_table(cols, rows)
 
 
@@ -171,10 +163,7 @@ async def listar_datasets_conhecidos(ctx: Context) -> str:
     """
     await ctx.info("Listando datasets conhecidos do OpenDataSUS...")
 
-    rows = [
-        (d["nome"], d["titulo"], d["descricao"])
-        for d in DATASETS_CONHECIDOS
-    ]
+    rows = [(d["nome"], d["titulo"], d["descricao"]) for d in DATASETS_CONHECIDOS]
 
     header = f"**Datasets conhecidos do OpenDataSUS** ({len(DATASETS_CONHECIDOS)} itens)\n\n"
     return header + markdown_table(["ID/Nome", "Título", "Descrição"], rows)
@@ -215,13 +204,9 @@ async def buscar_com_filtro(
     first = records[0].campos
     cols = list(first.keys())[:8]
 
-    rows = [
-        tuple(str(r.campos.get(c, "—"))[:40] for c in cols)
-        for r in records[:50]
-    ]
+    rows = [tuple(str(r.campos.get(c, "—"))[:40] for c in cols) for r in records[:50]]
 
     header = (
-        f"**DataStore filtrado** ({campo}={valor}) — "
-        f"{len(records)} registros (total: {total})\n\n"
+        f"**DataStore filtrado** ({campo}={valor}) — {len(records)} registros (total: {total})\n\n"
     )
     return header + markdown_table(cols, rows)

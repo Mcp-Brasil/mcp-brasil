@@ -24,7 +24,10 @@ from .schemas import DatasetOpenDataSUS, RecursoDataset, RegistroDataStore
 def _extract_result(data: Any) -> dict[str, Any]:
     """Extract the 'result' key from a CKAN response."""
     if isinstance(data, dict):
-        return data.get("result", data)
+        result = data.get("result", data)
+        if isinstance(result, dict):
+            return result
+        return data
     return {}
 
 
@@ -134,8 +137,7 @@ async def consultar_datastore(
     result = _extract_result(data)
     records_raw = result.get("records", [])
     records = [
-        RegistroDataStore(campos={k: v for k, v in r.items() if k != "_id"})
-        for r in records_raw
+        RegistroDataStore(campos={k: v for k, v in r.items() if k != "_id"}) for r in records_raw
     ]
     total = result.get("total", len(records))
     return records, total
