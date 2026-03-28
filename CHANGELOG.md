@@ -2,6 +2,12 @@
 
 Todas as mudanças notáveis do mcp-brasil estão documentadas neste arquivo.
 
+## [0.7.2] - 2026-03-28
+
+### Documentation
+
+- Add showcase with 51 real API tests (92.2% success rate)
+
 ## [0.7.1] - 2026-03-28
 
 ### Bug Fixes
