@@ -5,15 +5,15 @@ This file only registers components. Zero business logic (ADR-001 rule #4).
 
 from fastmcp import FastMCP
 
-from .prompts import analise_acordaos
+from .prompts import analise_acordaos, verificar_empresa
 from .resources import catalogo_endpoints, colegiados, situacoes_acordao
 from .tools import (
+    calcular_debito,
     consultar_acordaos,
+    consultar_cadirreg,
     consultar_certidoes,
     consultar_inabilitados,
     consultar_inidoneos,
-    calcular_debito,
-    consultar_cadirreg,
     consultar_pedidos_congresso,
     consultar_termos_contratuais,
 )
@@ -37,3 +37,4 @@ mcp.resource("data://situacoes-acordao", mime_type="application/json")(situacoes
 
 # Prompts
 mcp.prompt(analise_acordaos)
+mcp.prompt(verificar_empresa)

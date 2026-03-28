@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from fastmcp import Context
 
-from mcp_brasil._shared.formatting import format_brl, markdown_table, truncate_list
+from mcp_brasil._shared.formatting import format_brl, markdown_table
 
 from . import client
 from .schemas import ParcelaDebito
@@ -83,9 +83,7 @@ async def consultar_inabilitados(
     else:
         await ctx.info(f"Buscando inabilitados (limite: {limite}, início: {inicio})...")
 
-    inabilitados = await client.consultar_inabilitados(
-        cpf=cpf, offset=inicio, limit=limite
-    )
+    inabilitados = await client.consultar_inabilitados(cpf=cpf, offset=inicio, limit=limite)
     await ctx.info(f"{len(inabilitados)} inabilitado(s) encontrado(s)")
 
     if not inabilitados:
@@ -134,9 +132,7 @@ async def consultar_inidoneos(
     else:
         await ctx.info(f"Buscando inidôneos (limite: {limite}, início: {inicio})...")
 
-    inidoneos = await client.consultar_inidoneos(
-        cpf_cnpj=cpf_cnpj, offset=inicio, limit=limite
-    )
+    inidoneos = await client.consultar_inidoneos(cpf_cnpj=cpf_cnpj, offset=inicio, limit=limite)
     await ctx.info(f"{len(inidoneos)} inidôneo(s) encontrado(s)")
 
     if not inidoneos:
@@ -275,9 +271,7 @@ async def calcular_debito(
         f"atualizado para {data_atualizacao}..."
     )
 
-    parcela = ParcelaDebito(
-        data_fato=data_fato, indicativo="D", valor_original=valor_original
-    )
+    parcela = ParcelaDebito(data_fato=data_fato, indicativo="D", valor_original=valor_original)
     resultado = await client.calcular_debito(
         data_atualizacao=data_atualizacao,
         parcelas=[parcela],

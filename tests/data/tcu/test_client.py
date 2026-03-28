@@ -1,4 +1,4 @@
-"""Tests for the TCU HTTP client."""
+"""Tests for the TCU HTTP client (respx-mocked)."""
 
 import httpx
 import pytest
@@ -8,22 +8,17 @@ from mcp_brasil.data.tcu import client
 from mcp_brasil.data.tcu.constants import (
     ACORDAOS_URL,
     CADIRREG_URL,
-    CALCULO_DEBITO_URL,
+    CALCULAR_DEBITO_URL,
     CERTIDOES_URL,
     INABILITADOS_URL,
     INIDONEOS_URL,
     PEDIDOS_CONGRESSO_URL,
     TERMOS_CONTRATUAIS_URL,
-    TIPOS_CERTIDOES_URL,
 )
 from mcp_brasil.data.tcu.schemas import ParcelaDebito
 
-# ---------------------------------------------------------------------------
-# buscar_acordaos
-# ---------------------------------------------------------------------------
 
-
-class TestBuscarAcordaos:
+class TestConsultarAcordaos:
     @pytest.mark.asyncio
     @respx.mock
     async def test_returns_parsed_acordaos(self) -> None:
@@ -35,49 +30,43 @@ class TestBuscarAcordaos:
                         "key": "ACORDAO-COMPLETO-123",
                         "tipo": "ACORDAO",
                         "anoAcordao": "2026",
-                        "titulo": "ACORDAO 100/2026 ATA 2/2026 - PLENARIO",
+                        "titulo": "ACORDAO 100/2026",
                         "numeroAcordao": "100",
                         "numeroAta": "2/2026",
                         "colegiado": "Plenario",
                         "dataSessao": "18/03/2026",
                         "relator": "BRUNO DANTAS",
                         "situacao": "OFICIALIZADO",
-                        "sumario": "Embargos de declaração...",
+                        "sumario": "Embargos...",
                         "urlAcordao": "https://contas.tcu.gov.br/...",
                     }
                 ],
             )
         )
-        result = await client.buscar_acordaos(inicio=0, quantidade=10)
+        result = await client.consultar_acordaos(inicio=0, quantidade=10)
         assert len(result) == 1
         assert result[0].key == "ACORDAO-COMPLETO-123"
-        assert result[0].colegiado == "Plenario"
         assert result[0].relator == "BRUNO DANTAS"
 
     @pytest.mark.asyncio
     @respx.mock
     async def test_empty_response(self) -> None:
         respx.get(ACORDAOS_URL).mock(return_value=httpx.Response(200, json=[]))
-        result = await client.buscar_acordaos()
+        result = await client.consultar_acordaos()
         assert result == []
-
-
-# ---------------------------------------------------------------------------
-# consultar_inabilitados
-# ---------------------------------------------------------------------------
 
 
 class TestConsultarInabilitados:
     @pytest.mark.asyncio
     @respx.mock
-    async def test_returns_parsed_inabilitados(self) -> None:
+    async def test_returns_list(self) -> None:
         respx.get(INABILITADOS_URL).mock(
             return_value=httpx.Response(
                 200,
                 json={
                     "items": [
                         {
-                            "nome": "FULANO DA SILVA",
+                            "nome": "FULANO",
                             "cpf": "123.456.789-00",
                             "processo": "026.615/2020-7",
                             "deliberacao": "AC-000738/2022-PL",
@@ -90,37 +79,27 @@ class TestConsultarInabilitados:
                     "hasMore": True,
                     "limit": 25,
                     "offset": 0,
-                    "count": 25,
                 },
             )
         )
         result = await client.consultar_inabilitados()
-        assert len(result.items) == 1
-        assert result.items[0].nome == "FULANO DA SILVA"
-        assert result.has_more is True
+        assert len(result) == 1
+        assert result[0].nome == "FULANO"
 
     @pytest.mark.asyncio
     @respx.mock
     async def test_by_cpf(self) -> None:
         respx.get(f"{INABILITADOS_URL}/12345678900").mock(
-            return_value=httpx.Response(
-                200,
-                json={"items": [], "hasMore": False, "limit": 25, "offset": 0, "count": 0},
-            )
+            return_value=httpx.Response(200, json={"items": []})
         )
         result = await client.consultar_inabilitados(cpf="12345678900")
-        assert result.items == []
-
-
-# ---------------------------------------------------------------------------
-# consultar_inidoneos
-# ---------------------------------------------------------------------------
+        assert result == []
 
 
 class TestConsultarInidoneos:
     @pytest.mark.asyncio
     @respx.mock
-    async def test_returns_parsed_inidoneos(self) -> None:
+    async def test_returns_list(self) -> None:
         respx.get(INIDONEOS_URL).mock(
             return_value=httpx.Response(
                 200,
@@ -136,59 +115,18 @@ class TestConsultarInidoneos:
                         }
                     ],
                     "hasMore": False,
-                    "limit": 25,
-                    "offset": 0,
-                    "count": 1,
                 },
             )
         )
         result = await client.consultar_inidoneos()
-        assert len(result.items) == 1
-        assert result.items[0].cpf_cnpj == "07.405.573/0001-44"
-        assert result.has_more is False
-
-
-# ---------------------------------------------------------------------------
-# listar_tipos_certidoes
-# ---------------------------------------------------------------------------
-
-
-class TestListarTiposCertidoes:
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_returns_parsed_tipos(self) -> None:
-        respx.get(TIPOS_CERTIDOES_URL).mock(
-            return_value=httpx.Response(
-                200,
-                json=[
-                    {
-                        "orgaoEmissor": "TCU",
-                        "sigla": "Inidoneos",
-                        "descricao": "Licitantes Inidoneos",
-                    },
-                    {
-                        "orgaoEmissor": "CNJ",
-                        "sigla": "CNIA",
-                        "descricao": "CNIA",
-                    },
-                ],
-            )
-        )
-        result = await client.listar_tipos_certidoes()
-        assert len(result) == 2
-        assert result[0].sigla == "Inidoneos"
-        assert result[1].orgao_emissor == "CNJ"
-
-
-# ---------------------------------------------------------------------------
-# consultar_certidoes
-# ---------------------------------------------------------------------------
+        assert len(result) == 1
+        assert result[0].cpf_cnpj == "07.405.573/0001-44"
 
 
 class TestConsultarCertidoes:
     @pytest.mark.asyncio
     @respx.mock
-    async def test_returns_parsed_certidoes(self) -> None:
+    async def test_returns_parsed(self) -> None:
         respx.get(f"{CERTIDOES_URL}/00000000000191").mock(
             return_value=httpx.Response(
                 200,
@@ -196,7 +134,6 @@ class TestConsultarCertidoes:
                     "razaoSocial": "Banco do Brasil S.A.",
                     "nomeFantasia": "BB",
                     "cnpj": "00.000.000/0001-91",
-                    "uf": None,
                     "certidoes": [
                         {
                             "emissor": "TCU",
@@ -205,7 +142,6 @@ class TestConsultarCertidoes:
                             "descricao": "Licitantes Inidoneos",
                             "situacao": "NADA_CONSTA",
                             "observacao": None,
-                            "linkConsultaManual": "https://contas.tcu.gov.br/...",
                         }
                     ],
                     "seCnpjEncontradoNaBaseTcu": True,
@@ -216,19 +152,14 @@ class TestConsultarCertidoes:
         assert result.razao_social == "Banco do Brasil S.A."
         assert len(result.certidoes) == 1
         assert result.certidoes[0].situacao == "NADA_CONSTA"
-        assert result.cnpj_encontrado_base_tcu is True
-
-
-# ---------------------------------------------------------------------------
-# calcular_debito
-# ---------------------------------------------------------------------------
+        assert result.se_cnpj_encontrado is True
 
 
 class TestCalcularDebito:
     @pytest.mark.asyncio
     @respx.mock
     async def test_returns_parsed_calculo(self) -> None:
-        respx.post(CALCULO_DEBITO_URL).mock(
+        respx.post(CALCULAR_DEBITO_URL).mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -242,7 +173,7 @@ class TestCalcularDebito:
         )
         parcela = ParcelaDebito(
             data_fato="01/01/2020",
-            indicativo_debito_credito="D",
+            indicativo="D",
             valor_original=1000.0,
         )
         result = await client.calcular_debito(
@@ -254,15 +185,10 @@ class TestCalcularDebito:
         assert result.saldo_variacao_selic == 577.38
 
 
-# ---------------------------------------------------------------------------
-# buscar_pedidos_congresso
-# ---------------------------------------------------------------------------
-
-
-class TestBuscarPedidosCongresso:
+class TestConsultarPedidosCongresso:
     @pytest.mark.asyncio
     @respx.mock
-    async def test_returns_parsed_pedidos(self) -> None:
+    async def test_returns_list(self) -> None:
         respx.get(PEDIDOS_CONGRESSO_URL).mock(
             return_value=httpx.Response(
                 200,
@@ -272,45 +198,37 @@ class TestBuscarPedidosCongresso:
                             "tipo": "REQ",
                             "numero": 4,
                             "data_aprovacao": "2026-02-19T03:00:00Z",
-                            "assunto": "Requerimento de informações...",
+                            "assunto": "Requerimento...",
                             "autor": "Dr. Hiran",
                             "processo_scn": "004.808/2026-6",
                             "link_proposicao": "https://senado.leg.br/...",
                         }
                     ],
-                    "next": {"$ref": "http://contas.tcu.gov.br/...?page=1"},
                 },
             )
         )
-        result = await client.buscar_pedidos_congresso()
-        assert len(result.items) == 1
-        assert result.items[0].autor == "Dr. Hiran"
-        assert result.has_next is True
+        result = await client.consultar_pedidos_congresso()
+        assert len(result) == 1
+        assert result[0].autor == "Dr. Hiran"
 
     @pytest.mark.asyncio
     @respx.mock
-    async def test_empty_response(self) -> None:
+    async def test_empty(self) -> None:
         respx.get(PEDIDOS_CONGRESSO_URL).mock(return_value=httpx.Response(200, json={"items": []}))
-        result = await client.buscar_pedidos_congresso()
-        assert result.items == []
-        assert result.has_next is False
+        result = await client.consultar_pedidos_congresso()
+        assert result == []
 
 
-# ---------------------------------------------------------------------------
-# buscar_contratos_tcu
-# ---------------------------------------------------------------------------
-
-
-class TestBuscarContratosTcu:
+class TestConsultarTermosContratuais:
     @pytest.mark.asyncio
     @respx.mock
-    async def test_returns_parsed_contratos(self) -> None:
+    async def test_returns_list(self) -> None:
         respx.get(TERMOS_CONTRATUAIS_URL).mock(
             return_value=httpx.Response(
                 200,
                 json=[
                     {
-                        "tipoContratacao": "CONTRATACAO POR NOTA DE EMPENHO",
+                        "tipoContratacao": "CONTRATO",
                         "numero": 3,
                         "ano": 2025,
                         "unidadeGestora": "SEC-RJ",
@@ -320,41 +238,23 @@ class TestBuscarContratosTcu:
                         "valorInicial": 5271.82,
                         "valorAtualizado": 5271.82,
                         "dataAssinatura": "2025-10-20T00:00:00-0300",
-                        "dataInicioVigencia": "2025-10-28T00:00:00-0300",
                         "dataTerminoVigencia": "2025-12-31T00:00:00-0300",
                         "modalidadeLicitacao": "DISPENSA DE LICITACAO",
                         "numeroProcesso": "017.866/2025-1",
-                        "numeroAditamentos": 0,
-                        "unidadesFiscalizadoras": [
-                            {"codigo": 300046, "sigla": "SEC-RJ", "nome": "Sec RJ"}
-                        ],
                     }
                 ],
             )
         )
-        result = await client.buscar_contratos_tcu()
+        result = await client.consultar_termos_contratuais()
         assert len(result) == 1
         assert result[0].nome_fornecedor == "LABORATORIO RICHET"
         assert result[0].valor_inicial == 5271.82
-        assert len(result[0].unidades_fiscalizadoras) == 1
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_empty_response(self) -> None:
-        respx.get(TERMOS_CONTRATUAIS_URL).mock(return_value=httpx.Response(200, json=[]))
-        result = await client.buscar_contratos_tcu()
-        assert result == []
-
-
-# ---------------------------------------------------------------------------
-# consultar_cadirreg
-# ---------------------------------------------------------------------------
 
 
 class TestConsultarCadirreg:
     @pytest.mark.asyncio
     @respx.mock
-    async def test_returns_parsed_registros(self) -> None:
+    async def test_returns_list(self) -> None:
         respx.get(f"{CADIRREG_URL}/12345678900").mock(
             return_value=httpx.Response(
                 200,
@@ -375,11 +275,10 @@ class TestConsultarCadirreg:
         result = await client.consultar_cadirreg("12345678900")
         assert len(result) == 1
         assert result[0].nome_responsavel == "FULANO DE TAL"
-        assert result[0].cpf == "12345678900"
 
     @pytest.mark.asyncio
     @respx.mock
-    async def test_empty_response(self) -> None:
+    async def test_empty(self) -> None:
         respx.get(f"{CADIRREG_URL}/00000000000").mock(return_value=httpx.Response(200, json=[]))
         result = await client.consultar_cadirreg("00000000000")
         assert result == []

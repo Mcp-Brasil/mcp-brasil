@@ -93,9 +93,7 @@ class ParcelaDebito(BaseModel):
     """Parcela de débito para cálculo."""
 
     data_fato: str = Field(description="Data do fato gerador (DD/MM/AAAA)")
-    indicativo: str = Field(
-        default="D", description="D para débito, C para crédito"
-    )
+    indicativo: str = Field(default="D", description="D para débito, C para crédito")
     valor_original: float = Field(description="Valor original da parcela")
 
 

@@ -16,3 +16,22 @@ def analise_acordaos() -> str:
         "4. Resuma os principais temas dos sumários\n"
         "5. Apresente um panorama geral das decisões recentes"
     )
+
+
+def verificar_empresa(cnpj: str) -> str:
+    """Verificação completa de uma empresa nos cadastros do TCU.
+
+    Consulta certidões consolidadas e lista de inidôneos.
+
+    Args:
+        cnpj: CNPJ da empresa (somente números).
+    """
+    return (
+        f"Faça uma verificação completa da empresa CNPJ {cnpj} nos cadastros do TCU:\n\n"
+        f"1. Use consultar_certidoes(cnpj='{cnpj}') para verificar situação "
+        "em 4 cadastros (TCU, CNJ, CEIS, CNEP)\n"
+        f"2. Use consultar_inidoneos(cpf_cnpj='{cnpj}') para verificar "
+        "se está na lista de inidôneos\n"
+        "3. Apresente um resumo consolidado da situação da empresa\n"
+        "4. Destaque qualquer restrição encontrada"
+    )

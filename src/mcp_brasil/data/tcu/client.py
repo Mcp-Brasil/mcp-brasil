@@ -19,11 +19,11 @@ from mcp_brasil._shared.http_client import http_get, http_post
 
 from .constants import (
     ACORDAOS_URL,
-    CERTIDOES_URL,
+    CADIRREG_URL,
     CALCULAR_DEBITO_URL,
+    CERTIDOES_URL,
     INABILITADOS_URL,
     INIDONEOS_URL,
-    CADIRREG_URL,
     PEDIDOS_CONGRESSO_URL,
     TERMOS_CONTRATUAIS_URL,
 )
