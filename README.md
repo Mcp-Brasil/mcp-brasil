@@ -4,18 +4,18 @@
 
 # mcp-brasil
 
-**MCP Server para 39 APIs públicas brasileiras**
+**MCP Server para 41 APIs públicas brasileiras**
 
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-309 tools · 80 resources · 62 prompts · 14 áreas temáticas
+326 tools · 80 resources · 62 prompts · 11 áreas temáticas
 
 Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil — economia, legislação, transparência, judiciário, eleições, meio ambiente, saúde, segurança pública e mais.
 
-**36 APIs não requerem chave** · 3 usam chaves gratuitas (cadastro em 1 min)
+**38 APIs não requerem chave** · 3 usam chaves gratuitas (cadastro em 1 min)
 
-[Quick Start](#quick-start) · [Fontes de dados](#fontes-de-dados) · [Casos de Uso](#casos-de-uso) · [Documentação](#documentação) · [Desenvolvimento](#desenvolvimento)
+[Quick Start](#quick-start) · [Fontes de dados](#fontes-de-dados) · [Documentação](#documentação) · [Desenvolvimento](#desenvolvimento)
 
 </div>
 
@@ -23,10 +23,10 @@ Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil 
 
 ## Features
 
-- **309 tools** em 39 features cobrindo 14 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, segurança pública, compras públicas, educação, oceanografia e mais
+- **326 tools** em 41 features cobrindo 11 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, segurança pública, compras públicas, utilidades e mais
 - **Cross-referencing** com `planejar_consulta` — cria planos de execução combinando múltiplas APIs (ex: gastos de um deputado + votações + proposições)
 - **Execução em lote** com `executar_lote` — dispara consultas em paralelo numa única chamada
-- **Smart discovery** — BM25 search transform filtra 309 tools para só mostrar as relevantes ao contexto
+- **Smart discovery** — BM25 search transform filtra 326 tools para só mostrar as relevantes ao contexto
 - **Auto-registry** — adicionar uma feature é criar uma pasta; zero configuração manual
 - **Async everywhere** — httpx async + Pydantic v2 + rate limiting com backoff
 
@@ -190,7 +190,9 @@ Conecte o server e faça perguntas em linguagem natural:
 
 | Feature | Fonte | Tools |
 |---------|-------|:-----:|
-| `forum_seguranca` | Fórum Brasileiro de Segurança Pública — Atlas da Violência, Anuário | 4 |
+| `atlas_violencia` | Atlas da Violência (IPEA/FBSP) — homicídios, violência por gênero/raça, armas de fogo | 7 |
+| `sinesp` | SINESP/MJSP — datasets de segurança pública, sistema penitenciário | 6 |
+| `forum_seguranca` | Fórum Brasileiro de Segurança Pública — publicações, Anuário | 4 |
 
 ### Compras Públicas
 
@@ -244,28 +246,13 @@ META_ACCESS_TOKEN=seu-token
 |--------|-----------|
 | [Quick Start](docs/guide/quickstart.md) | Instalação e configuração em 2 minutos |
 | [Arquitetura](docs/concepts/architecture.md) | Como o projeto funciona por dentro |
-| [Catálogo de Features](docs/reference/features.md) | Todas as 39 features e suas 309 tools |
+| [Catálogo de Features](docs/reference/features.md) | Todas as 41 features e 326 tools |
 | [Smart Tools](docs/reference/smart-tools.md) | Meta-tools: planner, batch, discovery |
 | [Adicionando Features](docs/guide/adding-features.md) | Guia para contribuir com novas APIs |
 | [Configuração](docs/reference/configuration.md) | Variáveis de ambiente e opções |
 | [Meta Ad Library API](docs/reference/meta-ad-library-api.md) | Referência da API de anúncios eleitorais da Meta |
 | [Code Mode](docs/reference/code-mode.md) | Discovery programático + sandbox Python (experimental) |
 | [Desenvolvimento](docs/guide/development.md) | Setup de dev, testes, lint, CI |
-
-## Casos de Uso
-
-Exemplos de contextos profissionais onde o mcp-brasil pode ser aplicado:
-
-| Caso de Uso | Descrição | APIs Combinadas |
-|-------------|-----------|-----------------|
-| Panorama Econômico | Dashboard econômico com Selic, IPCA, câmbio, PIB | Bacen, IBGE, BNDES, Transparência |
-| Fiscalização Municipal | Onde vai o dinheiro da sua cidade — 10 TCEs cruzados | TCEs, PNCP, Contratos.gov.br, TransfereGov, IBGE |
-| Análise Legislativa | Ciclo completo de um PL: Câmara → Senado → DOU → STF | Câmara, Senado, Diário Oficial, DataJud |
-| Jornalista Investigativo | Rastrear emendas, licitações dirigidas, fornecedores suspeitos | Transparência, TCEs, TCU, PNCP, TSE |
-| Saúde Pública | Rede hospitalar, medicamentos, vacinação, preços | CNES, ANVISA, Farmácia Popular, Imunização, BPS |
-| Segurança Pública | Violência, criminalidade, publicações acadêmicas | Atlas Violência, SINESP, Fórum Segurança |
-| Relatório Parlamentar | Votação + emendas + despesas + financiamento | Câmara, Senado, TSE, TransfereGov |
-| Redator Oficial | Gerar ofícios, pareceres e notas técnicas com dados reais | Redator + Bacen, Transparência, TCU |
 
 ## Desenvolvimento
 
@@ -292,7 +279,7 @@ O projeto usa **Package by Feature** com **Auto-Registry** — cada feature é u
 src/mcp_brasil/
 ├── server.py              # Auto-registry (nunca editado manualmente)
 ├── _shared/               # Utilitários compartilhados
-├── data/                  # 38 features de consulta a APIs
+├── data/                  # 40 features de consulta a APIs
 │   ├── ibge/
 │   │   ├── __init__.py    # FEATURE_META
 │   │   ├── server.py      # FastMCP instance

@@ -1,6 +1,6 @@
 # Catalogo de Features
 
-41 features · 326 tools · 58 resources · 47 prompts
+41 features · 326 tools · 80 resources · 62 prompts
 
 ---
 
@@ -183,7 +183,7 @@ Emendas parlamentares PIX (transferencias especiais).
 | `tce_rs` | Rio Grande do Sul | 5 | Educacao, saude, gestao fiscal (LRF) |
 | `tce_sc` | Santa Catarina | 2 | Municipios, unidades gestoras |
 | `tce_pe` | Pernambuco | 5 | Licitacoes, contratos, despesas, fornecedores |
-| `tce_ce` | Ceara | 4 | Licitacoes, contratos, empenhos |
+| `tce_ce` | Ceara | 4 | Municipios, licitacoes, contratos, empenhos |
 | `tce_rn` | Rio Grande do Norte | 5 | Jurisdicionados, licitacoes, contratos |
 | `tce_pi` | Piaui | 5 | Prefeituras, despesas, receitas |
 | `tce_to` | Tocantins | 3 | Processos, pautas de sessoes |
@@ -393,10 +393,10 @@ Relacao Nacional de Medicamentos Essenciais do SUS — medicamentos por nome, pr
 
 | Tool | Descricao |
 |------|-----------|
-| `rename_listar_grupos_terapeuticos` | Grupos terapeuticos da RENAME |
 | `rename_buscar_medicamento_rename` | Busca medicamentos no catalogo RENAME |
-| `rename_buscar_por_principio_ativo_rename` | Busca por principio ativo |
-| `rename_detalhar_medicamento_rename` | Detalhes de um medicamento |
+| `rename_listar_por_grupo_terapeutico` | Medicamentos por grupo terapeutico |
+| `rename_verificar_disponibilidade_sus` | Verifica disponibilidade no SUS |
+| `rename_listar_grupos_terapeuticos` | Grupos terapeuticos da RENAME |
 | `rename_estatisticas_rename` | Estatisticas consolidadas da RENAME |
 
 **Chave:** Nenhuma
@@ -462,11 +462,11 @@ Departamento Nacional de Auditoria do SUS — atividades de auditoria, relatorio
 
 | Tool | Descricao |
 |------|-----------|
+| `denasus_buscar_auditorias` | Atividades de auditoria do DENASUS |
 | `denasus_listar_relatorios_anuais` | Relatorios anuais de atividades |
 | `denasus_listar_planos` | Planos anuais de auditoria interna |
+| `denasus_verificar_municipio` | Verifica se municipio foi alvo de auditoria |
 | `denasus_informacoes_sna` | Sistema Nacional de Auditoria do SUS (SNA) |
-| `denasus_consultar_demandas` | Demandas de auditoria |
-| `denasus_estatisticas_denasus` | Estatisticas consolidadas do DENASUS |
 
 **Chave:** Nenhuma
 
@@ -545,12 +545,12 @@ Series historicas de homicidios, violencia por genero/raca, suicidios, armas de 
 | Tool | Descricao |
 |------|-----------|
 | `atlas_violencia_listar_temas_violencia` | Temas disponiveis no Atlas da Violencia |
+| `atlas_violencia_listar_series_tema` | Series de dados disponiveis para um tema |
 | `atlas_violencia_consultar_valores_violencia` | Valores de uma serie temporal |
+| `atlas_violencia_consultar_valores_por_regiao` | Valores filtrados por regioes especificas |
 | `atlas_violencia_consultar_serie_violencia` | Metadados de uma serie especifica |
 | `atlas_violencia_listar_fontes_violencia` | Fontes de dados do Atlas |
 | `atlas_violencia_listar_metadados_violencia` | Unidades de medida e periodicidades |
-| `atlas_violencia_buscar_localidades_violencia` | Localidades disponiveis para consulta |
-| `atlas_violencia_comparar_localidades_violencia` | Comparacao de indicadores entre localidades |
 
 **Chave:** Nenhuma
 
@@ -563,11 +563,11 @@ Datasets de seguranca publica (homicidios, estupros, roubos, furtos, trafico, si
 | Tool | Descricao |
 |------|-----------|
 | `sinesp_listar_datasets_mjsp` | Todos os datasets do portal MJSP |
-| `sinesp_listar_organizacoes_mjsp` | Organizacoes do portal MJSP |
 | `sinesp_buscar_datasets_mjsp` | Busca datasets por palavra-chave |
 | `sinesp_detalhar_dataset_mjsp` | Detalhes de um dataset |
-| `sinesp_consultar_recurso_mjsp` | Dados de um recurso especifico |
-| `sinesp_listar_grupos_mjsp` | Grupos tematicos do portal |
+| `sinesp_listar_organizacoes_mjsp` | Organizacoes do portal MJSP |
+| `sinesp_listar_datasets_organizacao` | Datasets publicados por uma organizacao |
+| `sinesp_listar_datasets_grupo_seguranca` | Datasets do grupo de seguranca publica |
 
 **Chave:** Nenhuma
 
@@ -582,7 +582,7 @@ Publicacoes sobre seguranca publica, violencia, sistema prisional, Atlas da Viol
 | `forum_seguranca_buscar_publicacoes_seguranca` | Publicacoes no repositorio FBSP |
 | `forum_seguranca_listar_temas_seguranca` | Comunidades tematicas |
 | `forum_seguranca_detalhar_publicacao_seguranca` | Detalhes de uma publicacao por UUID |
-| `forum_seguranca_listar_colecoes_seguranca` | Colecoes de um tema |
+| `forum_seguranca_buscar_por_tema_seguranca` | Publicacoes dentro de uma comunidade tematica |
 
 **Chave:** Nenhuma
 
@@ -632,9 +632,11 @@ Catalogo de datasets de dados.gov.br.
 
 ---
 
-### `diario_oficial` — Querido Diario + DOU (6 tools)
+### `diario_oficial` — Querido Diario + DOU (11 tools)
 
 Diarios oficiais de 5.000+ municipios (Querido Diario) e Diario Oficial da Uniao (DOU federal).
+
+**Querido Diario — municipios (6):**
 
 | Tool | Descricao |
 |------|-----------|
@@ -645,13 +647,23 @@ Diarios oficiais de 5.000+ municipios (Querido Diario) e Diario Oficial da Uniao
 | `diario_oficial_listar_diarios_recentes` | Publicacoes recentes de um municipio |
 | `diario_oficial_buscar_diario_unificado` | Busca unificada (municipios + DOU federal) |
 
+**DOU — Diario Oficial da Uniao (5):**
+
+| Tool | Descricao |
+|------|-----------|
+| `diario_oficial_dou_buscar` | Busca publicacoes no DOU por termo, secao, periodo |
+| `diario_oficial_dou_ler_publicacao` | Le conteudo completo de uma publicacao do DOU |
+| `diario_oficial_dou_edicao_do_dia` | Publicacoes de uma edicao do DOU por data e secao |
+| `diario_oficial_dou_buscar_por_orgao` | Publicacoes de um orgao especifico no DOU |
+| `diario_oficial_dou_buscar_avancado` | Busca avancada com todos os filtros combinados |
+
 **Chave:** Nenhuma
 
 ---
 
 ## Agentes IA
 
-### `redator` — Redator Oficial (5 tools + 6 prompts + 10 resources)
+### `redator` — Redator Oficial (5 tools + 5 prompts + 10 resources)
 
 Agente inteligente para redacao oficial brasileira — oficio, despacho, memorando, portaria, parecer, nota tecnica.
 
@@ -665,7 +677,7 @@ Agente inteligente para redacao oficial brasileira — oficio, despacho, memoran
 | `redator_validar_documento` | Valida CPF/CNPJ |
 | `redator_listar_tipos_documento` | Lista tipos de documento suportados |
 
-**Prompts:** `redator_despacho`, `redator_memorando`, `redator_oficio`, `redator_portaria`, `redator_parecer`, `redator_nota_tecnica`
+**Prompts:** `redator_oficio`, `redator_despacho`, `redator_portaria`, `redator_parecer`, `redator_nota_tecnica`
 
 **Resources:** 7 templates de documentos + 3 documentos normativos (manual de redacao, pronomes, fechos)
 
