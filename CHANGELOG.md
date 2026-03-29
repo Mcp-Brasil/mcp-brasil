@@ -2,6 +2,21 @@
 
 Todas as mudanças notáveis do mcp-brasil estão documentadas neste arquivo.
 
+## [0.8.0] - 2026-03-29
+
+### Documentation
+
+- Update README and features catalog with 41 features and 326 tools
+
+### Features
+
+- **server:** Add optional Bearer token auth and health check endpoint
+- **docker:** Add Dockerfile and docker-compose for HTTP deployment
+
+### Refactoring
+
+- **prompts:** Update prompt templates for citizen-focused queries
+
 ## [0.7.3] - 2026-03-29
 
 ### Documentation
