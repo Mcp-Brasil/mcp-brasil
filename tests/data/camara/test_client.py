@@ -163,6 +163,24 @@ class TestBuscarProposicoes:
 
     @pytest.mark.asyncio
     @respx.mock
+    async def test_passes_author_filter(self) -> None:
+        route = respx.get(
+            PROPOSICOES_URL,
+            params={
+                "pagina": 1,
+                "itens": 15,
+                "ordem": "DESC",
+                "ordenarPor": "id",
+                "idDeputadoAutor": 204554,
+            },
+        ).mock(return_value=httpx.Response(200, json={"dados": [], "links": []}))
+
+        result = await client.buscar_proposicoes(id_deputado_autor=204554)
+        assert result == []
+        assert route.called
+
+    @pytest.mark.asyncio
+    @respx.mock
     async def test_empty(self) -> None:
         respx.get(PROPOSICOES_URL).mock(
             return_value=httpx.Response(200, json={"dados": [], "links": []})

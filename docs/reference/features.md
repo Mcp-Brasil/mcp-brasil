@@ -71,7 +71,7 @@ Deputados, proposicoes, votacoes, despesas, comissoes, frentes parlamentares.
 |------|-----------|
 | `camara_listar_deputados` | Lista deputados com filtros (nome, partido, UF) |
 | `camara_buscar_deputado` | Detalhes de um deputado por ID |
-| `camara_buscar_proposicao` | Projetos de lei por tipo, ano, tema, autor |
+| `camara_buscar_proposicao` | Projetos de lei por tipo, ano, tema, autor ou deputado autor |
 | `camara_detalhar_proposicao` | Detalhes completos de uma proposicao por ID |
 | `camara_consultar_tramitacao` | Historico de tramitacao de uma proposicao |
 | `camara_buscar_votacao` | Sessoes de votacao |

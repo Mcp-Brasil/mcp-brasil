@@ -104,12 +104,37 @@ class TestBuscarProposicao:
             )
         ]
         with patch(f"{MODULE}.buscar_proposicoes", new_callable=AsyncMock, return_value=mock_data):
-            result = await tools.buscar_proposicao(sigla_tipo="PL", ano=2024)
+            result = await tools.buscar_proposicao(
+                sigla_tipo="PL",
+                ano=2024,
+                id_deputado_autor=204554,
+            )
         assert "PL" in result
         assert "1234" in result
         assert "2300001" in result
         assert "educação" in result
         assert "detalhar_proposicao" in result
+
+    @pytest.mark.asyncio
+    async def test_passes_author_filter(self) -> None:
+        with patch(
+            f"{MODULE}.buscar_proposicoes",
+            new_callable=AsyncMock,
+            return_value=[],
+        ) as mocked:
+            await tools.buscar_proposicao(
+                sigla_tipo="PL",
+                ano=2024,
+                id_deputado_autor=204554,
+            )
+        mocked.assert_awaited_once_with(
+            sigla_tipo="PL",
+            numero=None,
+            ano=2024,
+            keywords=None,
+            id_deputado_autor=204554,
+            pagina=1,
+        )
 
     @pytest.mark.asyncio
     async def test_empty(self) -> None:

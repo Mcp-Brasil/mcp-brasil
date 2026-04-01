@@ -2,6 +2,12 @@
 
 Todas as mudanças notáveis do mcp-brasil estão documentadas neste arquivo.
 
+## [Unreleased]
+
+### Features
+
+- **camara:** Add `id_deputado_autor` filter to `buscar_proposicao`
+
 ## [0.8.0] - 2026-03-29
 
 ### Documentation

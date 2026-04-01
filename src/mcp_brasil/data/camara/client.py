@@ -248,6 +248,7 @@ async def buscar_proposicoes(
     numero: int | None = None,
     ano: int | None = None,
     keywords: str | None = None,
+    id_deputado_autor: int | None = None,
     pagina: int = 1,
 ) -> list[Proposicao]:
     """Busca proposições com filtros."""
@@ -265,6 +266,8 @@ async def buscar_proposicoes(
         params["ano"] = ano
     if keywords:
         params["keywords"] = keywords
+    if id_deputado_autor is not None:
+        params["idDeputadoAutor"] = id_deputado_autor
     data = await _get(PROPOSICOES_URL, params)
     return [_parse_proposicao(p) for p in _safe_list(data, "proposicoes")]
 

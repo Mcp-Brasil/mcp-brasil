@@ -101,17 +101,20 @@ async def buscar_proposicao(
     numero: int | None = None,
     ano: int | None = None,
     keywords: str | None = None,
+    id_deputado_autor: int | None = None,
     pagina: int = 1,
 ) -> str:
     """Busca proposições legislativas (PL, PEC, MPV, etc.).
 
-    Permite filtrar por tipo, número, ano ou palavras-chave na ementa.
+    Permite filtrar por tipo, número, ano, palavras-chave na ementa ou
+    pelo ID do deputado autor.
 
     Args:
         sigla_tipo: Tipo da proposição (ex: PL, PEC, MPV, PLP, PDL).
         numero: Número da proposição.
         ano: Ano da proposição.
         keywords: Palavras-chave para busca na ementa.
+        id_deputado_autor: ID do deputado autor da proposição na Câmara.
         pagina: Página de resultados (padrão: 1).
 
     Returns:
@@ -122,6 +125,7 @@ async def buscar_proposicao(
         numero=numero,
         ano=ano,
         keywords=keywords,
+        id_deputado_autor=id_deputado_autor,
         pagina=pagina,
     )
     if not proposicoes:

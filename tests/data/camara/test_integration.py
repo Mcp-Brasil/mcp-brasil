@@ -92,7 +92,10 @@ class TestToolExecution:
             return_value=mock_data,
         ):
             async with Client(mcp) as c:
-                result = await c.call_tool("buscar_proposicao", {"sigla_tipo": "PL", "ano": 2024})
+                result = await c.call_tool(
+                    "buscar_proposicao",
+                    {"sigla_tipo": "PL", "ano": 2024, "id_deputado_autor": 204554},
+                )
                 assert "Proposição E2E" in result.data
 
     @pytest.mark.asyncio
