@@ -59,3 +59,25 @@ class ProcessoDetalhe(BaseModel):
     partes: list[Parte] | None = None
     movimentacoes: list[Movimentacao] | None = None
     nivel_sigilo: int | None = None
+
+
+class MPUProcesso(BaseModel):
+    """Processo de Medida Protetiva de Urgência."""
+
+    numero: str | None = None
+    classe_codigo: int | None = None
+    classe_nome: str | None = None
+    tribunal: str | None = None
+    orgao_julgador: str | None = None
+    data_ajuizamento: str | None = None
+    movimentos: list[Movimentacao] | None = None
+
+
+class MPUEstatisticas(BaseModel):
+    """Estatísticas agregadas de MPUs."""
+
+    total: int = 0
+    tribunal: str | None = None
+    periodo: str | None = None
+    por_decisao: dict[str, int] | None = None
+    por_classe: dict[str, int] | None = None

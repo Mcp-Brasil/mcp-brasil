@@ -12,7 +12,8 @@ import contextlib
 from mcp_brasil._shared.formatting import markdown_table
 
 from . import client
-from .constants import DEFAULT_PAGE_SIZE
+from .constants import DEFAULT_PAGE_SIZE, MPU_MOV_NOMES, MPU_TIPOS_MEDIDA
+from .schemas import Movimentacao
 
 
 async def buscar_processos(
@@ -314,3 +315,251 @@ async def consultar_movimentacoes(
         f"({len(movimentacoes)} movimentações):\n\n"
     )
     return header + markdown_table(["Data", "Movimentação", "Complemento"], rows)
+
+
+# --- MPU (Medidas Protetivas de Urgência) ---
+
+
+async def buscar_medidas_protetivas(
+    tribunal: str = "tjsp",
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
+    lei: str = "ambas",
+    size: int = DEFAULT_PAGE_SIZE,
+) -> str:
+    """Busca Medidas Protetivas de Urgência (MPU) na base do DataJud.
+
+    Pesquisa processos de MPU da Lei Maria da Penha (11.340/2006) e/ou
+    Lei Henry Borel (14.344/2022) por tribunal e período.
+
+    A API pública do DataJud NÃO expõe dados de partes (nomes, CPFs).
+    Os resultados são estatísticos/processuais.
+
+    Args:
+        tribunal: Sigla do tribunal (ex: tjsp, tjpi, tjrj). Default: tjsp.
+        data_inicio: Data inicial no formato AAAA-MM-DD.
+        data_fim: Data final no formato AAAA-MM-DD.
+        lei: Filtro por lei: maria_penha, henry_borel ou ambas. Default: ambas.
+        size: Quantidade máxima de resultados (1-100). Default: 10.
+
+    Returns:
+        Tabela com MPUs encontradas.
+    """
+    mpus = await client.buscar_medidas_protetivas(
+        tribunal=tribunal,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+        lei=lei,
+        size=size,
+    )
+    if not mpus:
+        return f"Nenhuma MPU encontrada no {tribunal.upper()} para os filtros informados."
+
+    rows = [
+        (
+            (m.numero or "—")[:25],
+            (m.classe_nome or "—")[:40],
+            (m.orgao_julgador or "—")[:25],
+            (m.data_ajuizamento or "—")[:10],
+        )
+        for m in mpus
+    ]
+    header = f"Medidas Protetivas de Urgência — {tribunal.upper()} ({len(mpus)} resultados):\n\n"
+    return header + markdown_table(["Número", "Classe", "Órgão Julgador", "Ajuizamento"], rows)
+
+
+async def buscar_mpu_concedidas(
+    tribunal: str = "tjsp",
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
+    destinatario: str = "todos",
+    size: int = DEFAULT_PAGE_SIZE,
+) -> str:
+    """Busca MPUs com decisão de concessão (total ou parcial).
+
+    Filtra processos de Medidas Protetivas que tiveram movimentos de
+    concessão. Aceita filtro por destinatário: mulher, idoso, criança ou todos.
+
+    Inclui tanto códigos de movimentos novos (Nov/2024) quanto legados.
+
+    Args:
+        tribunal: Sigla do tribunal (ex: tjsp, tjpi). Default: tjsp.
+        data_inicio: Data inicial (AAAA-MM-DD).
+        data_fim: Data final (AAAA-MM-DD).
+        destinatario: Filtro: mulher, idoso, crianca ou todos. Default: todos.
+        size: Quantidade máxima de resultados. Default: 10.
+
+    Returns:
+        Tabela com MPUs concedidas e movimentos relevantes.
+    """
+    mpus = await client.buscar_mpu_concedidas(
+        tribunal=tribunal,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+        destinatario=destinatario,
+        size=size,
+    )
+    if not mpus:
+        return (
+            f"Nenhuma MPU concedida encontrada no {tribunal.upper()} para os filtros informados."
+        )
+
+    rows = [
+        (
+            (m.numero or "—")[:25],
+            (m.classe_nome or "—")[:35],
+            (m.orgao_julgador or "—")[:25],
+            (m.data_ajuizamento or "—")[:10],
+            _format_mpu_movimentos(m.movimentos),
+        )
+        for m in mpus
+    ]
+    dest_label = f" (destinatário: {destinatario})" if destinatario != "todos" else ""
+    header = f"MPUs Concedidas — {tribunal.upper()}{dest_label} ({len(mpus)} resultados):\n\n"
+    return header + markdown_table(
+        ["Número", "Classe", "Órgão Julgador", "Ajuizamento", "Decisão"],
+        rows,
+    )
+
+
+async def buscar_mpu_por_tipo(
+    tribunal: str = "tjsp",
+    tipo_medida: str = "afastamento_lar",
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
+    size: int = DEFAULT_PAGE_SIZE,
+) -> str:
+    """Busca MPUs por tipo de medida protetiva.
+
+    Tipos disponíveis: afastamento_lar, proibicao_aproximacao,
+    proibicao_contato, proibicao_frequentar, restricao_visitas,
+    alimentos_provisorios, reabilitacao_agressor,
+    monitoramento_eletronico, outras.
+
+    Args:
+        tribunal: Sigla do tribunal. Default: tjsp.
+        tipo_medida: Tipo da medida protetiva. Default: afastamento_lar.
+        data_inicio: Data inicial (AAAA-MM-DD).
+        data_fim: Data final (AAAA-MM-DD).
+        size: Quantidade máxima de resultados. Default: 10.
+
+    Returns:
+        Tabela com MPUs do tipo informado.
+    """
+    if tipo_medida not in MPU_TIPOS_MEDIDA:
+        return (
+            f"Tipo de medida '{tipo_medida}' não reconhecido. "
+            f"Opções: {', '.join(sorted(MPU_TIPOS_MEDIDA.keys()))}"
+        )
+
+    mpus = await client.buscar_mpu_por_tipo(
+        tribunal=tribunal,
+        tipo_medida=tipo_medida,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+        size=size,
+    )
+    if not mpus:
+        return (
+            f"Nenhuma MPU do tipo '{tipo_medida}' encontrada no {tribunal.upper()} "
+            "para os filtros informados."
+        )
+
+    tipo_label = tipo_medida.replace("_", " ").title()
+    rows = [
+        (
+            (m.numero or "—")[:25],
+            (m.orgao_julgador or "—")[:25],
+            (m.data_ajuizamento or "—")[:10],
+            _format_mpu_movimentos(m.movimentos),
+        )
+        for m in mpus
+    ]
+    header = f"MPUs — {tipo_label} — {tribunal.upper()} ({len(mpus)} resultados):\n\n"
+    return header + markdown_table(["Número", "Órgão Julgador", "Ajuizamento", "Decisão"], rows)
+
+
+async def estatisticas_mpu(
+    tribunal: str | None = None,
+    ano: int | None = None,
+) -> str:
+    """Estatísticas agregadas de Medidas Protetivas de Urgência.
+
+    Retorna totais de MPUs por tribunal, agrupados por classe processual
+    e tipo de decisão (concedida, não concedida, revogada, prorrogada).
+
+    Args:
+        tribunal: Sigla do tribunal (opcional, default: tjsp).
+        ano: Ano para filtrar (ex: 2024). Sem filtro = todos os anos.
+
+    Returns:
+        Resumo estatístico com totais e distribuições.
+    """
+    stats = await client.estatisticas_mpu(tribunal=tribunal, ano=ano)
+
+    lines = [
+        f"**Estatísticas de MPU — {(stats.tribunal or 'tjsp').upper()}**",
+        f"**Período:** {stats.periodo or 'todos'}",
+        f"**Total de processos:** {stats.total}",
+    ]
+
+    if stats.por_classe:
+        lines.append("\n**Por classe processual:**")
+        for classe, count in stats.por_classe.items():
+            lines.append(f"  - {classe}: {count}")
+
+    if stats.por_decisao:
+        lines.append("\n**Por tipo de decisão:**")
+        for decisao, count in stats.por_decisao.items():
+            lines.append(f"  - {decisao}: {count}")
+
+    if stats.total == 0:
+        lines.append("\n> Nenhuma MPU encontrada. Verifique o tribunal e o período.")
+
+    return "\n".join(lines)
+
+
+async def timeline_mpu(
+    numero_processo: str,
+    tribunal: str = "tjsp",
+) -> str:
+    """Timeline de movimentos de MPU de um processo específico.
+
+    Mostra a sequência de decisões sobre a medida protetiva:
+    concessão → prorrogação → revogação, etc.
+
+    Args:
+        numero_processo: Número do processo (formato livre).
+        tribunal: Sigla do tribunal. Default: tjsp.
+
+    Returns:
+        Cronologia dos movimentos de MPU do processo.
+    """
+    movimentos = await client.timeline_mpu(numero_processo, tribunal)
+    if not movimentos:
+        return (
+            f"Nenhum movimento de MPU encontrado para o processo '{numero_processo}' "
+            f"no {tribunal.upper()}."
+        )
+
+    rows = [
+        (
+            (m.data or "—")[:10],
+            m.nome or MPU_MOV_NOMES.get(m.codigo or 0, "—"),
+            (m.complemento or "—")[:50],
+        )
+        for m in movimentos
+    ]
+    header = (
+        f"Timeline MPU — Processo {numero_processo} — {tribunal.upper()} "
+        f"({len(movimentos)} movimentos):\n\n"
+    )
+    return header + markdown_table(["Data", "Decisão", "Complemento"], rows)
+
+
+def _format_mpu_movimentos(movimentos: list[Movimentacao] | None) -> str:
+    """Format MPU movements into a short summary string."""
+    if not movimentos:
+        return "—"
+    nomes = [m.nome or MPU_MOV_NOMES.get(m.codigo or 0, "?") for m in movimentos[:3]]
+    return "; ".join(nomes)[:60]
