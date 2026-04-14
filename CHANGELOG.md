@@ -2,6 +2,27 @@
 
 Todas as mudanças notáveis do mcp-brasil estão documentadas neste arquivo.
 
+## [0.12.0] - 2026-04-14
+
+### Bug Fixes
+
+- **deps:** Upgrade fastmcp to 3.2.3 for oauth-protected-resource endpoint
+- **docker:** Allow logo.png through dockerignore
+
+### Documentation
+
+- **foundry:** Rewrite Teams guide with full setup from scratch
+- **guide:** Add Claude.ai web connector guide
+
+### Features
+
+- **server:** Add logo to consent page and MCP server metadata
+- **foundry:** Add agent setup script and Teams deployment guide
+- **auth:** Add multi mode for OAuth + static token simultaneously
+- **dados_gov_br:** Replace dados_abertos with expanded dados.gov.br integration
+- **educação:** Add inep and fnde education features
+- **saude:** Add epidemiology tools (InfoDengue, InfoGripe, SINAN, DATASUS catalog)
+
 ## [0.11.0] - 2026-04-10
 
 ### Documentation
