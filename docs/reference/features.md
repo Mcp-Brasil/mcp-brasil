@@ -653,18 +653,25 @@ CEP, CNPJ, DDD, bancos, cambio, FIPE, feriados, PIX, ISBN, NCM.
 
 ---
 
-### `dados_abertos` — Portal Dados Abertos (4 tools)
+### `dados_gov_br` — Portal Brasileiro de Dados Abertos (11 tools)
 
-Catalogo de datasets de dados.gov.br.
+Catalogo central de datasets abertos do governo federal (dados.gov.br).
 
 | Tool | Descricao |
 |------|-----------|
-| `dados_abertos_buscar_conjuntos` | Busca datasets |
-| `dados_abertos_detalhar_conjunto` | Detalhes de um dataset |
-| `dados_abertos_listar_organizacoes` | Organizacoes publicadoras |
-| `dados_abertos_buscar_recursos` | Recursos/arquivos dentro de um dataset |
+| `dados_gov_br_buscar_conjuntos` | Busca datasets por nome/organizacao |
+| `dados_gov_br_detalhar_conjunto` | Detalhes de um dataset com recursos |
+| `dados_gov_br_listar_organizacoes` | Organizacoes publicadoras |
+| `dados_gov_br_detalhar_organizacao` | Detalhes de uma organizacao |
+| `dados_gov_br_listar_temas` | Temas (grupos tematicos) |
+| `dados_gov_br_buscar_tags` | Busca tags por nome |
+| `dados_gov_br_listar_formatos` | Formatos de arquivo disponiveis |
+| `dados_gov_br_listar_ods` | Objetivos de Desenvolvimento Sustentavel |
+| `dados_gov_br_listar_observancia_legal` | Opcoes de observancia legal |
+| `dados_gov_br_listar_reusos` | Reusos de dados (apps, dashboards) |
+| `dados_gov_br_detalhar_reuso` | Detalhes de um reuso |
 
-**Chave:** Nenhuma
+**Chave:** `DADOS_GOV_BR_API_KEY` (obrigatoria — token via Gov.br)
 
 ---
 
