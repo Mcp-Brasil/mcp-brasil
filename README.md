@@ -4,12 +4,12 @@
 
 # mcp-brasil
 
-**MCP Server para 41 APIs públicas brasileiras**
+**MCP Server para 42 APIs públicas brasileiras**
 
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-363 tools · 87 resources · 62 prompts · 11 áreas temáticas
+367 tools · 87 resources · 62 prompts · 11 áreas temáticas
 
 Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil — economia, legislação, transparência, judiciário, eleições, meio ambiente, saúde, segurança pública e mais.
 
@@ -23,7 +23,7 @@ Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil 
 
 ## Features
 
-- **363 tools** em 41 features cobrindo 11 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, segurança pública, compras públicas, utilidades e mais
+- **367 tools** em 42 features cobrindo 11 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, segurança pública, compras públicas, utilidades e mais
 - **Cross-referencing** com `planejar_consulta` — cria planos de execução combinando múltiplas APIs (ex: gastos de um deputado + votações + proposições)
 - **Execução em lote** com `executar_lote` — dispara consultas em paralelo numa única chamada
 - **Smart discovery** — BM25 search transform filtra 363 tools para só mostrar as relevantes ao contexto
@@ -151,6 +151,7 @@ Conecte o server e faça perguntas em linguagem natural:
 | `tce_pi` | TCE-PI — prefeituras, despesas, receitas | 5 |
 | `tce_sc` | TCE-SC — municípios e unidades gestoras | 2 |
 | `tce_to` | TCE-TO — processos, pautas de sessões | 3 |
+| `tce_pa` | TCE-PA — Diário Oficial, sessões plenárias, jurisprudência (acórdãos, resoluções, portarias, prejulgados) e conteúdo informativo | 4 |
 
 ### Judiciário
 
