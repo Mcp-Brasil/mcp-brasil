@@ -62,9 +62,9 @@ async def redes_do_candidato(
         Tabela com ano x rede x URL.
     """
     await ctx.info(f"Buscando redes sociais do candidato {sq_candidato}...")
-    # AA_ELEICAO no CSV (normalizado → aa_eleicao)
+    # Nota: coluna de ano é AA_ELEICAO (rede_social_candidato), não ANO_ELEICAO
     sql = (
-        "SELECT COALESCE(aa_eleicao, ano_eleicao) AS ano, "
+        "SELECT aa_eleicao AS ano, "
         "ds_url "
         f'FROM "{DATASET_TABLE}" '
         "WHERE CAST(sq_candidato AS VARCHAR) = ? "
@@ -109,7 +109,7 @@ async def redes_por_partido(
     extra = ""
     extra_params: list[Any] = []
     if ano is not None:
-        extra = " AND CAST(COALESCE(r.aa_eleicao, r.ano_eleicao) AS INTEGER) = ?"
+        extra = " AND CAST(r.aa_eleicao AS INTEGER) = ?"
         extra_params = [int(ano)]
     sql = (
         "SELECT ds_url "
@@ -158,9 +158,7 @@ async def top_redes_por_ano(ctx: Context, ano: int) -> str:
     """
     await ctx.info(f"Top redes {ano}...")
     sql = (
-        "SELECT ds_url, sq_candidato "
-        f'FROM "{DATASET_TABLE}" '
-        "WHERE CAST(COALESCE(aa_eleicao, ano_eleicao) AS INTEGER) = ?"
+        f'SELECT ds_url, sq_candidato FROM "{DATASET_TABLE}" WHERE CAST(aa_eleicao AS INTEGER) = ?'
     )
     rows = await executar_query(DATASET_SPEC, sql, [int(ano)])
     if not rows:

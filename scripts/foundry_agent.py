@@ -27,13 +27,9 @@ import os
 import sys
 from typing import NoReturn
 
-DEFAULT_ENDPOINT = (
-    "https://agent-brasil-resource.services.ai.azure.com/api/projects/agent-brasil"
-)
+DEFAULT_ENDPOINT = "https://agent-brasil-resource.services.ai.azure.com/api/projects/agent-brasil"
 DEFAULT_MODEL = "gpt-4o"
-DEFAULT_MCP_URL = (
-    "https://mcp-brasil.purplepond-78f67485.eastus2.azurecontainerapps.io/mcp"
-)
+DEFAULT_MCP_URL = "https://mcp-brasil.purplepond-78f67485.eastus2.azurecontainerapps.io/mcp"
 
 AGENT_NAME = "agente-brasil"
 

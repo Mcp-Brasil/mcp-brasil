@@ -55,34 +55,34 @@ def system_overview() -> None:
         with Cluster("Econômico"):
             bacen = Python("bacen")
             ibge = Python("ibge")
-            transparencia = Python("transparência")
-            transferegov = Python("transferegov")
+            Python("transparência")
+            Python("transferegov")
 
         with Cluster("Legislativo"):
             camara = Python("câmara")
-            senado = Python("senado")
+            Python("senado")
 
         with Cluster("Judiciário"):
             datajud = Python("datajud")
-            jurisprudencia = Python("jurisprudência")
+            Python("jurisprudência")
 
         with Cluster("Eleitoral"):
             tse = Python("tse")
 
         with Cluster("Fiscalização"):
             tcu = Python("tcu")
-            tces = Python("TCEs (9)")
+            Python("TCEs (9)")
 
         with Cluster("Ambiental & Saúde"):
             inpe = Python("inpe")
-            ana = Python("ana")
-            saude = Python("saúde")
+            Python("ana")
+            Python("saúde")
 
         with Cluster("Outros"):
             compras = Python("compras")
-            brasilapi = Python("brasilapi")
-            dados_ab = Python("dados_abertos")
-            diario = Python("diário_oficial")
+            Python("brasilapi")
+            Python("dados_abertos")
+            Python("diário_oficial")
 
         with Cluster("Agentes"):
             redator = Python("redator")
@@ -120,12 +120,12 @@ def feature_anatomy() -> None:
         edge_attr=EDGE_ATTR,
     ):
         with Cluster("data/ibge/"):
-            init = Python("__init__.py\nFEATURE_META")
+            Python("__init__.py\nFEATURE_META")
             server = FastAPI("server.py\nmcp: FastMCP")
             tools = Python("tools.py\nbuscar_localidades()\nconsultar_populacao()")
             client = Python("client.py\nhttp_get() async")
             schemas = Python("schemas.py\nBaseModel")
-            constants = Python("constants.py\nIBGE_API_BASE")
+            Python("constants.py\nIBGE_API_BASE")
 
             server >> Edge(label="registra") >> tools
             tools >> Edge(label="delega HTTP") >> client
