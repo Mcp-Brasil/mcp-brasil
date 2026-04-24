@@ -4,16 +4,16 @@
 
 # mcp-brasil
 
-**MCP Server para 56 fontes de dados públicas brasileiras**
+**MCP Server para 64 fontes de dados públicas brasileiras**
 
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-457 tools · 119 resources · 90 prompts · 56 features · 12 áreas temáticas
+498 tools · 126 resources · 95 prompts · 64 features · 14 áreas temáticas
 
-Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil — economia, legislação, transparência, judiciário, eleições, meio ambiente, saúde, educação, segurança pública, fiscal subnacional e mais.
+Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil — economia, legislação, transparência, judiciário, eleições, meio ambiente, saúde, educação, segurança pública, fiscal subnacional, aviação e mais.
 
-**52 APIs não requerem chave** · 4 usam chaves gratuitas (cadastro em 1 min)
+**60 APIs não requerem chave** · 4 usam chaves gratuitas (cadastro em 1 min)
 
 [Quick Start](#quick-start) · [Fontes de dados](#fontes-de-dados) · [Documentação](#documentação) · [Desenvolvimento](#desenvolvimento)
 
@@ -23,11 +23,11 @@ Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil 
 
 ## Features
 
-- **457 tools** em 56 features cobrindo 12 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, educação, segurança pública, compras públicas, fiscal subnacional e mais
-- **Datasets grandes com cache local** — SIAPA (~813k imóveis), TSE 2014-2024 (candidatos, bens, votação, redes sociais, FEFC), ANP preços de combustíveis, INEP Censo Escolar e ENEM — SQL via DuckDB embedded, opt-in via env
+- **498 tools** em 64 features cobrindo 14 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, educação, segurança pública, compras públicas, fiscal subnacional, aviação, energia e mais
+- **Datasets grandes com cache local** — SIAPA (~813k imóveis), TSE 2014-2024 (candidatos, bens, votação, redes sociais, FEFC), ANP preços de combustíveis, INEP Censo Escolar e ENEM, ISP-RJ segurança pública, ANAC aeronaves e voos regulares — SQL via DuckDB embedded, opt-in via env
 - **Cross-referencing** com `planejar_consulta` — cria planos de execução combinando múltiplas APIs (ex: gastos de um deputado + votações + proposições)
 - **Execução em lote** com `executar_lote` — dispara consultas em paralelo numa única chamada
-- **Smart discovery** — BM25 search transform filtra 457 tools para só mostrar as relevantes ao contexto
+- **Smart discovery** — BM25 search transform filtra 498 tools para só mostrar as relevantes ao contexto
 - **Auto-registry** — adicionar uma feature é criar uma pasta; zero configuração manual
 - **Async everywhere** — httpx async + Pydantic v2 + rate limiting com backoff
 
@@ -122,6 +122,7 @@ Conecte o server e faça perguntas em linguagem natural:
 |---------|-------|:-----:|
 | `bacen` | Banco Central — Selic, IPCA, câmbio, PIB e +190 séries temporais | 9 |
 | `bndes` | BNDES — operações de financiamento, desembolsos, instituições credenciadas | 4 |
+| `ipeadata` | IPEADATA/Ipea — séries macro, regionais e sociais históricas (OData) | 5 |
 
 ### Geografia e Estatística
 
@@ -177,6 +178,20 @@ Conecte o server e faça perguntas em linguagem natural:
 |---------|-------|:-----:|
 | `inpe` | INPE — focos de queimadas, desmatamento DETER/PRODES | 4 |
 | `ana` | ANA — estações hidrológicas, telemetria, reservatórios | 3 |
+| `ibama` | IBAMA (CKAN) — autos de infração, CTF/APP, TCFA, biomas | 4 |
+
+### Energia e Infraestrutura
+
+| Feature | Fonte | Tools |
+|---------|-------|:-----:|
+| `aneel` | ANEEL (CKAN) — SIGA, geração distribuída, tarifas, bandeiras | 4 |
+| `antt` | ANTT (CKAN) — rodovias concedidas, acidentes, cargas, passageiros | 4 |
+
+### Aviação
+
+| Feature | Fonte | Tools |
+|---------|-------|:-----:|
+| `opensky` | OpenSky Network — voos ao vivo via ADS-B (rastreamento, tracks) | 6 |
 
 ### Saúde
 
@@ -239,6 +254,9 @@ Primeira carga: minutos (download + ingest); subsequentes: ms.
 | `anp_precos` | ANP — preços semanais de combustíveis (gasolina/etanol, diesel/GNV, GLP) em postos | 2024 integral | 7 |
 | `inep_censo_escolar` | INEP — Censo Escolar da Educação Básica (~180k escolas, infraestrutura, matrículas) | 2023 | 7 |
 | `inep_enem` | INEP — Microdados ENEM (~3,9M inscritos, notas, perfil socioeconômico) | 2023 | 6 |
+| `isp_rj` | ISP-RJ — estatísticas criminais mensais por CISP do Rio de Janeiro | 1991-present | 6 |
+| `anac_rab` | ANAC — Registro Aeronáutico Brasileiro (~75k aeronaves civis) | snapshot semanal | 6 |
+| `anac_vra` | ANAC — Voos Regulares Ativos (pontualidade, atrasos, origem/destino) | 2020-present | — |
 
 Ative com:
 ```bash
@@ -258,7 +276,7 @@ Ver [guia de Datasets locais](docs/guide/datasets.md) para detalhes de uso.
 | Portal da Transparência | Opcional | [Cadastro gratuito](https://portaldatransparencia.gov.br/api-de-dados/cadastrar-email) |
 | DataJud/CNJ | Opcional | [Cadastro gratuito](https://datajud-wiki.cnj.jus.br/api-publica/acesso) |
 | Anúncios Eleitorais (Meta) | Opcional | [Meta Ad Library API](https://www.facebook.com/ads/library/api/) |
-| Todas as outras (52) | Nenhuma chave | — |
+| Todas as outras (60) | Nenhuma chave | — |
 
 Configure via variáveis de ambiente ou `.env`:
 
@@ -290,7 +308,7 @@ META_ACCESS_TOKEN=seu-token
 |--------|-----------|
 | [Quick Start](docs/guide/quickstart.md) | Instalação e configuração em 2 minutos |
 | [Arquitetura](docs/concepts/architecture.md) | Como o projeto funciona por dentro |
-| [Catálogo de Features](docs/reference/features.md) | Todas as 56 features e 457 tools |
+| [Catálogo de Features](docs/reference/features.md) | Todas as 64 features e 498 tools |
 | [Datasets locais (DuckDB)](docs/guide/datasets.md) | SIAPA + TSE 2014-2024 via SQL embedded |
 | [Smart Tools](docs/reference/smart-tools.md) | Meta-tools: planner, batch, discovery |
 | [Adicionando Features](docs/guide/adding-features.md) | Guia para contribuir com novas APIs |
@@ -326,7 +344,7 @@ src/mcp_brasil/
 ├── server.py              # Auto-registry (nunca editado manualmente)
 ├── _shared/               # Utilitários compartilhados
 │   └── datasets/          # Infra DuckDB local
-├── data/                  # 46 features — REST passthrough
+├── data/                  # 51 features — REST passthrough
 │   ├── ibge/
 │   │   ├── __init__.py    # FEATURE_META
 │   │   ├── server.py      # FastMCP instance
@@ -336,7 +354,7 @@ src/mcp_brasil/
 │   │   └── constants.py   # URLs, códigos
 │   ├── bacen/
 │   └── ...
-├── datasets/              # 9 features — cache local DuckDB (opt-in via env)
+├── datasets/              # 12 features — cache local DuckDB (opt-in via env)
 │   ├── spu_siapa/         # SIAPA 813k imóveis
 │   ├── tse_candidatos/    # TSE candidatos 2014-2024
 │   └── ...
