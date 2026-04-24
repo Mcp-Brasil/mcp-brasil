@@ -240,20 +240,34 @@ def _load_into_duckdb(spec: DatasetSpec) -> Manifest:
         1. Stream each CSV to a local temp file via httpx (reliable with
            redirects/cookies/slow servers; handles ZIP archives via
            ``zip_member``; transcodes cp1252/other encodings to UTF-8).
-        2. Load into DuckDB. For single-source specs, the table is created
-           directly. For multi-source specs, one table is created per source
-           (named ``{table}_{suffix}``) plus a ``{table}`` VIEW doing
-           ``UNION ALL BY NAME`` across them.
+        2. Load into DuckDB in an **ephemeral** tempdir (DuckDB uses mmap
+           which does not work on SMB-backed volumes like Azure Files).
+        3. After ingestion, atomically move the finished .duckdb file to
+           its final location in the cache dir (which may be SMB-mounted).
+
+    For single-source specs, the table is created directly. For multi-source
+    specs, one table is created per source (named ``{table}_{suffix}``) plus
+    a ``{table}`` VIEW doing ``UNION ALL BY NAME`` across them.
 
     Runs synchronously — caller is responsible for off-loading to a thread
     via ``asyncio.to_thread`` when called from async context.
     """
+    import shutil
+    import tempfile
+
     from mcp_brasil import settings as _settings
 
     path = db_path(spec.id)
-    tmp_path = path.with_suffix(".duckdb.part")
-    if tmp_path.exists():
-        tmp_path.unlink()
+    # Write DuckDB file to ephemeral tempdir; mmap/fcntl on SMB shares
+    # (Azure Files) does not support all the operations DuckDB needs.
+    ephemeral_dir = Path(tempfile.mkdtemp(prefix=f"mcpb-{spec.id}-"))
+    tmp_path = ephemeral_dir / f"{spec.id}.duckdb"
+    # Clean any leftover .part in the cache (from a previous failed run on
+    # an older code path); the new file flow doesn't use it, but residue
+    # wastes space.
+    old_part = path.with_suffix(".duckdb.part")
+    with contextlib.suppress(FileNotFoundError):
+        old_part.unlink()
 
     # Normalize the source list — single-source specs are promoted to a
     # one-entry list so the downstream loop handles both uniformly.
@@ -261,13 +275,21 @@ def _load_into_duckdb(spec: DatasetSpec) -> Manifest:
         list(spec.sources) if spec.sources else [(spec.url, spec.zip_member, "")]
     )
 
-    logger.info("Loading dataset %s with %d source(s) into %s", spec.id, len(sources), tmp_path)
+    logger.info(
+        "Loading dataset %s with %d source(s) into %s (final: %s)",
+        spec.id,
+        len(sources),
+        tmp_path,
+        path,
+    )
     con = duckdb.connect(str(tmp_path), read_only=False)
     try:
         total_row_count = 0
         schema_reprs: list[str] = []
         for url, zip_member, suffix in sources:
-            csv_tmp = path.with_suffix(f".{suffix or 'single'}.tmp")
+            # CSV temp also lives in the ephemeral dir (avoids SMB churn and
+            # the extra round-trip of an mmap-unfriendly filesystem).
+            csv_tmp = ephemeral_dir / f"source-{suffix or 'single'}.csv"
             if csv_tmp.exists():
                 csv_tmp.unlink()
             staged = _stage_source(
@@ -299,8 +321,14 @@ def _load_into_duckdb(spec: DatasetSpec) -> Manifest:
     finally:
         con.close()
 
-    # Swap into place
-    tmp_path.replace(path)
+    # Move the completed DuckDB file from ephemeral to the persistent cache.
+    # shutil.move handles cross-filesystem (tmpfs -> SMB) transparently.
+    with contextlib.suppress(FileNotFoundError):
+        path.unlink()
+    shutil.move(str(tmp_path), str(path))
+    # Clean up the ephemeral workdir
+    with contextlib.suppress(FileNotFoundError, OSError):
+        shutil.rmtree(ephemeral_dir, ignore_errors=True)
     size_bytes = path.stat().st_size
 
     manifest = Manifest(
