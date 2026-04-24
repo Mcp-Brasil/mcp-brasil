@@ -59,16 +59,23 @@ async def metadados_serie(codigo: str) -> SerieMetadado | None:
 
 
 async def valores_serie(codigo: str, *, top: int = 500) -> list[SerieValor]:
-    """GET /ValoresSerie(SERCODIGO='...') — valores históricos de uma série.
+    """GET /ValoresSerie(SERCODIGO='...') — valores históricos, mais recentes primeiro.
+
+    Nota: IPEADATA ignora ``$orderby`` em ValoresSerie e sempre retorna asc.
+    Buscamos todos os registros (sem top) e cortamos os últimos ``top`` no
+    lado cliente — caro mas correto. Para séries pesadas, use ``ultimo_valor``.
 
     Args:
         codigo: SERCODIGO.
-        top: Limite de pontos retornados (padrão 500, mais recentes primeiro).
+        top: Número de pontos mais recentes (padrão 500, máx 5000).
     """
     esc = codigo.replace("'", "''")
     path = f"/ValoresSerie(SERCODIGO='{esc}')"
-    rows = await _get_odata(path, {"$orderby": "VALDATA desc", "$top": str(top)})
-    return [SerieValor.model_validate(r) for r in rows]
+    rows = await _get_odata(path, {})
+    # Rows chegam em ordem asc. Pega os últimos `top` e inverte.
+    top = max(1, min(top, 5000))
+    tail = rows[-top:] if len(rows) > top else rows
+    return [SerieValor.model_validate(r) for r in reversed(tail)]
 
 
 async def listar_temas() -> list[dict[str, Any]]:
