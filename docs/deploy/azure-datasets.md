@@ -211,3 +211,20 @@ Total estimado para dev: **R$ 30-50/mês**.
 - Warmup sequencial (um dataset por vez). Para paralelizar, edite
   `scripts/warmup_datasets.py` usando `asyncio.gather` (cuidado com
   memória).
+
+## Notas técnicas — DuckDB e SMB
+
+DuckDB usa `mmap()` e `fcntl()` para crescer seu arquivo de banco. Essas
+operações **não funcionam direto em SMB shares** (Azure Files), gerando
+erros opacos como `IO Error: Cannot open file ... No such file or directory`
+logo no `duckdb.connect(path, read_only=False)`.
+
+A solução (implementada em `_shared/datasets/loader.py`): escrever o
+`.duckdb` em `/tmp/` (tmpfs ephemeral) durante a ingestão, e só no final
+usar `shutil.move()` para movê-lo ao cache Azure Files. Arquivos já
+finalizados funcionam em read-only na SMB share normalmente — é só a
+**criação/crescimento** que exige ephemeral.
+
+Consequência prática: você precisa de **espaço ephemeral >= tamanho
+máximo de um dataset em DuckDB**. Para `tse_votacao` (dataset maior),
+reserve ~6-8GB de ephemeral storage no Container App.
