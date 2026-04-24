@@ -63,7 +63,7 @@ async def states_brasil() -> list[StateVector]:
 
 async def track_aircraft(icao24: str, time_s: int = 0) -> list[TrackPoint]:
     """Trajectory of one aircraft. time=0 for live."""
-    params = {"icao24": icao24.lower().strip(), "time": time_s}
+    params: dict[str, str | int] = {"icao24": icao24.lower().strip(), "time": time_s}
     async with create_client(base_url=OPENSKY_API_BASE) as c:
         try:
             r = await c.get("/tracks/all", params=params)

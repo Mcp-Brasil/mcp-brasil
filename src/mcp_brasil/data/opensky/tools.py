@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time as _time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from fastmcp import Context
 
@@ -11,6 +11,8 @@ from mcp_brasil._shared.formatting import markdown_table
 
 from . import client
 from .constants import BRASIL_BBOX
+
+UTC = timezone.utc
 
 
 def _epoch_utc(epoch: int | None) -> str:
