@@ -4,16 +4,16 @@
 
 # mcp-brasil
 
-**MCP Server para 69 fontes de dados públicas brasileiras**
+**MCP Server para 70 fontes de dados públicas brasileiras**
 
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-525 tools · 130 resources · 101 prompts · 69 features · 15 áreas temáticas
+533 tools · 131 resources · 102 prompts · 70 features · 15 áreas temáticas
 
 Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil — economia, legislação, transparência, judiciário, eleições, meio ambiente, saúde, educação, segurança pública, fiscal subnacional, aviação e mais.
 
-**65 APIs não requerem chave** · 4 usam chaves gratuitas (cadastro em 1 min)
+**66 APIs não requerem chave** · 4 usam chaves gratuitas (cadastro em 1 min)
 
 [Quick Start](#quick-start) · [Fontes de dados](#fontes-de-dados) · [Documentação](#documentação) · [Desenvolvimento](#desenvolvimento)
 
@@ -23,11 +23,11 @@ Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil 
 
 ## Features
 
-- **525 tools** em 69 features cobrindo 15 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, educação, segurança pública, compras públicas, fiscal subnacional, aviação, energia e mais
+- **533 tools** em 70 features cobrindo 15 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, educação, segurança pública, compras públicas, fiscal subnacional, aviação, energia e mais
 - **Datasets grandes com cache local** — SIAPA (~813k imóveis), TSE 2014-2024 (candidatos, bens, votação, redes sociais, FEFC), ANP preços de combustíveis, INEP Censo Escolar e ENEM, ISP-RJ segurança pública, ANAC aeronaves e voos regulares — SQL via DuckDB embedded, opt-in via env
 - **Cross-referencing** com `planejar_consulta` — cria planos de execução combinando múltiplas APIs (ex: gastos de um deputado + votações + proposições)
 - **Execução em lote** com `executar_lote` — dispara consultas em paralelo numa única chamada
-- **Smart discovery** — BM25 search transform filtra 525 tools para só mostrar as relevantes ao contexto
+- **Smart discovery** — BM25 search transform filtra 533 tools para só mostrar as relevantes ao contexto
 - **Auto-registry** — adicionar uma feature é criar uma pasta; zero configuração manual
 - **Async everywhere** — httpx async + Pydantic v2 + rate limiting com backoff
 
@@ -120,7 +120,8 @@ Conecte o server e faça perguntas em linguagem natural:
 
 | Feature | Fonte | Tools |
 |---------|-------|:-----:|
-| `bacen` | Banco Central — Selic, IPCA, câmbio, PIB e +190 séries temporais | 9 |
+| `bacen` | Banco Central — Selic, IPCA, câmbio, PIB e +190 séries temporais (SGS) | 9 |
+| `bcb_olinda` | Banco Central — PTAX (câmbio oficial), Expectativas Focus, taxas de juros bancárias | 8 |
 | `bndes` | BNDES — operações de financiamento, desembolsos, instituições credenciadas | 4 |
 | `ipeadata` | IPEADATA/Ipea — séries macro, regionais e sociais históricas (OData) | 5 |
 
