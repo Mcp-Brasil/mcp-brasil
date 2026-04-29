@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/jxnxts-mcp-brasil-badge.png)](https://mseep.ai/app/jxnxts-mcp-brasil)
+
 <div align="center">
 
 <img src="docs/assets/logo.png" alt="mcp-brasil logo" width="100">
