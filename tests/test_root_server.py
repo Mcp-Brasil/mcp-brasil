@@ -4,10 +4,12 @@ Tests the fully composed server with all features mounted.
 MCP_BRASIL_TOOL_SEARCH=none is set in conftest.py (before any import).
 """
 
-import pytest
-from fastmcp import Client
+import json
 
-from mcp_brasil.server import mcp
+import pytest
+from fastmcp import Client, FastMCP
+
+from mcp_brasil.server import RequestLoggingMiddleware, mcp
 
 
 class TestRootServerTools:
@@ -178,6 +180,56 @@ class TestRootServerAuth:
         from mcp_brasil.server import auth as root_auth
 
         assert root_auth is None
+
+
+class TestMiddlewareStringCoercion:
+    """RequestLoggingMiddleware coerces JSON string params before Pydantic validation."""
+
+    @pytest.mark.asyncio
+    async def test_arguments_string_coerced_to_dict(self) -> None:
+        """Middleware coerces 'arguments' JSON string → dict for call_tool-like tools."""
+        app = FastMCP("test")
+        app.add_middleware(RequestLoggingMiddleware())
+        received: dict = {}
+
+        @app.tool()
+        async def echo_args(arguments: dict) -> str:
+            received.update(arguments)
+            return "ok"
+
+        async with Client(app) as c:
+            result = await c.call_tool("echo_args", {"arguments": '{"key": "value"}'})
+            assert result.data == "ok"
+            assert received == {"key": "value"}
+
+    @pytest.mark.asyncio
+    async def test_arguments_invalid_json_string_passes_through(self) -> None:
+        """Invalid JSON string is not silently swallowed — Pydantic rejects it."""
+        app = FastMCP("test")
+        app.add_middleware(RequestLoggingMiddleware())
+
+        @app.tool()
+        async def echo_args(arguments: dict) -> str:
+            return "ok"
+
+        async with Client(app) as c:
+            with pytest.raises(Exception, match="Input should be a valid dictionary"):
+                await c.call_tool("echo_args", {"arguments": "nao-e-json"})
+
+    @pytest.mark.asyncio
+    async def test_consultas_string_coerced_to_list(self) -> None:
+        """Middleware coerces 'consultas' JSON string → list for executar_lote."""
+        consultas_json = json.dumps([{"tool": "listar_features", "args": {}}])
+        async with Client(mcp) as c:
+            result = await c.call_tool("executar_lote", {"consultas": consultas_json})
+            assert result.data
+
+    @pytest.mark.asyncio
+    async def test_consultas_invalid_json_string_passes_through(self) -> None:
+        """Invalid JSON string for 'consultas' is not silently swallowed — Pydantic rejects it."""
+        async with Client(mcp) as c:
+            with pytest.raises(Exception, match="Input should be a valid list"):
+                await c.call_tool("executar_lote", {"consultas": "nao-e-json"})
 
 
 class TestRootServerToolTags:

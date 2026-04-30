@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import importlib
 import inspect
+import json
 import logging
 import pkgutil
 from typing import TYPE_CHECKING, Any
@@ -89,6 +90,15 @@ async def execute_batch(
     async def _run_one(q: dict[str, Any]) -> tuple[str, str]:
         tool_name = q.get("tool", "")
         args = q.get("args", {})
+
+        if isinstance(args, str):
+            try:
+                args = json.loads(args)
+            except json.JSONDecodeError as exc:
+                return tool_name, f"'args' não é JSON válido: {exc}"
+        if not isinstance(args, dict):
+            return tool_name, f"'args' deve ser um objeto JSON, recebido: {type(args).__name__}"
+
         fn = _dispatch.get(tool_name)
 
         if fn is None:
