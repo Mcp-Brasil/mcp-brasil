@@ -1,7 +1,7 @@
 """HTTP client for the ComexStat feature.
 
 Endpoints:
-    - POST /general/query              → _query (export/import data)
+    - POST /general              → _query (export/import data)
     - GET  /general/filters/country   → listar_paises
 """
 
@@ -10,10 +10,20 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from mcp_brasil._shared.http_client import http_get, http_post
+from curl_cffi.requests import AsyncSession
+
+from mcp_brasil._shared.http_client import http_get
 from mcp_brasil._shared.rate_limiter import RateLimiter
 
-from .constants import COUNTRY_URL, FLOW_EXPORT, FLOW_IMPORT, METRIC_FOB, METRIC_KG, QUERY_URL
+from .constants import (
+    COUNTRY_URL,
+    FLOW_EXPORT,
+    FLOW_IMPORT,
+    METRIC_FOB,
+    METRIC_KG,
+    QUERY_URL,
+    REQUEST_HEADERS,
+)
 from .schemas import BalancaItem, ComexItem, PaisItem
 
 _rate_limiter = RateLimiter(max_requests=30, period=60.0)
@@ -21,12 +31,11 @@ _rate_limiter = RateLimiter(max_requests=30, period=60.0)
 
 def _build_periodo(row: dict[str, Any], month_detail: bool) -> str:
     """Extract a YYYY-MM or YYYY period string from a ComexStat row."""
+    year = str(row.get("year", ""))
     if month_detail:
-        ano_mes = str(row.get("coAnoMes", ""))
-        if len(ano_mes) == 6:
-            return f"{ano_mes[:4]}-{ano_mes[4:]}"
-        return ano_mes
-    return str(row.get("coAno", ""))
+        month = str(row.get("monthNumber", "")).zfill(2)
+        return f"{year}-{month}" if year else ""
+    return year
 
 
 async def _query(
@@ -38,7 +47,12 @@ async def _query(
     metrics: list[str],
     month_detail: bool,
 ) -> list[dict[str, Any]]:
-    """POST to ComexStat query endpoint and return the data list."""
+    """POST to ComexStat query endpoint and return the data list.
+
+    Uses curl_cffi to impersonate Chrome TLS fingerprint, bypassing
+    Cloudflare WAF which blocks non-browser TLS on POST /general.
+    Retries once after 12s on HTTP 429 (API rate limit window is 10s).
+    """
     body: dict[str, Any] = {
         "flow": flow,
         "period": {"from": period_from, "to": period_to},
@@ -47,8 +61,20 @@ async def _query(
         "metrics": metrics,
         "monthDetail": month_detail,
     }
-    async with _rate_limiter:
-        raw: dict[str, Any] = await http_post(QUERY_URL, json_body=body)
+    async with _rate_limiter, AsyncSession(impersonate="chrome124") as session:
+        for attempt in range(2):
+            response = await session.post(
+                QUERY_URL,
+                json=body,
+                headers=REQUEST_HEADERS,
+                timeout=30,
+            )
+            if response.status_code == 429 and attempt == 0:
+                await asyncio.sleep(12)
+                continue
+            response.raise_for_status()
+            break
+        raw: dict[str, Any] = response.json()
     data: dict[str, Any] = raw.get("data") or {}
     return list(data.get("list") or [])
 
@@ -57,8 +83,8 @@ def _rows_to_comex(rows: list[dict[str, Any]], month_detail: bool) -> list[Comex
     return [
         ComexItem(
             periodo=_build_periodo(row, month_detail),
-            pais=row.get("noPaisPt") or row.get("noPais") or None,
-            ncm=row.get("coNcm") or None,
+            pais=row.get("country") or None,
+            ncm=row.get("ncm") or None,
             fob_usd=float(row.get("metricFOB") or 0),
             kg_liquido=float(row.get("metricKG") or 0),
         )
@@ -127,13 +153,17 @@ async def balanca_comercial(
     periodo_fim: str,
     ncm: str | None = None,
 ) -> list[BalancaItem]:
-    """Compute trade balance (exports FOB - imports FOB) per month."""
+    """Compute trade balance (exports FOB - imports FOB) per period."""
     filters: list[dict[str, Any]] = []
     if ncm:
         filters.append({"filter": "ncm", "values": [ncm]})
-    exp_rows, imp_rows = await asyncio.gather(
-        _query(FLOW_EXPORT, periodo_inicio, periodo_fim, [], filters, [METRIC_FOB], True),
-        _query(FLOW_IMPORT, periodo_inicio, periodo_fim, [], filters, [METRIC_FOB], True),
+    # Sequential with delay — concurrent POSTs trigger API 429 rate limit
+    exp_rows = await _query(
+        FLOW_EXPORT, periodo_inicio, periodo_fim, [], filters, [METRIC_FOB], True
+    )
+    await asyncio.sleep(3)
+    imp_rows = await _query(
+        FLOW_IMPORT, periodo_inicio, periodo_fim, [], filters, [METRIC_FOB], True
     )
 
     exp_by: dict[str, float] = {}
@@ -161,12 +191,14 @@ async def balanca_comercial(
 async def listar_paises() -> list[PaisItem]:
     """Fetch available countries from ComexStat filters."""
     async with _rate_limiter:
-        raw: dict[str, Any] = await http_get(COUNTRY_URL)
-    items: list[dict[str, Any]] = raw.get("data", {}).get("list", [])
+        raw: dict[str, Any] = await http_get(COUNTRY_URL, headers=REQUEST_HEADERS)
+    # API returns {"data": [[{id, text}, ...]]} — outer list wraps one inner list
+    data_raw: list[Any] = raw.get("data") or []
+    items: list[dict[str, Any]] = data_raw[0] if data_raw else []
     return [
         PaisItem(
-            id=str(item.get("id_country", "")),
-            nome=item.get("no_country_pt") or item.get("no_country_en", ""),
+            id=str(item.get("id", "")),
+            nome=item.get("text", ""),
         )
         for item in items
     ]
