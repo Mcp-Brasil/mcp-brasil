@@ -16,28 +16,30 @@ from mcp_brasil.data.siscomex import client
 from mcp_brasil.data.siscomex.constants import NCM_BASE_URL
 from mcp_brasil.data.siscomex.schemas import NcmItem
 
-_NCM_SAMPLE: list[dict] = [
-    {
-        "codigo": "01031000",
-        "descricao": "Reprodutores de raça pura",
-        "dataUltimaAlteracao": "2024-01-01",
-        "dataInicio": "2022-01-01",
-        "dataFim": None,
-        "tipoOrgaoAtoIni": "Resolução",
-        "numeroAtoIni": "123",
-        "anoAtoIni": 2022,
-    },
-    {
-        "codigo": "01039000",
-        "descricao": "Outros suínos vivos",
-        "dataUltimaAlteracao": "2020-01-01",
-        "dataInicio": "2019-01-01",
-        "dataFim": "2021-12-31",
-        "tipoOrgaoAtoIni": None,
-        "numeroAtoIni": None,
-        "anoAtoIni": None,
-    },
-]
+_NCM_SAMPLE: dict = {
+    "Data_Ultima_Atualizacao_NCM": "Vigente em 11/05/2026",
+    "Ato": "Resolução Gecex nº 812/2025",
+    "Nomenclaturas": [
+        {
+            "Codigo": "01031000",
+            "Descricao": "Reprodutores de raça pura",
+            "Data_Inicio": "01/01/2022",
+            "Data_Fim": "31/12/9999",
+            "Tipo_Ato_Ini": "Resolução",
+            "Numero_Ato_Ini": "123",
+            "Ano_Ato_Ini": "2022",
+        },
+        {
+            "Codigo": "01039000",
+            "Descricao": "Outros suínos vivos",
+            "Data_Inicio": "01/01/2019",
+            "Data_Fim": "31/12/2021",
+            "Tipo_Ato_Ini": None,
+            "Numero_Ato_Ini": None,
+            "Ano_Ato_Ini": None,
+        },
+    ],
+}
 
 
 def _reset_cache() -> None:
@@ -75,7 +77,7 @@ class TestFetchAll:
         assert len(result) == 2
         assert result[0].codigo == "01031000"
         assert result[0].descricao == "Reprodutores de raça pura"
-        assert result[1].dataFim == "2021-12-31"
+        assert result[1].dataFim == "31/12/2021"
 
     @pytest.mark.asyncio
     @respx.mock
