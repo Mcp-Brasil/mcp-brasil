@@ -9,11 +9,11 @@
 
 [![License: MIT (code)](https://img.shields.io/badge/code-MIT-yellow.svg)](LICENSE) [![Sources: see SOURCES.md](https://img.shields.io/badge/data-see%20SOURCES.md-blue)](SOURCES.md) [![AUP](https://img.shields.io/badge/use-ACCEPTABLE__USE.md-orange)](ACCEPTABLE_USE.md)
 
-533 tools · 131 resources · 102 prompts · 70 features · 15 áreas temáticas
+539 tools · 131 resources · 102 prompts · 72 features · 16 áreas temáticas
 
 Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil — economia, legislação, transparência, judiciário, eleições, meio ambiente, saúde, educação, segurança pública, fiscal subnacional, aviação e mais.
 
-**66 APIs não requerem chave** · 4 usam chaves gratuitas (cadastro em 1 min)
+**68 APIs não requerem chave** · 4 usam chaves gratuitas (cadastro em 1 min)
 
 [Quick Start](#quick-start) · [Fontes de dados](#fontes-de-dados) · [Documentação](#documentação) · [Desenvolvimento](#desenvolvimento)
 
@@ -128,6 +128,13 @@ Conecte o server e faça perguntas em linguagem natural:
 | `bcb_olinda` | Banco Central — PTAX (câmbio oficial), Expectativas Focus, taxas de juros bancárias | 8 |
 | `bndes` | BNDES — operações de financiamento, desembolsos, instituições credenciadas | 4 |
 | `ipeadata` | IPEADATA/Ipea — séries macro, regionais e sociais históricas (OData) | 5 |
+
+### Comércio Exterior
+
+| Feature | Fonte | Tools |
+|---------|-------|:-----:|
+| `comexstat` | ComexStat MDIC — exportações e importações brasileiras por NCM, país e período (desde 1997) | 4 |
+| `siscomex` | Portal Único Siscomex — Nomenclatura Comum do Mercosul (NCM) oficial com rastreamento de vigência | 2 |
 
 ### Geografia e Estatística
 
@@ -324,7 +331,7 @@ META_ACCESS_TOKEN=seu-token
 |--------|-----------|
 | [Quick Start](docs/guide/quickstart.md) | Instalação e configuração em 2 minutos |
 | [Arquitetura](docs/concepts/architecture.md) | Como o projeto funciona por dentro |
-| [Catálogo de Features](docs/reference/features.md) | Todas as 69 features e 525 tools |
+| [Catálogo de Features](docs/reference/features.md) | Todas as 72 features e 539 tools |
 | [Datasets locais (DuckDB)](docs/guide/datasets.md) | SIAPA + TSE 2014-2024 via SQL embedded |
 | [Smart Tools](docs/reference/smart-tools.md) | Meta-tools: planner, batch, discovery |
 | [Adicionando Features](docs/guide/adding-features.md) | Guia para contribuir com novas APIs |
@@ -360,7 +367,7 @@ src/mcp_brasil/
 ├── server.py              # Auto-registry (nunca editado manualmente)
 ├── _shared/               # Utilitários compartilhados
 │   └── datasets/          # Infra DuckDB local
-├── data/                  # 51 features — REST passthrough
+├── data/                  # 53 features — REST passthrough
 │   ├── ibge/
 │   │   ├── __init__.py    # FEATURE_META
 │   │   ├── server.py      # FastMCP instance
