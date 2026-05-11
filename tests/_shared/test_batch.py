@@ -161,6 +161,48 @@ class TestExecuteBatch:
         assert "Erro" in result
 
 
+class TestExecuteBatchStringArgs:
+    def teardown_method(self) -> None:
+        for key in ("feriados", "some_tool", "typed_tool"):
+            batch._dispatch.pop(key, None)
+
+    @pytest.mark.asyncio
+    async def test_args_as_json_string(self) -> None:
+        """Should accept args as JSON string and execute the tool normally."""
+
+        async def tool(ano: int) -> str:
+            return f"ano={ano}"
+
+        batch._dispatch["feriados"] = tool
+        ctx = _mock_ctx()
+        result = await batch.execute_batch([{"tool": "feriados", "args": '{"ano": 2026}'}], ctx)
+        assert "ano=2026" in result
+
+    @pytest.mark.asyncio
+    async def test_args_invalid_json_string_returns_error(self) -> None:
+        """Invalid JSON string should return an error in the result, not raise an exception."""
+
+        async def tool(x: int) -> str:
+            return "ok"
+
+        batch._dispatch["some_tool"] = tool
+        ctx = _mock_ctx()
+        result = await batch.execute_batch([{"tool": "some_tool", "args": "nao-e-json"}], ctx)
+        assert "não é JSON válido" in result
+
+    @pytest.mark.asyncio
+    async def test_args_wrong_type_returns_error(self) -> None:
+        """Invalid type (e.g. list) should return a descriptive error, not raise an exception."""
+
+        async def tool(x: int) -> str:
+            return "ok"
+
+        batch._dispatch["typed_tool"] = tool
+        ctx = _mock_ctx()
+        result = await batch.execute_batch([{"tool": "typed_tool", "args": [1, 2, 3]}], ctx)
+        assert "deve ser um objeto JSON" in result
+
+
 def _real_registry() -> batch.FeatureRegistry:
     """Build a real registry from the project for integration testing."""
     from mcp_brasil._shared.feature import FeatureRegistry

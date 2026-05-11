@@ -9,6 +9,7 @@ Usage:
     fastmcp run mcp_brasil.server:mcp --transport http --port 8000
 """
 
+import json
 import logging
 import pathlib
 import time
@@ -49,6 +50,22 @@ class RequestLoggingMiddleware(Middleware):
         name = context.message.name
         logger.info("Tool call: %s", name)
         start = time.monotonic()
+
+        # Models that serialize dict/list as JSON string — fix before Pydantic validation.
+        args = context.message.arguments or {}
+        if isinstance(args.get("arguments"), str):
+            try:
+                args["arguments"] = json.loads(args["arguments"])
+                logger.warning("Tool %s: 'arguments' recebido como string JSON — corrigido", name)
+            except json.JSONDecodeError:
+                pass  # let Pydantic reject with its original message
+        if isinstance(args.get("consultas"), str):
+            try:
+                args["consultas"] = json.loads(args["consultas"])
+                logger.warning("Tool %s: 'consultas' recebido como string JSON — corrigido", name)
+            except json.JSONDecodeError:
+                pass
+
         result = await call_next(context)
         elapsed = time.monotonic() - start
         logger.info("Tool %s completed in %.2fs", name, elapsed)
