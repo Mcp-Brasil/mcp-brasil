@@ -47,6 +47,21 @@ pip install mcp-brasil
 uv add mcp-brasil
 ```
 
+### Google Antigravity
+
+Adicione o bloco abaixo ao seu arquivo `mcp_config.json` (acessível no Antigravity em **MCP Servers -> View raw config** ou localizado em `~/.gemini/antigravity/mcp_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "mcp-brasil": {
+      "command": "uvx",
+      "args": ["--from", "mcp-brasil", "python", "-m", "mcp_brasil.server"]
+    }
+  }
+}
+```
+
 ### Claude Desktop
 
 Adicione ao `claude_desktop_config.json`:
