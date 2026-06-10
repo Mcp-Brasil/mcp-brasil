@@ -9,19 +9,25 @@ Usage:
     fastmcp run mcp_brasil.server:mcp --transport http --port 8000
 """
 
+import asyncio
 import logging
+import os
 import pathlib
 import time
+from collections.abc import AsyncIterator
 
+import anyio
 import mcp.types as mt
 import starlette.responses
 from fastmcp import Context, FastMCP
 from fastmcp.prompts import PromptResult
 from fastmcp.resources import ResourceResult
+from fastmcp.server.lifespan import lifespan
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools import ToolResult
 from starlette.responses import JSONResponse
 
+from . import __version__
 from ._shared.auth import build_auth
 from ._shared.batch import build_dispatch, execute_batch
 from ._shared.feature import FeatureRegistry
@@ -78,6 +84,80 @@ class RequestLoggingMiddleware(Middleware):
 # ---------------------------------------------------------------------------
 auth = build_auth()
 
+
+# ---------------------------------------------------------------------------
+# Feature registration — lazy & loop-safe (ADR-005, hardened)
+#
+# Importing the 42 feature modules takes 1-40 s under load. Doing it at import
+# time blocks the MCP `initialize` handshake and causes client-side timeouts
+# (Claude Desktop's 60 s limit). We answer the handshake immediately and run
+# registration as a background task ON THE EVENT LOOP (started from the
+# lifespan), so the only mutation of the live FastMCP tool catalog
+# (`mount_all`) happens on the loop thread — no cross-thread mutation race.
+# The heavy, pure-import discovery is offloaded to a worker thread; it only
+# populates the registry's own structures, never the live server.
+#
+# Tool calls that arrive before registration finishes wait on an `anyio.Event`
+# (loop-native — no threadpool worker is consumed while waiting).
+#
+# MCP_BRASIL_EAGER_REGISTRATION=1 restores synchronous import-time
+# registration (used by tests that import this module and expect a populated
+# registry).
+# ---------------------------------------------------------------------------
+registry = FeatureRegistry()
+_registry_ready = anyio.Event()
+_registration_task: asyncio.Task[None] | None = None
+_EAGER = os.environ.get("MCP_BRASIL_EAGER_REGISTRATION", "").lower() in {"1", "true", "yes"}
+
+
+def _discover_all() -> None:
+    """Import & index all feature modules. Pure registry work — safe off-loop."""
+    registry.discover("mcp_brasil.data")
+    registry.discover("mcp_brasil.agentes")
+    registry.discover("mcp_brasil.datasets")  # ADR-004 — gated by MCP_BRASIL_DATASETS env
+
+
+async def _register_features() -> None:
+    """Discover (off-loop) then mount (on-loop). Runs once."""
+    try:
+        await anyio.to_thread.run_sync(_discover_all)
+        registry.mount_all(mcp)  # mutates the live server — on the loop thread
+        build_dispatch(registry)  # batch dispatch table for executar_lote
+        logger.info("\n%s", registry.summary())
+    except Exception:
+        # Never let a feature import failure leave clients blocked forever —
+        # log and still release the gate (degrade gracefully).
+        logger.exception("Feature registration failed; serving with partial registry")
+    finally:
+        _registry_ready.set()
+
+
+@lifespan
+async def _registration_lifespan(server: FastMCP) -> AsyncIterator[None]:
+    """Start feature registration on the event loop once serving begins."""
+    global _registration_task
+    if not _EAGER and not _registry_ready.is_set():
+        _registration_task = asyncio.create_task(
+            _register_features(), name="mcp-brasil-registry"
+        )
+    yield None
+    if _registration_task is not None:
+        _registration_task.cancel()
+
+
+class WaitForRegistryMiddleware(Middleware):
+    """Hold tool calls until background feature registration completes."""
+
+    async def on_call_tool(
+        self,
+        context: MiddlewareContext[mt.CallToolRequestParams],
+        call_next: CallNext[mt.CallToolRequestParams, ToolResult],
+    ) -> ToolResult:
+        if not _registry_ready.is_set():
+            logger.info("Tool call before registry ready — awaiting registration")
+            await _registry_ready.wait()
+        return await call_next(context)
+
 # ---------------------------------------------------------------------------
 # Server setup
 # ---------------------------------------------------------------------------
@@ -91,7 +171,8 @@ _LOGO_URL = f"{MCP_BRASIL_BASE_URL.rstrip('/')}/logo.png" if MCP_BRASIL_BASE_URL
 # Create the root server
 mcp = FastMCP(
     "mcp-brasil 🇧🇷",
-    lifespan=http_lifespan,
+    version=__version__,
+    lifespan=http_lifespan | _registration_lifespan,
     auth=auth,
     icons=[mt.Icon(src=_LOGO_URL, mimeType="image/png")],
     website_url="https://github.com/Mcp-Brasil/mcp-brasil",
@@ -99,6 +180,7 @@ mcp = FastMCP(
 
 # Add middleware
 mcp.add_middleware(RequestLoggingMiddleware())
+mcp.add_middleware(WaitForRegistryMiddleware())
 
 
 # Health check endpoint (no auth required)
@@ -119,17 +201,16 @@ async def logo(request: object) -> starlette.responses.Response:
     return starlette.responses.Response(status_code=404)
 
 
-# Auto-discover and mount all features
-registry = FeatureRegistry()
-registry.discover("mcp_brasil.data")
-registry.discover("mcp_brasil.agentes")
-registry.discover("mcp_brasil.datasets")  # ADR-004 — gated by MCP_BRASIL_DATASETS env
-registry.mount_all(mcp)
-
-logger.info("\n%s", registry.summary())
-
-# Build batch dispatch table for executar_lote
-build_dispatch(registry)
+# Feature registration.
+# Lazy path (default): kicked off on the event loop by `_registration_lifespan`.
+# Eager path (MCP_BRASIL_EAGER_REGISTRATION=1): register synchronously now, so
+# tests that import this module see a fully populated registry.
+if _EAGER:
+    _discover_all()
+    registry.mount_all(mcp)
+    build_dispatch(registry)
+    logger.info("\n%s", registry.summary())
+    _registry_ready.set()
 
 
 # Expose a meta-tool for introspection
@@ -308,7 +389,7 @@ elif TOOL_SEARCH == "code_mode":
         )
 
 else:
-    logger.info("Tool search: none (all %d+ tools visible)", len(registry.features))
+    logger.info("Tool search: none (all tools visible after registration)")
 
 
 if __name__ == "__main__":
