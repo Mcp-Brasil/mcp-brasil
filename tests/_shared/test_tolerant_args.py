@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 from mcp_brasil._shared.tolerant_args import normalize_json_string_args
 
 
@@ -69,3 +71,31 @@ class TestSeguranca:
         args: dict[str, object] = {}
         normalize_json_string_args("executar_lote", args)
         assert args == {}
+
+
+class TestCallToolE2E:
+    """e2e do caminho `call_tool` (transform BM25) com `arguments` como string JSON."""
+
+    @pytest.mark.asyncio
+    async def test_call_tool_aceita_arguments_string_json(self) -> None:
+        from fastmcp import Client, Context, FastMCP
+        from fastmcp.server.transforms.search import BM25SearchTransform
+
+        from mcp_brasil._shared.tolerant_args import TolerantArgumentsMiddleware
+
+        mcp = FastMCP("test-call-tool")
+        mcp.add_middleware(TolerantArgumentsMiddleware())
+
+        @mcp.tool
+        async def eco(valor: str, ctx: Context) -> str:
+            return f"eco:{valor}"
+
+        mcp.add_transform(BM25SearchTransform(max_results=5, always_visible=["eco"]))
+
+        async with Client(mcp) as c:
+            result = await c.call_tool(
+                "call_tool",
+                {"name": "eco", "arguments": json.dumps({"valor": "oi"})},
+            )
+        # Sem a normalização, `arguments` (string) seria rejeitado por validação.
+        assert "eco:oi" in str(result.data)
