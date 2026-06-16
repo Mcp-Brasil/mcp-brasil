@@ -4,6 +4,8 @@ Tests the fully composed server with all features mounted.
 MCP_BRASIL_TOOL_SEARCH=none is set in conftest.py (before any import).
 """
 
+import json
+
 import pytest
 from fastmcp import Client
 
@@ -166,6 +168,18 @@ class TestExecutarLote:
             tool = next(t for t in tools if t.name == "executar_lote")
             assert tool.description
             assert "paralelo" in tool.description.lower()
+
+    @pytest.mark.asyncio
+    async def test_aceita_consultas_como_string_json(self) -> None:
+        # Issue #8: modelos que serializam `consultas` como string JSON não devem
+        # ser rejeitados por erro de validação — a string é normalizada antes.
+        consultas = [{"tool": "tool_inexistente", "args": {}}]
+        async with Client(mcp) as c:
+            result = await c.call_tool(
+                "executar_lote", {"consultas": json.dumps(consultas)}
+            )
+        # O lote roda (sem ValidationError); a tool inexistente vira mensagem no resultado.
+        assert result.data is not None
 
 
 class TestRootServerAuth:
