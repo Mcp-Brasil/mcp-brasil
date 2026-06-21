@@ -21,6 +21,7 @@ from collections.abc import Callable
 from typing import Any, TypeVar
 
 F = TypeVar("F", bound=Callable[..., Any])
+_MISSING = object()
 
 
 class TTLCache:
@@ -40,15 +41,15 @@ class TTLCache:
         """Number of entries currently in cache (including expired)."""
         return len(self._store)
 
-    def get(self, key: str) -> Any | None:
+    def get(self, key: str, default: Any = None) -> Any:
         """Get a value if it exists and hasn't expired."""
         entry = self._store.get(key)
         if entry is None:
-            return None
+            return default
         expires_at, value = entry
         if time.monotonic() > expires_at:
             del self._store[key]
-            return None
+            return default
         return value
 
     def set(self, key: str, value: Any) -> None:
@@ -97,8 +98,8 @@ def ttl_cache(ttl: float = 300.0, maxsize: int = 256) -> Callable[[F], F]:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             key = f"{func.__qualname__}:{args!r}:{kwargs!r}"
-            cached = cache.get(key)
-            if cached is not None:
+            cached = cache.get(key, _MISSING)
+            if cached is not _MISSING:
                 return cached
             result = await func(*args, **kwargs)
             cache.set(key, result)
