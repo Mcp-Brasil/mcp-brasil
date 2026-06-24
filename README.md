@@ -4,6 +4,15 @@
 
 # mcp-brasil
 
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=mcp-brasil">
+    <img src="assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="140" />
+  </a>
+  <br />
+  <sub><strong>Atlas Cloud</strong> Atlas Cloud provides OpenAI-compatible LLM APIs and async image/video generation APIs for MCP workflows, tools, and multimodal data handling.</sub>
+</p>
+
+
 **MCP Server para 70 fontes de dados públicas brasileiras**
 
 
