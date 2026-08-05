@@ -9,7 +9,7 @@ FEATURE_META = FeatureMeta(
         "via API de Dados Abertos do SIM (Sistema de Informações Municipais)."
     ),
     version="0.1.0",
-    api_base="https://api-dados-abertos.tce.ce.gov.br",
+    api_base="https://api-dados-abertos.tce.ce.gov.br/sim",
     requires_auth=False,
     tags=["tce", "ce", "licitacoes", "contratos", "empenhos"],
 )
