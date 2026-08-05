@@ -33,9 +33,7 @@ from .schemas import (
 async def listar_municipios() -> list[Municipio]:
     """Lista todos os municípios cearenses."""
     raw: dict[str, Any] = await http_get(MUNICIPIOS_URL)
-    items = raw.get("data", [])
-    if isinstance(items, dict):
-        items = items.get("data", [])
+    items = raw.get("elements", [])
     return [
         Municipio(
             codigo_municipio=str(item.get("codigo_municipio", "")),
@@ -56,14 +54,18 @@ async def buscar_licitacoes(
         codigo_municipio: Código do município (ex: "057" para Fortaleza).
         data_realizacao: Data ou intervalo (yyyy-mm-dd ou yyyy-mm-dd_yyyy-mm-dd).
     """
+    if "_" in data_realizacao:
+        data_inicio, data_fim = data_realizacao.split("_", 1)
+    else:
+        data_inicio = data_fim = data_realizacao
+
     params: dict[str, Any] = {
         "codigo_municipio": codigo_municipio,
-        "data_realizacao_autuacao_licitacao": data_realizacao,
+        "data_inicio": data_inicio,
+        "data_fim": data_fim,
     }
     raw: dict[str, Any] = await http_get(LICITACOES_URL, params=params)
-    items = raw.get("data", [])
-    if isinstance(items, dict):
-        items = items.get("data", [])
+    items = raw.get("elements", [])
     return [
         Licitacao(
             codigo_municipio=str(item.get("codigo_municipio", "")),
@@ -99,17 +101,11 @@ async def buscar_contratos(
     params: dict[str, Any] = {
         "codigo_municipio": codigo_municipio,
         "data_contrato": data_contrato,
-        "quantidade": quantidade,
-        "deslocamento": deslocamento,
+        "$start_index": deslocamento,
     }
     raw: dict[str, Any] = await http_get(CONTRATOS_URL, params=params)
-    data = raw.get("data", {})
-    if isinstance(data, list):
-        items = data
-        total = len(items)
-    else:
-        items = data.get("data", [])
-        total = data.get("total", len(items))
+    items = raw.get("elements", [])
+    total = raw.get("total", len(items))
     contratos = [
         Contrato(
             codigo_municipio=str(item.get("codigo_municipio", "")),
@@ -148,17 +144,11 @@ async def buscar_empenhos(
         "codigo_municipio": codigo_municipio,
         "data_referencia_empenho": data_referencia,
         "codigo_orgao": codigo_orgao,
-        "quantidade": quantidade,
-        "deslocamento": deslocamento,
+        "$start_index": deslocamento,
     }
     raw: dict[str, Any] = await http_get(EMPENHOS_URL, params=params)
-    data = raw.get("data", {})
-    if isinstance(data, list):
-        items = data
-        total = len(items)
-    else:
-        items = data.get("data", [])
-        total = data.get("total", len(items))
+    items = raw.get("elements", [])
+    total = raw.get("total", len(items))
     empenhos = [
         Empenho(
             codigo_municipio=item.get("codigo_municipio"),
