@@ -49,14 +49,19 @@ uv add mcp-brasil
 
 ### Google Antigravity
 
-Adicione o bloco abaixo ao seu arquivo `mcp_config.json` (acessível no Antigravity em **MCP Servers -> View raw config** ou localizado em `~/.gemini/antigravity/mcp_config.json`):
+Adicione o bloco abaixo ao seu `mcp_config.json` — acessível em **MCP Servers → Manage MCP Servers → View raw config**, ou editando direto `~/.gemini/config/mcp_config.json` (global) / `.agents/mcp_config.json` (workspace):
 
 ```json
 {
   "mcpServers": {
     "mcp-brasil": {
       "command": "uvx",
-      "args": ["--from", "mcp-brasil", "python", "-m", "mcp_brasil.server"]
+      "args": ["--from", "mcp-brasil", "python", "-m", "mcp_brasil.server"],
+      "env": {
+        "TRANSPARENCIA_API_KEY": "sua-chave-aqui",
+        "DATAJUD_API_KEY": "sua-chave-aqui",
+        "META_ACCESS_TOKEN": "seu-token-aqui"
+      }
     }
   }
 }
