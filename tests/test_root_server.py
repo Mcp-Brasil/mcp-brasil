@@ -175,9 +175,7 @@ class TestExecutarLote:
         # ser rejeitados por erro de validação — a string é normalizada antes.
         consultas = [{"tool": "tool_inexistente", "args": {}}]
         async with Client(mcp) as c:
-            result = await c.call_tool(
-                "executar_lote", {"consultas": json.dumps(consultas)}
-            )
+            result = await c.call_tool("executar_lote", {"consultas": json.dumps(consultas)})
         # O lote roda (sem ValidationError); a tool inexistente vira mensagem no resultado.
         assert result.data is not None
 
