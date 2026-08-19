@@ -22,6 +22,7 @@ from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools import ToolResult
 from starlette.responses import JSONResponse
 
+from . import __version__
 from ._shared.auth import build_auth
 from ._shared.batch import build_dispatch, execute_batch
 from ._shared.feature import FeatureRegistry
@@ -92,6 +93,7 @@ _LOGO_URL = f"{MCP_BRASIL_BASE_URL.rstrip('/')}/logo.png" if MCP_BRASIL_BASE_URL
 # Create the root server
 mcp = FastMCP(
     "mcp-brasil 🇧🇷",
+    version=__version__,
     lifespan=http_lifespan,
     auth=auth,
     icons=[mt.Icon(src=_LOGO_URL, mimeType="image/png")],
