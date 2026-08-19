@@ -55,6 +55,20 @@ class TestTTLCache:
 
 class TestTtlCacheDecorator:
     @pytest.mark.asyncio
+    async def test_caches_none_result(self) -> None:
+        call_count = 0
+
+        @ttl_cache(ttl=60)
+        async def fetch_optional() -> None:
+            nonlocal call_count
+            call_count += 1
+            return None
+
+        assert await fetch_optional() is None
+        assert await fetch_optional() is None
+        assert call_count == 1
+
+    @pytest.mark.asyncio
     async def test_caches_result(self) -> None:
         call_count = 0
 

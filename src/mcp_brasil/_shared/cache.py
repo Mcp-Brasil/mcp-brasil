@@ -21,6 +21,7 @@ from collections.abc import Callable
 from typing import Any, TypeVar
 
 F = TypeVar("F", bound=Callable[..., Any])
+_MISSING = object()
 
 
 class TTLCache:
@@ -40,15 +41,22 @@ class TTLCache:
         """Number of entries currently in cache (including expired)."""
         return len(self._store)
 
-    def get(self, key: str) -> Any | None:
-        """Get a value if it exists and hasn't expired."""
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get a value if it exists and hasn't expired.
+
+        Args:
+            key: Cache key.
+            default: Returned when the key is absent or expired. Pass a unique
+                sentinel to distinguish "not cached" from a cached ``None``;
+                ``None`` alone cannot tell the two apart.
+        """
         entry = self._store.get(key)
         if entry is None:
-            return None
+            return default
         expires_at, value = entry
         if time.monotonic() > expires_at:
             del self._store[key]
-            return None
+            return default
         return value
 
     def set(self, key: str, value: Any) -> None:
@@ -79,6 +87,13 @@ def ttl_cache(ttl: float = 300.0, maxsize: int = 256) -> Callable[[F], F]:
 
     Cache key is built from function name + stringified args/kwargs.
 
+    Every result is cached, **including ``None``** ("negative caching"). This is
+    deliberate: a function that legitimately returns ``None`` should not be
+    re-executed on every call. The trade-off is that a caller which swallows an
+    exception and returns ``None`` will have that failure frozen for ``ttl``
+    seconds. Clients should raise on transport errors rather than returning
+    ``None``, so the failure is never cached in the first place.
+
     Args:
         ttl: Time-to-live in seconds. Default: 300 (5 minutes).
         maxsize: Maximum cache entries. Default: 256.
@@ -97,8 +112,8 @@ def ttl_cache(ttl: float = 300.0, maxsize: int = 256) -> Callable[[F], F]:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             key = f"{func.__qualname__}:{args!r}:{kwargs!r}"
-            cached = cache.get(key)
-            if cached is not None:
+            cached = cache.get(key, _MISSING)
+            if cached is not _MISSING:
                 return cached
             result = await func(*args, **kwargs)
             cache.set(key, result)
