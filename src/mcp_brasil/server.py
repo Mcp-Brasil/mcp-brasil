@@ -26,6 +26,7 @@ from ._shared.auth import build_auth
 from ._shared.batch import build_dispatch, execute_batch
 from ._shared.feature import FeatureRegistry
 from ._shared.lifespan import http_lifespan
+from ._shared.tolerant_args import TolerantArgumentsMiddleware
 from .settings import MCP_BRASIL_BASE_URL, TOOL_SEARCH
 
 logging.basicConfig(
@@ -99,6 +100,8 @@ mcp = FastMCP(
 
 # Add middleware
 mcp.add_middleware(RequestLoggingMiddleware())
+# Tolera `consultas`/`arguments` enviados como string JSON (ver _shared/tolerant_args.py)
+mcp.add_middleware(TolerantArgumentsMiddleware())
 
 
 # Health check endpoint (no auth required)
