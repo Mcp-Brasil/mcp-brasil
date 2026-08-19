@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import importlib
 import inspect
+import json
 import logging
 import pkgutil
 from typing import TYPE_CHECKING, Any
@@ -89,6 +90,20 @@ async def execute_batch(
     async def _run_one(q: dict[str, Any]) -> tuple[str, str]:
         tool_name = q.get("tool", "")
         args = q.get("args", {})
+
+        # Alguns modelos serializam `args` como string JSON em vez de objeto
+        # (ver #8). O middleware de tolerant_args cobre os campos de topo do
+        # call_tool/executar_lote, mas nao este `args` aninhado de cada
+        # consulta do lote — sem isto, `fn(**args)` estoura com
+        # "argument after ** must be a mapping, not str".
+        if isinstance(args, str):
+            try:
+                args = json.loads(args)
+            except json.JSONDecodeError as exc:
+                return tool_name, f"'args' não é JSON válido: {exc}"
+        if not isinstance(args, dict):
+            return tool_name, f"'args' deve ser um objeto JSON, recebido: {type(args).__name__}"
+
         fn = _dispatch.get(tool_name)
 
         if fn is None:

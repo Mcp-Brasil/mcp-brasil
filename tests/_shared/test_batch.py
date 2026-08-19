@@ -161,6 +161,67 @@ class TestExecuteBatch:
         assert "Erro" in result
 
 
+class TestExecuteBatchStringArgs:
+    """Cobre o `args` aninhado de cada consulta do lote (issue #8).
+
+    O middleware de `tolerant_args` trata os campos de topo (`arguments` do
+    call_tool, `consultas` do executar_lote); este `args` fica um nivel abaixo
+    e nao e alcancado por ele.
+    """
+
+    def teardown_method(self) -> None:
+        for key in ("feriados", "some_tool", "typed_tool"):
+            batch._dispatch.pop(key, None)
+
+    @pytest.mark.asyncio
+    async def test_args_as_json_string(self) -> None:
+        """String JSON valida deve ser coagida e a tool executar normalmente."""
+
+        async def tool(ano: int) -> str:
+            return f"ano={ano}"
+
+        batch._dispatch["feriados"] = tool
+        ctx = _mock_ctx()
+        result = await batch.execute_batch([{"tool": "feriados", "args": '{"ano": 2026}'}], ctx)
+        assert "ano=2026" in result
+
+    @pytest.mark.asyncio
+    async def test_args_dict_still_works(self) -> None:
+        """Nao-regressao: dict continua sendo o caminho normal, sem coercao."""
+
+        async def tool(ano: int) -> str:
+            return f"ano={ano}"
+
+        batch._dispatch["feriados"] = tool
+        ctx = _mock_ctx()
+        result = await batch.execute_batch([{"tool": "feriados", "args": {"ano": 2026}}], ctx)
+        assert "ano=2026" in result
+
+    @pytest.mark.asyncio
+    async def test_args_invalid_json_string_returns_error(self) -> None:
+        """String invalida vira erro no resultado, nao excecao."""
+
+        async def tool(x: int) -> str:
+            return "ok"
+
+        batch._dispatch["some_tool"] = tool
+        ctx = _mock_ctx()
+        result = await batch.execute_batch([{"tool": "some_tool", "args": "nao-e-json"}], ctx)
+        assert "não é JSON válido" in result
+
+    @pytest.mark.asyncio
+    async def test_args_wrong_type_returns_error(self) -> None:
+        """Tipo invalido (ex: lista) vira erro descritivo, nao excecao."""
+
+        async def tool(x: int) -> str:
+            return "ok"
+
+        batch._dispatch["typed_tool"] = tool
+        ctx = _mock_ctx()
+        result = await batch.execute_batch([{"tool": "typed_tool", "args": [1, 2, 3]}], ctx)
+        assert "deve ser um objeto JSON" in result
+
+
 def _real_registry() -> batch.FeatureRegistry:
     """Build a real registry from the project for integration testing."""
     from mcp_brasil._shared.feature import FeatureRegistry
