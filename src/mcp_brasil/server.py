@@ -317,4 +317,8 @@ else:
 
 
 if __name__ == "__main__":
-    mcp.run()
+    # show_banner=False: no transporte stdio o banner vai para stderr (ruído para
+    # o cliente MCP) e dispara a checagem de versão do FastMCP, que faz um GET
+    # HTTPS a pypi.org com timeout de 2 s. Fora de lugar num servidor local, e
+    # custo fixo em ambiente offline/air-gapped.
+    mcp.run(show_banner=False)

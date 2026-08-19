@@ -1,16 +1,25 @@
 """Configuração global do mcp-brasil.
 
 Valores podem ser sobrescritos via variáveis de ambiente.
-Carrega automaticamente o arquivo .env na raiz do projeto.
+Carrega o arquivo `.env` do diretório de trabalho atual, se existir.
+Para apontar outro caminho, use `MCP_BRASIL_DOTENV=/caminho/para/.env`.
 """
 
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# `load_dotenv()` sem argumento SOBE a árvore de diretórios a partir do arquivo
+# que o chamou. Num pacote instalado isso parte de site-packages e pode acabar
+# carregando um `.env` de fora do projeto, injetando credenciais sem que
+# ninguém tenha pedido. Carregamos apenas o `.env` do diretório atual — que é
+# o que a documentação sempre prometeu — com escape hatch explícito.
+_dotenv_path = Path(os.environ.get("MCP_BRASIL_DOTENV", "")) or Path.cwd() / ".env"
+if _dotenv_path.is_file():
+    load_dotenv(_dotenv_path)
 
 # --- HTTP Client ---
 HTTP_TIMEOUT: float = float(os.environ.get("MCP_BRASIL_HTTP_TIMEOUT", "30.0"))
