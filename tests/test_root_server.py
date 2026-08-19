@@ -211,3 +211,19 @@ class TestRootServerToolTags:
             tools = await c.list_tools()
             listar = next((t for t in tools if t.name == "listar_features"), None)
             assert listar is not None
+
+
+class TestRootServerInfo:
+    @pytest.mark.asyncio
+    async def test_serverinfo_announces_package_version(self) -> None:
+        """serverInfo.version must be the mcp-brasil version, not FastMCP's.
+
+        Without an explicit `version=` in the FastMCP constructor, the handshake
+        advertises the FastMCP release (e.g. 3.2.3) instead of the package
+        version, which makes client-side version pinning and bug reports point
+        at the wrong project.
+        """
+        from mcp_brasil import __version__
+
+        async with Client(mcp) as c:
+            assert c.initialize_result.serverInfo.version == __version__
