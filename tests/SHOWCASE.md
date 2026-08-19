@@ -247,8 +247,6 @@ Estas APIs estavam indisponíveis no momento do teste:
 
 | Feature | Tool | Erro |
 |---------|------|------|
-| Tábua de Marés | `listar_estados_costeiros` | HTTP 404 — API tabuademares.com indisponível |
-| Tábua de Marés | `listar_portos` | HTTP 404 — API tabuademares.com indisponível |
 | ANVISA | `buscar_medicamento` | HTTP 403 — Bloqueio da ANVISA (Cloudflare) |
 | ANA | `monitorar_reservatorios` | JSON inválido — API SAR instável |
 
