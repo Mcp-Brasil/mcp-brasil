@@ -19,7 +19,7 @@ class GeoLocalizacao(BaseModel):
 class Porto(BaseModel):
     """Informações detalhadas de um porto."""
 
-    id: int
+    id: str = Field(description="ID alfanumérico do porto (ex: 'pb01')")
     harbor_name: str
     state: str
     timezone: str
@@ -31,7 +31,7 @@ class Porto(BaseModel):
 class PortoResumo(BaseModel):
     """Resumo de um porto retornado pela listagem por estado."""
 
-    id: int
+    id: str = Field(description="ID alfanumérico do porto (ex: 'pb01')")
     year: int
     harbor_name: str
     data_collection_institution: str
