@@ -1,0 +1,75 @@
+name: Canary de fontes
+
+# Por que existe: a suíte é 100% mockada (respx), então mede o parser contra a
+# fixture e nunca o contrato contra a fonte. Features já ficaram meses mortas em
+# produção sem nenhum sinal (tce_ce desde 2026-03-23; tabua_mares só apareceu
+# porque um usuário abriu issue).
+
+on:
+  schedule:
+    # Toda segunda 05:00 UTC (02:00 BRT) — depois do refresh de datasets.
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: canary-sources
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install 3.12
+
+      - name: Sync deps
+        run: uv sync --frozen
+
+      - name: Rodar canary
+        id: canary
+        # Não falha o step: queremos publicar o relatório mesmo com falhas.
+        continue-on-error: true
+        run: |
+          set +e
+          uv run python scripts/canary_sources.py --markdown > relatorio.md
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          cat relatorio.md
+
+      - name: Publicar no resumo do job
+        run: cat relatorio.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Abrir ou atualizar issue
+        if: steps.canary.outputs.exit_code != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TITULO: "[canary] Fontes de dados fora do ar"
+        run: |
+          set -euo pipefail
+          {
+            echo "Relatório automático do canary semanal — execução de $(date -u '+%Y-%m-%d %H:%M UTC')."
+            echo
+            cat relatorio.md
+            echo
+            echo "---"
+            echo "_Gerado por \`.github/workflows/canary-sources.yml\`. Rode localmente com \`uv run python scripts/canary_sources.py\`._"
+          } > corpo.md
+
+          EXISTENTE=$(gh issue list --state open --search "\"$TITULO\" in:title" \
+            --json number,title --jq "[.[] | select(.title == \"$TITULO\")][0].number // empty")
+
+          if [ -n "$EXISTENTE" ]; then
+            gh issue comment "$EXISTENTE" --body-file corpo.md
+            echo "Comentado na issue #$EXISTENTE"
+          else
+            gh issue create --title "$TITULO" --body-file corpo.md
+          fi
