@@ -445,10 +445,10 @@ Antes de operar este servidor — especialmente em cenários comerciais, com vol
 
 ## Star History
 
-<a href="https://www.star-history.com/?repos=Mcp-Brasil%2Fmcp-brasil&type=date&legend=top-left">
+<a href="https://star-history.dera.page/#Mcp-Brasil/mcp-brasil&type=date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Mcp-Brasil/mcp-brasil&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Mcp-Brasil/mcp-brasil&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Mcp-Brasil/mcp-brasil&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=Mcp-Brasil/mcp-brasil&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=Mcp-Brasil/mcp-brasil&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=Mcp-Brasil/mcp-brasil&type=date&legend=top-left" />
  </picture>
 </a>
