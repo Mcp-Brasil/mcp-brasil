@@ -45,7 +45,7 @@ async def test_listar_portos_estado() -> None:
             json={
                 "data": [
                     {
-                        "id": 27,
+                        "id": "pb01",
                         "year": 2025,
                         "harbor_name": "PORTO DE CABEDELO",
                         "data_collection_institution": "DNPVN",
@@ -69,7 +69,7 @@ async def test_buscar_portos() -> None:
             json={
                 "data": [
                     {
-                        "id": 1,
+                        "id": "pb01",
                         "harbor_name": "PORTO DE CABEDELO",
                         "state": "pb",
                         "timezone": "UTC -03.0",
@@ -138,7 +138,7 @@ async def test_porto_mais_proximo() -> None:
             json={
                 "data": [
                     {
-                        "id": 1,
+                        "id": "pb01",
                         "harbor_name": "PORTO DE CABEDELO",
                         "state": "pb",
                         "timezone": "UTC -03.0",
@@ -164,7 +164,7 @@ async def test_porto_mais_proximo_geral() -> None:
             json={
                 "data": [
                     {
-                        "id": 1,
+                        "id": "pb01",
                         "harbor_name": "PORTO DE CABEDELO",
                         "state": "pb",
                         "timezone": "UTC -03.0",

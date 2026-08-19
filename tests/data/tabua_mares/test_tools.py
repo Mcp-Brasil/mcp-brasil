@@ -39,7 +39,7 @@ def ctx() -> AsyncMock:
 @pytest.fixture()
 def sample_porto() -> Porto:
     return Porto(
-        id=1,
+        id="pb01",
         harbor_name="PORTO DE CABEDELO (ESTADO DA PARAÍBA)",
         state="pb",
         timezone="UTC -03.0",
@@ -103,7 +103,7 @@ async def test_listar_portos(ctx: AsyncMock) -> None:
     with patch(f"{MODULE}.listar_portos_estado", new_callable=AsyncMock) as mock:
         mock.return_value = [
             PortoResumo(
-                id=27,
+                id="pb01",
                 year=2025,
                 harbor_name="PORTO DE CABEDELO",
                 data_collection_institution="DNPVN",
