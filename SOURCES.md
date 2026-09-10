@@ -275,6 +275,17 @@ Este documento descreve, fonte por fonte, a licença declarada e as restrições
 - **Origem**: Agência Nacional do Petróleo
 - **Licença**: open data; atribuição
 
+### 7.7. `cpfcnpj` (cpfcnpj.com.br, terceiro privado, pago, opcional)
+
+- **Origem**: CPF.CNPJ (ALAS Tecnologia LTDA), terceiro privado; dados de CNPJ em tempo real a partir da Receita Federal e fontes oficiais. Não é fonte oficial da Receita.
+- **Licença**: Termos de uso próprios da plataforma (cadastro, consultas pagas por requisição). Consulte https://www.cpfcnpj.com.br/dev/
+- **Risco**: Médio. Terceiro pode mudar termos, preços ou encerrar o serviço; o token é atrelado ao IP da conta; as consultas geram custo.
+- **Base legal e PII (LGPD)**: os pacotes de CNPJ podem expor CPF de responsável e de sócios pessoa natural. O consumo desses dados exige base legal e finalidade legítima (art. 7, e art. 11 para dados sensíveis) e o princípio da minimização. Esta fonte MASCARA por padrão o CPF de responsável e de sócios pessoa natural, respeitando `MCP_BRASIL_LGPD_ALLOW_PII` (escopo `cpfcnpj`); CNPJ de sócio pessoa jurídica não é dado pessoal e sai inteiro. A responsabilidade pelo tratamento a jusante é do integrador.
+- **Atribuição**: citar CPF.CNPJ (cpfcnpj.com.br) como origem dos dados de CNPJ quando esta fonte for usada.
+
+**Disclaimer obrigatório:**
+> Consultas de CNPJ via CPF.CNPJ (cpfcnpj.com.br): **terceiro privado**, pago e opcional, desligado por padrão. NÃO é fonte oficial da Receita Federal.
+
 ---
 
 ## 8. Geografia, Estatística — Baixo Risco

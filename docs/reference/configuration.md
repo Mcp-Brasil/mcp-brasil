@@ -8,6 +8,7 @@
 |----------|---------|-----------|
 | `TRANSPARENCIA_API_KEY` | — | Chave do Portal da Transparencia (opcional, cadastro gratuito) |
 | `DATAJUD_API_KEY` | — | Chave do DataJud/CNJ (opcional, cadastro gratuito) |
+| `CPFCNPJ_TOKEN` | (nenhum) | Token da conta CPF.CNPJ (terceiro privado, opcional, consultas pagas; sem ele a fonte fica desligada) |
 | `ANTHROPIC_API_KEY` | — | Necessaria para `recomendar_tools` e `planejar_consulta` |
 
 ### Configuracao do server

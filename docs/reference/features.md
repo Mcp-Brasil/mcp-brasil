@@ -661,6 +661,27 @@ CEP, CNPJ, DDD, bancos, cambio, FIPE, feriados, PIX, ISBN, NCM.
 
 ---
 
+### `cpfcnpj`: CPF.CNPJ (6 tools)
+
+Cadastro de CNPJ com QSA, situacao cadastral e inscricoes estaduais, via CPF.CNPJ
+(terceiro privado, pago). Fonte opcional, desligada por padrao: sem `CPFCNPJ_TOKEN`
+a feature nem e montada. CPF de responsavel e de socios pessoa natural sai
+mascarado por padrao (respeita `MCP_BRASIL_LGPD_ALLOW_PII`). Nao substitui a
+`brasilapi`, que continua como fonte gratuita de CNPJ.
+
+| Tool | Descricao |
+|------|-----------|
+| `cpfcnpj_validar_documento` | Valida CPF/CNPJ local (sem rede, sem custo); aceita CNPJ alfanumerico |
+| `cpfcnpj_consultar_cnpj` | Cadastro de CNPJ (pacote 5, ou 6 com `completo=True`) |
+| `cpfcnpj_situacao_cnpj` | Situacao cadastral, porte e inicio de atividades (pacote 6) |
+| `cpfcnpj_qsa_cnpj` | Quadro de socios com documento mascarado (pacote 6) |
+| `cpfcnpj_inscricoes_estaduais` | Inscricoes estaduais por UF (pacote 16) |
+| `cpfcnpj_saldo` | Saldo de creditos de um pacote (gratuito) |
+
+**Chave:** Opcional, [cadastro na CPF.CNPJ](https://www.cpfcnpj.com.br/dev/) (terceiro privado, consultas pagas)
+
+---
+
 ### `dados_gov_br` — Portal Brasileiro de Dados Abertos (11 tools)
 
 Catalogo central de datasets abertos do governo federal (dados.gov.br).
