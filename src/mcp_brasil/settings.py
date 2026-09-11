@@ -86,6 +86,15 @@ AUTHKIT_REQUIRED_SCOPES: list[str] = _parse_scopes(os.environ.get("AUTHKIT_REQUI
 # --- LLM Discovery (recomendar_tools) ---
 ANTHROPIC_API_KEY: str = os.environ.get("ANTHROPIC_API_KEY", "")
 
+# --- Selecao de features ---
+# Allowlist opcional: lista CSV das features a expor (ex: "ibge,brasilapi").
+# Vazio = todas as features descobertas continuam ativas (comportamento padrao).
+FEATURES_ENABLED: list[str] = _parse_scopes(os.environ.get("MCP_BRASIL_FEATURES", ""))
+
+# Denylist opcional: lista CSV de features a nao registrar. Tem precedencia
+# sobre a allowlist. Util para reduzir a superficie de tools de um deploy.
+FEATURES_DISABLED: list[str] = _parse_scopes(os.environ.get("MCP_BRASIL_FEATURES_DISABLED", ""))
+
 # --- Datasets (ADR-004: local cache com DuckDB) ---
 # Opt-in: lista CSV dos datasets a habilitar (ex: "spu_siapa,cnpj_rfb").
 # Datasets não listados NÃO são carregados nem expostos como tools.
