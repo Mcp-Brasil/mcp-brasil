@@ -79,6 +79,7 @@ CANARY_URLS: dict[str, str] = {
     "ibge": "https://servicodados.ibge.gov.br/api/v1/localidades/estados",
     "tabua_mares": "https://tabuamare.api.br/api/v2/states",
     "brasilapi": "https://brasilapi.com.br/api/banks/v1",
+    "cpfcnpj": "https://api.cpfcnpj.com.br/5ae973d7a997af13f0aaf2bf60e65803/5/11222333000181",
 }
 
 
