@@ -155,6 +155,38 @@ class TestConsultarCertidoes:
         assert result.certidoes[0].situacao == "NADA_CONSTA"
         assert result.se_cnpj_encontrado is True
 
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_accepts_null_optional_strings(self) -> None:
+        """TCU returns JSON null for companies without a trade name."""
+        respx.get(f"{CERTIDOES_URL}/15120049000155").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "razaoSocial": "EPOC TECH LTDA",
+                    "nomeFantasia": None,
+                    "cnpj": "15.120.049/0001-55",
+                    "certidoes": [
+                        {
+                            "emissor": "TCU",
+                            "tipo": "Inidoneos",
+                            "dataHoraEmissao": None,
+                            "descricao": None,
+                            "situacao": "NADA_CONSTA",
+                            "observacao": None,
+                        }
+                    ],
+                    "seCnpjEncontradoNaBaseTcu": False,
+                },
+            )
+        )
+        result = await client.consultar_certidoes("15120049000155")
+        assert result.razao_social == "EPOC TECH LTDA"
+        assert result.nome_fantasia == ""
+        assert result.certidoes[0].descricao == ""
+        assert result.certidoes[0].data_hora_emissao == ""
+        assert result.certidoes[0].situacao == "NADA_CONSTA"
+
 
 class TestCalcularDebito:
     @pytest.mark.asyncio

@@ -2,10 +2,46 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from typing import Any, Union, get_args, get_origin
+
+from pydantic import BaseModel, Field, model_validator
 
 
-class Acordao(BaseModel):
+def _accepts_none(annotation: Any) -> bool:
+    """Return True when the annotation allows None (Optional/Union with None)."""
+    if annotation is None or annotation is type(None):
+        return True
+    if get_origin(annotation) is Union:
+        return type(None) in get_args(annotation)
+    # PEP 604 unions (str | None) surface as types.UnionType at runtime.
+    return type(None) in get_args(annotation)
+
+
+class TcuModel(BaseModel):
+    """Base model that treats an explicit JSON ``null`` as an absent field.
+
+    Several TCU endpoints send ``null`` instead of omitting a value - for
+    example ``nomeFantasia`` for a company with no trade name. Pydantic
+    rejects that for non-optional fields, which made the whole response fail
+    to parse. Dropping those nulls lets the declared default apply, while
+    fields typed as optional keep their explicit ``None``.
+    """
+
+    @model_validator(mode="before")
+    @classmethod
+    def _null_means_absent(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        nullable: set[str] = set()
+        for name, field in cls.model_fields.items():
+            if _accepts_none(field.annotation):
+                nullable.add(name)
+                if field.alias:
+                    nullable.add(field.alias)
+        return {k: v for k, v in data.items() if v is not None or k in nullable}
+
+
+class Acordao(TcuModel):
     """Acórdão (decisão colegiada) do TCU."""
 
     key: str = Field(description="Identificador único (ex: ACORDAO-COMPLETO-2745491)")
@@ -24,7 +60,7 @@ class Acordao(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class Inabilitado(BaseModel):
+class Inabilitado(TcuModel):
     """Pessoa inabilitada para exercer cargo/função pública pelo TCU."""
 
     nome: str = ""
@@ -38,7 +74,7 @@ class Inabilitado(BaseModel):
     municipio: str = ""
 
 
-class Inidoneo(BaseModel):
+class Inidoneo(TcuModel):
     """Licitante declarado inidôneo pelo TCU."""
 
     nome: str = ""
@@ -52,7 +88,7 @@ class Inidoneo(BaseModel):
     municipio: str | None = None
 
 
-class CertidaoItem(BaseModel):
+class CertidaoItem(TcuModel):
     """Certidão individual dentro da consulta consolidada."""
 
     emissor: str = ""
@@ -65,7 +101,7 @@ class CertidaoItem(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class CertidaoConsolidada(BaseModel):
+class CertidaoConsolidada(TcuModel):
     """Resultado consolidado de certidões de pessoa jurídica."""
 
     razao_social: str = Field(default="", alias="razaoSocial")
@@ -77,7 +113,7 @@ class CertidaoConsolidada(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class PedidoCongresso(BaseModel):
+class PedidoCongresso(TcuModel):
     """Solicitação do Congresso Nacional ao TCU."""
 
     tipo: str = ""
@@ -89,7 +125,7 @@ class PedidoCongresso(BaseModel):
     link_proposicao: str = ""
 
 
-class ParcelaDebito(BaseModel):
+class ParcelaDebito(TcuModel):
     """Parcela de débito para cálculo."""
 
     data_fato: str = Field(description="Data do fato gerador (DD/MM/AAAA)")
@@ -97,7 +133,7 @@ class ParcelaDebito(BaseModel):
     valor_original: float = Field(description="Valor original da parcela")
 
 
-class ResultadoDebito(BaseModel):
+class ResultadoDebito(TcuModel):
     """Resultado do cálculo de débito."""
 
     data: str = ""
@@ -109,7 +145,7 @@ class ResultadoDebito(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class TermoContratual(BaseModel):
+class TermoContratual(TcuModel):
     """Termo contratual firmado pelo TCU."""
 
     numero: int = 0
@@ -129,7 +165,7 @@ class TermoContratual(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class PautaSessao(BaseModel):
+class PautaSessao(TcuModel):
     """Pauta de sessão de julgamento do TCU."""
 
     nome_colegiado: str = Field(default="", alias="nomeColegiado")
@@ -144,7 +180,7 @@ class PautaSessao(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class PessoaCadirreg(BaseModel):
+class PessoaCadirreg(TcuModel):
     """Pessoa com contas julgadas irregulares pelo TCU (CADIRREG)."""
 
     nome_responsavel: str = Field(default="", alias="nomeResponsavel")
