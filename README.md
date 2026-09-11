@@ -329,6 +329,8 @@ META_ACCESS_TOKEN=seu-token
 | `TRANSPARENCIA_API_KEY` | — | Chave do Portal da Transparência |
 | `DATAJUD_API_KEY` | — | Chave do DataJud/CNJ |
 | `META_ACCESS_TOKEN` | — | Token da [Meta Ad Library API](https://www.facebook.com/ads/library/api/) |
+| `MCP_BRASIL_FEATURES` | — | Allowlist CSV de features a expor. Vazio = todas. Ex: `ibge,brasilapi,bacen` |
+| `MCP_BRASIL_FEATURES_DISABLED` | — | Denylist CSV de features a nao registrar. Tem precedencia sobre a allowlist |
 | `MCP_BRASIL_TOOL_SEARCH` | `bm25` | Modo de discovery: `bm25`, `code_mode` ou `none` |
 | `MCP_BRASIL_HTTP_TIMEOUT` | `30.0` | Timeout HTTP em segundos |
 | `MCP_BRASIL_HTTP_MAX_RETRIES` | `3` | Máximo de retentativas HTTP |

@@ -29,7 +29,7 @@ import pkgutil
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-import mcp_brasil.settings  # noqa: F401 — ensure .env is loaded before checking env vars
+from mcp_brasil import settings
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
@@ -162,6 +162,17 @@ class FeatureRegistry:
         if not meta.enabled:
             self._skipped[short_name] = "disabled (enabled=False)"
             logger.info("Feature '%s' is disabled, skipping.", short_name)
+            return
+
+        # Step 3b: Honour the operator-defined allow/deny lists
+        if settings.FEATURES_DISABLED and short_name in settings.FEATURES_DISABLED:
+            self._skipped[short_name] = "disabled via MCP_BRASIL_FEATURES_DISABLED"
+            logger.info("Feature '%s' disabled by denylist, skipping.", short_name)
+            return
+
+        if settings.FEATURES_ENABLED and short_name not in settings.FEATURES_ENABLED:
+            self._skipped[short_name] = "not listed in MCP_BRASIL_FEATURES"
+            logger.info("Feature '%s' not in allowlist, skipping.", short_name)
             return
 
         # Step 4: Check auth if required

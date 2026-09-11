@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 from fastmcp import Client, FastMCP
 
+from mcp_brasil import settings
 from mcp_brasil._shared.feature import FeatureMeta, FeatureRegistry, RegisteredFeature
 
 # ---------------------------------------------------------------------------
@@ -216,3 +217,38 @@ class TestRegistryIntegration:
         async with Client(mcp) as client:
             result = await client.call_tool("listar_features", {})
             assert "mcp-brasil" in result.data
+
+
+# ---------------------------------------------------------------------------
+# Allow/deny lists (MCP_BRASIL_FEATURES / MCP_BRASIL_FEATURES_DISABLED)
+# ---------------------------------------------------------------------------
+
+
+class TestFeatureSelection:
+    def test_allowlist_keeps_only_listed_features(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "FEATURES_ENABLED", ["ibge"])
+        monkeypatch.setattr(settings, "FEATURES_DISABLED", [])
+        registry = FeatureRegistry().discover("mcp_brasil.data")
+        assert list(registry.features) == ["ibge"]
+        assert "brasilapi" in registry.skipped
+
+    def test_denylist_drops_listed_features(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "FEATURES_ENABLED", [])
+        monkeypatch.setattr(settings, "FEATURES_DISABLED", ["ibge"])
+        registry = FeatureRegistry().discover("mcp_brasil.data")
+        assert "ibge" not in registry.features
+        assert "brasilapi" in registry.features
+
+    def test_denylist_wins_over_allowlist(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "FEATURES_ENABLED", ["ibge", "brasilapi"])
+        monkeypatch.setattr(settings, "FEATURES_DISABLED", ["ibge"])
+        registry = FeatureRegistry().discover("mcp_brasil.data")
+        assert "ibge" not in registry.features
+        assert "brasilapi" in registry.features
+
+    def test_no_lists_keeps_default_behaviour(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "FEATURES_ENABLED", [])
+        monkeypatch.setattr(settings, "FEATURES_DISABLED", [])
+        registry = FeatureRegistry().discover("mcp_brasil.data")
+        assert "ibge" in registry.features
+        assert "brasilapi" in registry.features
