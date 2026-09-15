@@ -5,7 +5,12 @@ import pytest
 import respx
 
 from mcp_brasil.data.ana import client
-from mcp_brasil.data.ana.constants import ESTACOES_URL, RESERVATORIOS_URL, TELEMETRIA_URL
+from mcp_brasil.data.ana.constants import (
+    AUTH_ENV_VAR,
+    ESTACOES_URL,
+    RESERVATORIOS_URL,
+    TELEMETRIA_URL,
+)
 
 # ---------------------------------------------------------------------------
 # buscar_estacoes
@@ -194,3 +199,28 @@ class TestMonitorarReservatorios:
         )
         req_url = str(route.calls[0].request.url)
         assert "codigoReservatorio=ABC" in req_url
+
+
+# ---------------------------------------------------------------------------
+# Optional auth (issue #37 — Hidroweb started requiring a token)
+# ---------------------------------------------------------------------------
+
+
+class TestOptionalAuth:
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_no_auth_header_by_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Without ANA_HIDROWEB_TOKEN, requests stay anonymous."""
+        monkeypatch.delenv(AUTH_ENV_VAR, raising=False)
+        route = respx.get(ESTACOES_URL).mock(return_value=httpx.Response(200, json=[]))
+        await client.buscar_estacoes(codigo_estacao="60435000")
+        assert "authorization" not in route.calls[0].request.headers
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_sends_bearer_token_when_env_set(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """With ANA_HIDROWEB_TOKEN, requests carry a Bearer credential."""
+        monkeypatch.setenv(AUTH_ENV_VAR, "token-abc-123")
+        route = respx.get(ESTACOES_URL).mock(return_value=httpx.Response(200, json=[]))
+        await client.buscar_estacoes(codigo_estacao="60435000")
+        assert route.calls[0].request.headers["authorization"] == "Bearer token-abc-123"

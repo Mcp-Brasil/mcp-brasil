@@ -10,6 +10,7 @@ import pytest
 
 from mcp_brasil.data.ana import tools
 from mcp_brasil.data.ana.schemas import DadoTelemetria, Estacao, Reservatorio
+from mcp_brasil.exceptions import HttpClientError
 
 CLIENT_MODULE = "mcp_brasil.data.ana.client"
 
@@ -258,3 +259,36 @@ class TestMonitorarReservatorios:
             data_inicio="01/01/2024",
             data_fim="31/03/2024",
         )
+
+
+# ---------------------------------------------------------------------------
+# API failures (issue #37)
+# ---------------------------------------------------------------------------
+
+
+class TestApiFailures:
+    @pytest.mark.asyncio
+    async def test_401_points_to_token_env_var(self) -> None:
+        """HTTP 401 surfaces an actionable auth hint, not a raw error."""
+        ctx = _mock_ctx()
+        with patch(
+            f"{CLIENT_MODULE}.buscar_estacoes",
+            new_callable=AsyncMock,
+            side_effect=HttpClientError("HTTP 401 from https://...: Unauthorized"),
+        ):
+            result = await tools.buscar_estacoes(ctx, codigo_estacao="60435000")
+        assert "401" in result
+        assert "ANA_HIDROWEB_TOKEN" in result
+
+    @pytest.mark.asyncio
+    async def test_generic_failure_reports_outage(self) -> None:
+        """Non-auth failures report an outage instead of crashing."""
+        ctx = _mock_ctx()
+        with patch(
+            f"{CLIENT_MODULE}.monitorar_reservatorios",
+            new_callable=AsyncMock,
+            side_effect=HttpClientError("HTTP 503 from https://...: Unavailable"),
+        ):
+            result = await tools.monitorar_reservatorios(ctx)
+        assert "indisponível" in result
+        assert "Nenhum dado de reservatório" not in result

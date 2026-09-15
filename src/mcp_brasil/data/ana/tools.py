@@ -10,8 +10,24 @@ from __future__ import annotations
 from fastmcp import Context
 
 from mcp_brasil._shared.formatting import format_number_br, markdown_table
+from mcp_brasil.exceptions import HttpClientError
 
 from . import client
+from .constants import AUTH_ENV_VAR
+
+_UNAUTHORIZED_MSG = (
+    "A API do Hidroweb/SNIRH (ANA) está exigindo autenticação (HTTP 401) "
+    "neste endpoint. Se você possui um token de acesso, configure a variável "
+    f"de ambiente {AUTH_ENV_VAR}. Sem token, este endpoint pode estar "
+    "temporariamente restrito — tente novamente mais tarde."
+)
+
+
+def _erro_api_ana(exc: HttpClientError) -> str:
+    """Format an ANA API failure for LLM consumption."""
+    if "401" in str(exc):
+        return f"{_UNAUTHORIZED_MSG} Detalhe: {exc}"
+    return f"A API da ANA está indisponível no momento. Detalhe: {exc}"
 
 
 async def buscar_estacoes(
@@ -40,14 +56,17 @@ async def buscar_estacoes(
         Tabela com as estações encontradas.
     """
     await ctx.info("Buscando estações hidrológicas na ANA...")
-    estacoes = await client.buscar_estacoes(
-        codigo_estacao=codigo_estacao,
-        codigo_rio=codigo_rio,
-        codigo_bacia=codigo_bacia,
-        codigo_sub_bacia=codigo_sub_bacia,
-        nome_estacao=nome_estacao,
-        tipo_estacao=tipo_estacao,
-    )
+    try:
+        estacoes = await client.buscar_estacoes(
+            codigo_estacao=codigo_estacao,
+            codigo_rio=codigo_rio,
+            codigo_bacia=codigo_bacia,
+            codigo_sub_bacia=codigo_sub_bacia,
+            nome_estacao=nome_estacao,
+            tipo_estacao=tipo_estacao,
+        )
+    except HttpClientError as exc:
+        return _erro_api_ana(exc)
 
     if not estacoes:
         return "Nenhuma estação encontrada para os filtros informados."
@@ -90,11 +109,14 @@ async def consultar_telemetria(
         Tabela com os dados telemétricos.
     """
     await ctx.info(f"Consultando telemetria da estação {codigo_estacao}...")
-    dados = await client.consultar_telemetria(
-        codigo_estacao=codigo_estacao,
-        data_inicio=data_inicio,
-        data_fim=data_fim,
-    )
+    try:
+        dados = await client.consultar_telemetria(
+            codigo_estacao=codigo_estacao,
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+        )
+    except HttpClientError as exc:
+        return _erro_api_ana(exc)
 
     if not dados:
         return f"Nenhum dado telemétrico encontrado para a estação {codigo_estacao}."
@@ -135,11 +157,14 @@ async def monitorar_reservatorios(
         Tabela com os dados dos reservatórios.
     """
     await ctx.info("Consultando dados de reservatórios no SAR/ANA...")
-    reservatorios = await client.monitorar_reservatorios(
-        codigo_reservatorio=codigo_reservatorio,
-        data_inicio=data_inicio,
-        data_fim=data_fim,
-    )
+    try:
+        reservatorios = await client.monitorar_reservatorios(
+            codigo_reservatorio=codigo_reservatorio,
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+        )
+    except HttpClientError as exc:
+        return _erro_api_ana(exc)
 
     if not reservatorios:
         return "Nenhum dado de reservatório encontrado para os filtros informados."

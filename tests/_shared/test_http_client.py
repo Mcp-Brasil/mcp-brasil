@@ -6,7 +6,7 @@ import httpx
 import pytest
 import respx
 
-from mcp_brasil._shared.http_client import create_client, http_get
+from mcp_brasil._shared.http_client import create_client, http_get, http_post
 from mcp_brasil.exceptions import HttpClientError
 
 
@@ -128,3 +128,37 @@ class TestHttpGet:
         )
         with pytest.raises(HttpClientError, match="HTTP 500"):
             await http_get("https://api.example.com/once", max_retries=0)
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_non_json_body_raises_http_client_error(self) -> None:
+        """HTTP 200 with an HTML error page must not leak JSONDecodeError.
+
+        Regression test for issue #37: SAR/ANA returned an HTML error page
+        and tools crashed with "Expecting value: line 1 column 1 (char 0)".
+        """
+        respx.get("https://api.example.com/page").mock(
+            return_value=httpx.Response(
+                200,
+                text="<html><body>Erro</body></html>",
+                headers={"content-type": "text/html"},
+            )
+        )
+        with pytest.raises(HttpClientError, match="non-JSON body"):
+            await http_get("https://api.example.com/page")
+
+
+class TestHttpPost:
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_non_json_body_raises_http_client_error(self) -> None:
+        """Same non-JSON wrapping guarantee for POST responses."""
+        respx.post("https://api.example.com/submit").mock(
+            return_value=httpx.Response(
+                200,
+                text="<html><body>Erro</body></html>",
+                headers={"content-type": "text/html"},
+            )
+        )
+        with pytest.raises(HttpClientError, match="non-JSON body"):
+            await http_post("https://api.example.com/submit", json_body={"k": "v"})
