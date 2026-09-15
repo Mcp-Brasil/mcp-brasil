@@ -79,6 +79,12 @@ CANARY_URLS: dict[str, str] = {
     "ibge": "https://servicodados.ibge.gov.br/api/v1/localidades/estados",
     "tabua_mares": "https://tabuamare.api.br/api/v2/states",
     "brasilapi": "https://brasilapi.com.br/api/banks/v1",
+    "camara": "https://dadosabertos.camara.leg.br/api/v2/deputados?itens=1",
+    "b3": "https://brapi.dev/api/quote/PETR4",
+    # Quebrado desde 2026-03-23 (issue #35): todos os endpoints da API
+    # de Dados Abertos devolvem 404. Mantido de propósito para que o
+    # canary sinalize FALHA até a feature ser migrada (ver PR #27).
+    "tce_ce": "https://api-dados-abertos.tce.ce.gov.br/municipios",
 }
 
 
