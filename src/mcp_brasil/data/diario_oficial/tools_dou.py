@@ -9,8 +9,24 @@ from __future__ import annotations
 
 from fastmcp import Context
 
+from mcp_brasil.exceptions import HttpClientError
+
 from . import client_dou
 from .constants import DOU_ARTICLE_URL, DOU_SECTIONS_INFO
+
+
+def _erro_fonte_indisponivel(exc: HttpClientError) -> str:
+    """Format a source-outage error for LLM consumption.
+
+    Distinct from "no results" messages: an outage must never look like
+    an empty search, otherwise endpoint removals go unnoticed (issue #22).
+    """
+    return (
+        "A fonte DOU (portal in.gov.br) está indisponível no momento. "
+        f"Detalhe: {exc} "
+        "Isso indica instabilidade ou mudança no portal da Imprensa Nacional, "
+        "não ausência de resultados. Tente novamente mais tarde."
+    )
 
 
 async def dou_buscar(
@@ -42,15 +58,18 @@ async def dou_buscar(
         Lista de publicações do DOU com resumo e metadados.
     """
     await ctx.info(f"Buscando no DOU: '{termo}' (seção={secao}, período={periodo})")
-    resultado = await client_dou.buscar_dou(
-        termo=termo,
-        secao=secao,
-        periodo=periodo,
-        orgao=orgao,
-        tipo_publicacao=tipo,
-        campo=campo,
-        pagina=pagina,
-    )
+    try:
+        resultado = await client_dou.buscar_dou(
+            termo=termo,
+            secao=secao,
+            periodo=periodo,
+            orgao=orgao,
+            tipo_publicacao=tipo,
+            campo=campo,
+            pagina=pagina,
+        )
+    except HttpClientError as exc:
+        return _erro_fonte_indisponivel(exc)
     await ctx.info(f"{resultado.total} publicações encontradas no DOU")
 
     if not resultado.publicacoes:
@@ -156,14 +175,17 @@ async def dou_edicao_do_dia(
         Lista de publicações da edição.
     """
     await ctx.info(f"Buscando edição do DOU de {data} (seção={secao})")
-    resultado = await client_dou.buscar_dou(
-        termo="*",
-        secao=secao,
-        periodo="PERSONALIZADO",
-        data_inicio=data,
-        data_fim=data,
-        tamanho=50,
-    )
+    try:
+        resultado = await client_dou.buscar_dou(
+            termo="*",
+            secao=secao,
+            periodo="PERSONALIZADO",
+            data_inicio=data,
+            data_fim=data,
+            tamanho=50,
+        )
+    except HttpClientError as exc:
+        return _erro_fonte_indisponivel(exc)
     await ctx.info(f"{resultado.total} publicações na edição de {data}")
 
     if not resultado.publicacoes:
@@ -201,13 +223,16 @@ async def dou_buscar_por_orgao(
         Publicações do órgão no período.
     """
     await ctx.info(f"Buscando publicações de '{orgao}' no DOU ({periodo})")
-    resultado = await client_dou.buscar_dou(
-        termo="*",
-        secao=secao,
-        periodo=periodo,
-        orgao=orgao,
-        tamanho=30,
-    )
+    try:
+        resultado = await client_dou.buscar_dou(
+            termo="*",
+            secao=secao,
+            periodo=periodo,
+            orgao=orgao,
+            tamanho=30,
+        )
+    except HttpClientError as exc:
+        return _erro_fonte_indisponivel(exc)
     await ctx.info(f"{resultado.total} publicações de '{orgao}'")
 
     if not resultado.publicacoes:
@@ -266,18 +291,21 @@ async def dou_buscar_avancado(
     await ctx.info(f"Busca avançada no DOU: {desc}")
 
     periodo = "PERSONALIZADO" if (data_inicio and data_fim) else "ANO"
-    resultado = await client_dou.buscar_dou(
-        termo=termo or "*",
-        secao=secao,
-        periodo=periodo,
-        data_inicio=data_inicio,
-        data_fim=data_fim,
-        orgao=orgao,
-        tipo_publicacao=tipo,
-        campo=campo,
-        pagina=pagina,
-        tamanho=20,
-    )
+    try:
+        resultado = await client_dou.buscar_dou(
+            termo=termo or "*",
+            secao=secao,
+            periodo=periodo,
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+            orgao=orgao,
+            tipo_publicacao=tipo,
+            campo=campo,
+            pagina=pagina,
+            tamanho=20,
+        )
+    except HttpClientError as exc:
+        return _erro_fonte_indisponivel(exc)
     await ctx.info(f"{resultado.total} publicações encontradas")
 
     if not resultado.publicacoes:

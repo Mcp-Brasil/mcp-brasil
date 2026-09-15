@@ -8,6 +8,7 @@ import respx
 
 from mcp_brasil.data.diario_oficial import client_dou
 from mcp_brasil.data.diario_oficial.constants import DOU_ARTICLE_URL, DOU_SEARCH_URL
+from mcp_brasil.exceptions import HttpClientError
 
 
 def _mock_search_response(total: int = 1, items: list | None = None) -> dict:
@@ -157,6 +158,27 @@ class TestBuscarDou:
         result = await client_dou.buscar_dou(termo="teste")
         assert result.total == 0
         assert result.publicacoes == []
+
+    @pytest.mark.asyncio
+    @respx.mock
+    @pytest.mark.parametrize("status", [403, 404, 500])
+    async def test_http_error_raises_instead_of_empty(self, status: int) -> None:
+        """HTTP failures must surface as errors, never as "0 resultados".
+
+        Regression test for issue #22: the disabled in.gov.br endpoint
+        returned 404 and was reported as "Nenhuma publicação encontrada".
+        """
+        respx.get(DOU_SEARCH_URL).mock(return_value=httpx.Response(status, text="erro"))
+        with pytest.raises(HttpClientError, match=f"HTTP {status}"):
+            await client_dou.buscar_dou(termo="portaria")
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_connection_error_raises(self) -> None:
+        """Connection failures must surface as errors, not empty results."""
+        respx.get(DOU_SEARCH_URL).mock(side_effect=httpx.ConnectError("refused"))
+        with pytest.raises(HttpClientError, match="falha de conexão"):
+            await client_dou.buscar_dou(termo="portaria")
 
 
 # ---------------------------------------------------------------------------

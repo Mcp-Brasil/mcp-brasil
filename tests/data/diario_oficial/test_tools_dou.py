@@ -9,6 +9,7 @@ import pytest
 
 from mcp_brasil.data.diario_oficial import tools_dou
 from mcp_brasil.data.diario_oficial.schemas import PublicacaoDOU, ResultadoDOU
+from mcp_brasil.exceptions import HttpClientError
 
 CLIENT_MODULE = "mcp_brasil.data.diario_oficial.client_dou"
 
@@ -88,6 +89,19 @@ class TestDouBuscar:
         assert "pagina=1" in result
         assert "50" in result
 
+    @pytest.mark.asyncio
+    async def test_source_error_is_not_empty_result(self) -> None:
+        """Client HTTP errors surface as outage, not "no results" (issue #22)."""
+        ctx = _mock_ctx()
+        with patch(
+            f"{CLIENT_MODULE}.buscar_dou",
+            new_callable=AsyncMock,
+            side_effect=HttpClientError("Busca DOU indisponível (HTTP 404 em ...)"),
+        ):
+            result = await tools_dou.dou_buscar("portaria", ctx)
+        assert "indisponível" in result
+        assert "Nenhuma publicação encontrada" not in result
+
 
 # ---------------------------------------------------------------------------
 # dou_ler_publicacao
@@ -158,6 +172,19 @@ class TestDouEdicaoDoDia:
         ):
             result = await tools_dou.dou_edicao_do_dia("2024-12-25", ctx)
         assert "Nenhuma publicação" in result
+
+    @pytest.mark.asyncio
+    async def test_source_error_is_not_empty_result(self) -> None:
+        """Client HTTP errors surface as outage, not "no results" (issue #22)."""
+        ctx = _mock_ctx()
+        with patch(
+            f"{CLIENT_MODULE}.buscar_dou",
+            new_callable=AsyncMock,
+            side_effect=HttpClientError("Busca DOU indisponível (HTTP 404 em ...)"),
+        ):
+            result = await tools_dou.dou_edicao_do_dia("2024-01-15", ctx)
+        assert "indisponível" in result
+        assert "Nenhuma publicação" not in result
 
 
 # ---------------------------------------------------------------------------
