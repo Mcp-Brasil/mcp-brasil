@@ -15,6 +15,8 @@ import logging
 import re
 from typing import Any
 
+import httpx
+
 from mcp_brasil._shared.http_client import create_client, http_get
 from mcp_brasil.exceptions import HttpClientError
 
@@ -150,9 +152,21 @@ async def buscar_dou(
             response = await client.get(DOU_SEARCH_URL, params=params)
             response.raise_for_status()
             html = response.text
-    except Exception as exc:
-        logger.warning("DOU API error for '%s': %s", termo, exc)
-        return ResultadoDOU(total=0, publicacoes=[])
+    except httpx.HTTPStatusError as exc:
+        status = exc.response.status_code
+        logger.warning("DOU search HTTP %d for '%s': %s", status, termo, exc)
+        raise HttpClientError(
+            f"Busca DOU indisponível (HTTP {status} em {DOU_SEARCH_URL}). "
+            "O portal in.gov.br pode estar fora do ar ou ter desativado "
+            "o endpoint de consulta. Tente novamente mais tarde."
+        ) from exc
+    except (httpx.TimeoutException, httpx.ConnectError) as exc:
+        logger.warning("DOU search connection error for '%s': %s", termo, exc)
+        raise HttpClientError(
+            "Busca DOU indisponível "
+            f"(falha de conexão com {DOU_SEARCH_URL}: {type(exc).__name__}). "
+            "Tente novamente mais tarde."
+        ) from exc
 
     data = _extract_json_from_html(html)
     if not data:
