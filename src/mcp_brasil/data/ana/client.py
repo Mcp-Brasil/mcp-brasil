@@ -8,12 +8,32 @@ Endpoints:
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from mcp_brasil._shared.http_client import http_get
 
-from .constants import ESTACOES_URL, RESERVATORIOS_URL, TELEMETRIA_URL
+from .constants import (
+    AUTH_ENV_VAR,
+    AUTH_HEADER_NAME,
+    ESTACOES_URL,
+    RESERVATORIOS_URL,
+    TELEMETRIA_URL,
+)
 from .schemas import DadoTelemetria, Estacao, Reservatorio
+
+
+def _auth_headers() -> dict[str, str] | None:
+    """Return auth headers when ANA_HIDROWEB_TOKEN is set, else None.
+
+    The Hidroweb/SNIRH API started requiring a token on previously public
+    endpoints (issue #37). The token is optional: anonymous requests keep
+    working wherever the API still allows them.
+    """
+    token = os.environ.get(AUTH_ENV_VAR, "").strip()
+    if not token:
+        return None
+    return {AUTH_HEADER_NAME: f"Bearer {token}"}
 
 
 async def buscar_estacoes(
@@ -51,7 +71,9 @@ async def buscar_estacoes(
     if tipo_estacao is not None:
         params["tipoEstacao"] = str(tipo_estacao)
 
-    data: list[dict[str, Any]] = await http_get(ESTACOES_URL, params=params or None)
+    data: list[dict[str, Any]] = await http_get(
+        ESTACOES_URL, params=params or None, headers=_auth_headers()
+    )
 
     return [
         Estacao(
@@ -93,7 +115,9 @@ async def consultar_telemetria(
     if data_fim:
         params["dataFim"] = data_fim
 
-    data: list[dict[str, Any]] = await http_get(TELEMETRIA_URL, params=params)
+    data: list[dict[str, Any]] = await http_get(
+        TELEMETRIA_URL, params=params, headers=_auth_headers()
+    )
 
     return [
         DadoTelemetria(
@@ -130,7 +154,9 @@ async def monitorar_reservatorios(
     if data_fim:
         params["dataFim"] = data_fim
 
-    data: list[dict[str, Any]] = await http_get(RESERVATORIOS_URL, params=params or None)
+    data: list[dict[str, Any]] = await http_get(
+        RESERVATORIOS_URL, params=params or None, headers=_auth_headers()
+    )
 
     return [
         Reservatorio(

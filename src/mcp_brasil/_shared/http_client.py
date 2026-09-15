@@ -115,7 +115,14 @@ async def http_get(
                     )
 
                 response.raise_for_status()
-                return response.json()
+                try:
+                    return response.json()
+                except ValueError as exc:
+                    raise HttpClientError(
+                        f"HTTP {response.status_code} from {url} returned "
+                        f"a non-JSON body: {response.text[:200]!r}. "
+                        "The API may be returning an error page instead of data."
+                    ) from exc
 
             except httpx.HTTPStatusError as exc:
                 raise HttpClientError(
@@ -194,7 +201,14 @@ async def http_post(
                     )
 
                 response.raise_for_status()
-                return response.json()
+                try:
+                    return response.json()
+                except ValueError as exc:
+                    raise HttpClientError(
+                        f"HTTP {response.status_code} from {url} returned "
+                        f"a non-JSON body: {response.text[:200]!r}. "
+                        "The API may be returning an error page instead of data."
+                    ) from exc
 
             except httpx.HTTPStatusError as exc:
                 raise HttpClientError(
