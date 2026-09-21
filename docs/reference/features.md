@@ -350,6 +350,23 @@ Estacoes hidrologicas, telemetria (chuva, vazao, nivel), reservatorios.
 
 ---
 
+### `mapbiomas_alerta` — MapBiomas Alerta (4 tools)
+
+Alertas validados de supressao de vegetacao nativa: area em hectares, data de deteccao, sobreposicao com APP, Reserva Legal, Unidade de Conservacao e Terra Indigena, embargos, autorizacoes e imoveis do CAR cruzados.
+
+| Tool | Descricao |
+|------|-----------|
+| `mapbiomas_alerta_listar_territorios` | Territorios (municipio, estado, UC, TI) e seus codigos |
+| `mapbiomas_alerta_buscar_alertas` | Alertas por territorio, periodo, area e cruzamentos |
+| `mapbiomas_alerta_consultar_alerta` | Dossie completo de um alerta pelo codigo |
+| `mapbiomas_alerta_buscar_alertas_por_car` | Alertas associados a um imovel rural (CAR) |
+
+**Chave:** Obrigatoria — conta gratuita em [plataforma.alerta.mapbiomas.org/sign-up](https://plataforma.alerta.mapbiomas.org/sign-up). Configure `MAPBIOMAS_EMAIL` e `MAPBIOMAS_PASSWORD`.
+
+> Alerta e deteccao validada por equipe tecnica, nao laudo pericial. As areas de sobreposicao nao devem ser somadas e a ausencia de alerta nao prova ausencia de supressao.
+
+---
+
 ### `tabua_mares` — Tabua de Mares (7 tools)
 
 Previsao de mares para portos do litoral brasileiro.
