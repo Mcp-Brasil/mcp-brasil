@@ -9,11 +9,11 @@
 
 [![License: MIT (code)](https://img.shields.io/badge/code-MIT-yellow.svg)](LICENSE) [![Sources: see SOURCES.md](https://img.shields.io/badge/data-see%20SOURCES.md-blue)](SOURCES.md) [![AUP](https://img.shields.io/badge/use-ACCEPTABLE__USE.md-orange)](ACCEPTABLE_USE.md)
 
-533 tools · 131 resources · 102 prompts · 70 features · 15 áreas temáticas
+537 tools · 132 resources · 103 prompts · 71 features · 15 áreas temáticas
 
 Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil — economia, legislação, transparência, judiciário, eleições, meio ambiente, saúde, educação, segurança pública, fiscal subnacional, aviação e mais.
 
-**66 APIs não requerem chave** · 4 usam chaves gratuitas (cadastro em 1 min)
+**67 APIs não requerem chave** · 4 usam chaves gratuitas (cadastro em 1 min)
 
 [Quick Start](#quick-start) · [Fontes de dados](#fontes-de-dados) · [Documentação](#documentação) · [Desenvolvimento](#desenvolvimento)
 
@@ -27,11 +27,11 @@ Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil 
 
 ## Features
 
-- **533 tools** em 70 features cobrindo 15 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, educação, segurança pública, compras públicas, fiscal subnacional, aviação, energia e mais
+- **537 tools** em 71 features cobrindo 15 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, educação, segurança pública, compras públicas, fiscal subnacional, aviação, energia e mais
 - **Datasets grandes com cache local** — SIAPA (~813k imóveis), TSE 2014-2024 (candidatos, bens, votação, redes sociais, FEFC), ANP preços de combustíveis, INEP Censo Escolar e ENEM, ISP-RJ segurança pública, ANAC aeronaves e voos regulares — SQL via DuckDB embedded, opt-in via env
 - **Cross-referencing** com `planejar_consulta` — cria planos de execução combinando múltiplas APIs (ex: gastos de um deputado + votações + proposições)
 - **Execução em lote** com `executar_lote` — dispara consultas em paralelo numa única chamada
-- **Smart discovery** — BM25 search transform filtra 533 tools para só mostrar as relevantes ao contexto
+- **Smart discovery** — BM25 search transform filtra 537 tools para só mostrar as relevantes ao contexto
 - **Auto-registry** — adicionar uma feature é criar uma pasta; zero configuração manual
 - **Async everywhere** — httpx async + Pydantic v2 + rate limiting com backoff
 
@@ -184,6 +184,7 @@ Conecte o server e faça perguntas em linguagem natural:
 | `spu_imoveis` | Imóveis da União (Raio-X APF / Gov360) — busca por órgão, UF, município, regime e agregações institucionais | 4 |
 | `siconfi` | SICONFI/Tesouro Nacional — RREO, RGF, DCA e MSC de municípios/estados (LRF, LC 101) | 7 |
 | `mj` | MJSP (CKAN) — SINESP, INFOPEN, PROCONs/Sindec, armas, sistema prisional | 4 |
+| `megasoft` | Portais da Transparência municipais (Megasoft) — empenhos, ordens de pagamento, totais financeiros e receitas | 4 |
 
 ### Judiciário
 
@@ -312,7 +313,12 @@ Ver [guia de Datasets locais](docs/guide/datasets.md) para detalhes de uso.
 | DataJud/CNJ | Opcional | [Cadastro gratuito](https://datajud-wiki.cnj.jus.br/api-publica/acesso) |
 | Anúncios Eleitorais (Meta) | Opcional | [Meta Ad Library API](https://www.facebook.com/ads/library/api/) |
 | brapi.dev (B3) | Opcional | [Token gratuito](https://brapi.dev/dashboard) para índices e múltiplas ações |
-| Todas as outras (62) | Nenhuma chave | — |
+| Megasoft (portais municipais) | Nenhuma chave | Token público obtido automaticamente do próprio portal; `MEGASOFT_TOKEN` é um override opcional |
+| Todas as outras (66) | Nenhuma chave | — |
+
+> Convenção: as APIs listadas individualmente (4 opcionais + Megasoft) são
+> destacadas; "Todas as outras" é o restante das 71 features (4 + 1 + 66 = 71).
+> Das 71, 67 não exigem chave e 4 usam chave gratuita.
 
 Configure via variáveis de ambiente ou `.env`:
 
@@ -329,6 +335,7 @@ META_ACCESS_TOKEN=seu-token
 | `TRANSPARENCIA_API_KEY` | — | Chave do Portal da Transparência |
 | `DATAJUD_API_KEY` | — | Chave do DataJud/CNJ |
 | `META_ACCESS_TOKEN` | — | Token da [Meta Ad Library API](https://www.facebook.com/ads/library/api/) |
+| `MEGASOFT_TOKEN` | — | Token opcional dos portais Megasoft (obtido automaticamente do portal quando vazio) |
 | `MCP_BRASIL_TOOL_SEARCH` | `bm25` | Modo de discovery: `bm25`, `code_mode` ou `none` |
 | `MCP_BRASIL_HTTP_TIMEOUT` | `30.0` | Timeout HTTP em segundos |
 | `MCP_BRASIL_HTTP_MAX_RETRIES` | `3` | Máximo de retentativas HTTP |
@@ -344,7 +351,7 @@ META_ACCESS_TOKEN=seu-token
 |--------|-----------|
 | [Quick Start](docs/guide/quickstart.md) | Instalação e configuração em 2 minutos |
 | [Arquitetura](docs/concepts/architecture.md) | Como o projeto funciona por dentro |
-| [Catálogo de Features](docs/reference/features.md) | Todas as 69 features e 525 tools |
+| [Catálogo de Features](docs/reference/features.md) | Todas as 71 features e 537 tools |
 | [Datasets locais (DuckDB)](docs/guide/datasets.md) | SIAPA + TSE 2014-2024 via SQL embedded |
 | [Smart Tools](docs/reference/smart-tools.md) | Meta-tools: planner, batch, discovery |
 | [Adicionando Features](docs/guide/adding-features.md) | Guia para contribuir com novas APIs |

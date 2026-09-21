@@ -236,6 +236,18 @@ Este documento descreve, fonte por fonte, a licença declarada e as restrições
 - **Origem**: SPU
 - **Licença**: open data; atribuição
 
+### 6.7. `megasoft` — Portais da Transparência municipais (Megasoft)
+
+- **Origem**: portais municipais de transparência na plataforma Megasoft
+  (`{municipio}.megasofttransparencia.com.br`)
+- **Licença**: dados públicos por força da LAI (Lei 12.527/11) e da Lei de
+  Responsabilidade Fiscal (LC 101/2000); atribuição ao município de origem
+- **Acesso**: API JSON somente leitura. O token de leitura é publicado pelo
+  próprio portal em `/api/configuracao/carregamento-inicial`, sem cadastro
+- **Restrições especiais**: dados de empenhos, pagamentos e receitas podem
+  conter nome e CPF/CNPJ de fornecedores e pessoas físicas. **Não usar para
+  perseguição, assédio ou reidentificação de indivíduos** (LAI art. 31 e LGPD).
+
 ---
 
 ## 7. Economia e Finanças — Baixo Risco

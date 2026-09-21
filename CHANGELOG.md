@@ -2,6 +2,12 @@
 
 Todas as mudanças notáveis do mcp-brasil estão documentadas neste arquivo.
 
+## [Unreleased]
+
+### Features
+
+- **megasoft:** Add municipal transparency portals (empenhos, ordens de pagamento, totais financeiros e receitas)
+
 ## [0.14.0] - 2026-04-24
 
 ### Bug Fixes

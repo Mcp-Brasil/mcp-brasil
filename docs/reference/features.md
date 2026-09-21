@@ -1,10 +1,10 @@
 # Catalogo de Features
 
-**50 features · 435 tools · 108 resources · 82 prompts**
+**51 features · 439 tools · 109 resources · 83 prompts**
 
 Organizadas em 3 modalidades:
 
-- **`data/`** (43 features) — REST passthrough; tools chamam APIs governamentais
+- **`data/`** (44 features) — REST passthrough; tools chamam APIs governamentais
   em tempo real (seções por área abaixo)
 - **`datasets/`** (6 features) — Cache local DuckDB para CSVs/ZIPs grandes;
   opt-in via `MCP_BRASIL_DATASETS` (ver [Datasets locais](#datasets-locais))
@@ -215,6 +215,24 @@ Emendas parlamentares PIX (transferencias especiais).
 | `transferegov_resumo_emendas_ano` | Resumo anual de emendas PIX |
 
 **Chave:** Nenhuma
+
+---
+
+### `megasoft` — Portais da Transparencia municipais (4 tools)
+
+Empenhos, ordens de pagamento, totais financeiros e receitas de municipios que
+publicam o Portal da Transparencia na plataforma Megasoft
+(`{municipio}.megasofttransparencia.com.br`). O token de leitura e publicado
+pelo proprio portal e obtido automaticamente.
+
+| Tool | Descricao |
+|------|-----------|
+| `megasoft_buscar_empenhos` | Empenhos do municipio em um periodo |
+| `megasoft_buscar_ordens_pagamento` | Ordens de pagamento do municipio em um periodo |
+| `megasoft_totais_ordens_pagamento` | Totais financeiros consolidados do periodo |
+| `megasoft_buscar_receitas` | Receitas (arrecadacao) do municipio em um periodo |
+
+**Chave:** Nenhuma (token obtido automaticamente do portal; `MEGASOFT_TOKEN` opcional)
 
 ---
 
