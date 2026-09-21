@@ -2,6 +2,12 @@
 
 Todas as mudanças notáveis do mcp-brasil estão documentadas neste arquivo.
 
+## [Unreleased]
+
+### Features
+
+- **tcm_go:** Add TCM-GO processes (eSiproc) and acórdãos (TCMJuris) with 3 tools
+
 ## [0.14.0] - 2026-04-24
 
 ### Bug Fixes

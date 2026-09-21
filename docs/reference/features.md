@@ -218,6 +218,16 @@ Emendas parlamentares PIX (transferencias especiais).
 
 ---
 
+### Tribunais de Contas Municipais (1 feature)
+
+| Feature | UF | Tools | Cobertura |
+|---------|-----|-------|-----------|
+| `tcm_go` | Goias (municipal) | 3 | Processos eletronicos (eSiproc), acordaos (TCMJuris) |
+
+**Chave:** Nenhuma
+
+---
+
 ### Tribunais de Contas Estaduais (10 features)
 
 | Feature | UF | Tools | Cobertura |
