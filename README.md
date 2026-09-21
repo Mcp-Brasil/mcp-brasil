@@ -4,12 +4,12 @@
 
 # mcp-brasil
 
-**MCP Server para 70 fontes de dados públicas brasileiras**
+**MCP Server para 71 fontes de dados públicas brasileiras**
 
 
 [![License: MIT (code)](https://img.shields.io/badge/code-MIT-yellow.svg)](LICENSE) [![Sources: see SOURCES.md](https://img.shields.io/badge/data-see%20SOURCES.md-blue)](SOURCES.md) [![AUP](https://img.shields.io/badge/use-ACCEPTABLE__USE.md-orange)](ACCEPTABLE_USE.md)
 
-533 tools · 131 resources · 102 prompts · 70 features · 15 áreas temáticas
+538 tools · 131 resources · 102 prompts · 71 features · 15 áreas temáticas
 
 Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil — economia, legislação, transparência, judiciário, eleições, meio ambiente, saúde, educação, segurança pública, fiscal subnacional, aviação e mais.
 
@@ -27,11 +27,11 @@ Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil 
 
 ## Features
 
-- **533 tools** em 70 features cobrindo 15 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, educação, segurança pública, compras públicas, fiscal subnacional, aviação, energia e mais
+- **538 tools** em 71 features cobrindo 15 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, educação, segurança pública, compras públicas, fiscal subnacional, aviação, energia e mais
 - **Datasets grandes com cache local** — SIAPA (~813k imóveis), TSE 2014-2024 (candidatos, bens, votação, redes sociais, FEFC), ANP preços de combustíveis, INEP Censo Escolar e ENEM, ISP-RJ segurança pública, ANAC aeronaves e voos regulares — SQL via DuckDB embedded, opt-in via env
 - **Cross-referencing** com `planejar_consulta` — cria planos de execução combinando múltiplas APIs (ex: gastos de um deputado + votações + proposições)
 - **Execução em lote** com `executar_lote` — dispara consultas em paralelo numa única chamada
-- **Smart discovery** — BM25 search transform filtra 533 tools para só mostrar as relevantes ao contexto
+- **Smart discovery** — BM25 search transform filtra 538 tools para só mostrar as relevantes ao contexto
 - **Auto-registry** — adicionar uma feature é criar uma pasta; zero configuração manual
 - **Async everywhere** — httpx async + Pydantic v2 + rate limiting com backoff
 
@@ -184,6 +184,7 @@ Conecte o server e faça perguntas em linguagem natural:
 | `spu_imoveis` | Imóveis da União (Raio-X APF / Gov360) — busca por órgão, UF, município, regime e agregações institucionais | 4 |
 | `siconfi` | SICONFI/Tesouro Nacional — RREO, RGF, DCA e MSC de municípios/estados (LRF, LC 101) | 7 |
 | `mj` | MJSP (CKAN) — SINESP, INFOPEN, PROCONs/Sindec, armas, sistema prisional | 4 |
+| `nucleogov` | Portais da Transparência municipais (NucleoGov) — empenhos, contratos, licitações, dispensas, legislação | 5 |
 
 ### Judiciário
 
@@ -344,7 +345,7 @@ META_ACCESS_TOKEN=seu-token
 |--------|-----------|
 | [Quick Start](docs/guide/quickstart.md) | Instalação e configuração em 2 minutos |
 | [Arquitetura](docs/concepts/architecture.md) | Como o projeto funciona por dentro |
-| [Catálogo de Features](docs/reference/features.md) | Todas as 69 features e 525 tools |
+| [Catálogo de Features](docs/reference/features.md) | Todas as 71 features e 538 tools |
 | [Datasets locais (DuckDB)](docs/guide/datasets.md) | SIAPA + TSE 2014-2024 via SQL embedded |
 | [Smart Tools](docs/reference/smart-tools.md) | Meta-tools: planner, batch, discovery |
 | [Adicionando Features](docs/guide/adding-features.md) | Guia para contribuir com novas APIs |
