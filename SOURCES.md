@@ -236,6 +236,15 @@ Este documento descreve, fonte por fonte, a licença declarada e as restrições
 - **Origem**: SPU
 - **Licença**: open data; atribuição
 
+### 6.7. `tcm_go` — Tribunal de Contas dos Municípios do Estado de Goiás
+
+- **Origem**: TCM-GO — eSiproc (processos eletrônicos) e TCMJuris (acórdãos)
+- **Licença**: dados públicos por força da LAI (Lei 12.527/11); atribuição
+- **Nota técnica**: o TCMJuris recusa requisições de clientes headless (bloqueia o User-Agent "HeadlessChrome"), então o servidor envia um User-Agent de navegador desktop comum.
+- **Escopo**: metadados de trâmite dos processos (eSiproc) e acórdãos publicados com link do PDF (TCMJuris). A tool **não baixa nem processa o PDF** — devolve apenas o link.
+
+**Atribuição:** Tribunal de Contas dos Municípios do Estado de Goiás.
+
 ---
 
 ## 7. Economia e Finanças — Baixo Risco
