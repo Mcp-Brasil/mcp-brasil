@@ -233,6 +233,27 @@ class TestBuscarDespesas:
 
     @pytest.mark.asyncio
     @respx.mock
+    @pytest.mark.parametrize(
+        ("entrada", "enviado"),
+        [
+            ("12345678000190", "12.345.678/0001-90"),
+            ("12.345.678/0001-90", "12.345.678/0001-90"),
+            ("12345678901", "123.456.789-01"),
+        ],
+    )
+    async def test_cnpj_is_masked_before_remote_filter(self, entrada: str, enviado: str) -> None:
+        # the portal returns zero results for a digits-only document
+        route = respx.post(DESPESAS_URL).mock(
+            return_value=httpx.Response(200, json=_envelope([], total=0))
+        )
+        await client.buscar_despesas(PORTAL, cnpj=entrada)
+        inner = json.loads(
+            urllib.parse.parse_qs(route.calls.last.request.content.decode("utf-8"))["params"][0]
+        )["0-mcp"]
+        assert inner["cpf_cnpj"] == enviado
+
+    @pytest.mark.asyncio
+    @respx.mock
     async def test_cnpj_match_outside_first_page_is_not_lost(self) -> None:
         respx.post(DESPESAS_URL).mock(
             return_value=httpx.Response(

@@ -161,6 +161,20 @@ def _somente_digitos(valor: object) -> str:
     return "".join(ch for ch in str(valor or "") if ch.isdigit())
 
 
+def _mascarar_documento(documento: str) -> str:
+    """Format a CNPJ/CPF the way the remote ``cpf_cnpj`` filter expects.
+
+    The portal only matches the masked form (``00.000.000/0000-00`` or
+    ``000.000.000-00``); digits-only input returns zero results.
+    """
+    d = _somente_digitos(documento)
+    if len(d) == 14:
+        return f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}"
+    if len(d) == 11:
+        return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}"
+    return documento.strip()
+
+
 def _texto(valor: object) -> str | None:
     if valor is None:
         return None
@@ -408,7 +422,7 @@ async def buscar_despesas(
     if data_fim:
         filtros["datamax"] = _data_br(data_fim, campo="data_fim", fim=True)
     if cnpj:
-        filtros["cpf_cnpj"] = cnpj.strip()
+        filtros["cpf_cnpj"] = _mascarar_documento(cnpj)
     if busca:
         filtros[CAMPO_BUSCA] = busca
 
