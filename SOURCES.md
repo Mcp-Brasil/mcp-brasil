@@ -314,6 +314,16 @@ Este documento descreve, fonte por fonte, a licença declarada e as restrições
 - **Origem**: Instituto Brasileiro do Meio Ambiente
 - **Licença**: open data; atribuição
 
+### 10.4. `mapbiomas_alerta` — MapBiomas Alerta
+
+- **Origem**: MapBiomas (Rede de Monitoramento de Alertas de Supressão de Vegetação Nativa)
+- **Licença**: termos de uso próprios; acesso mediante conta cadastrada (API GraphQL autenticada)
+- **Atribuição**: MapBiomas Alerta
+- **Restrição**: os alertas são detecções de supressão de vegetação nativa validadas por equipe técnica, **sem avaliação de legalidade ou responsabilidade**; as áreas de sobreposição entre camadas **não devem ser somadas**; a ausência de alerta **não comprova** ausência de supressão.
+
+**Disclaimer obrigatório:**
+> Dados do MapBiomas Alerta são alertas de supressão de vegetação nativa, não laudo pericial nem decisão sobre regularidade. Não os utilize para imputar responsabilidade sem cotejo com outras fontes. Atribuição: MapBiomas Alerta. Consulte os termos de uso da plataforma antes de redistribuir.
+
 ---
 
 ## 11. Energia, Infraestrutura, Aviação — Risco Variável

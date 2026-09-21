@@ -4,16 +4,16 @@
 
 # mcp-brasil
 
-**MCP Server para 70 fontes de dados públicas brasileiras**
+**MCP Server para 71 fontes de dados públicas brasileiras**
 
 
 [![License: MIT (code)](https://img.shields.io/badge/code-MIT-yellow.svg)](LICENSE) [![Sources: see SOURCES.md](https://img.shields.io/badge/data-see%20SOURCES.md-blue)](SOURCES.md) [![AUP](https://img.shields.io/badge/use-ACCEPTABLE__USE.md-orange)](ACCEPTABLE_USE.md)
 
-533 tools · 131 resources · 102 prompts · 70 features · 15 áreas temáticas
+537 tools · 133 resources · 103 prompts · 71 features · 15 áreas temáticas
 
 Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil — economia, legislação, transparência, judiciário, eleições, meio ambiente, saúde, educação, segurança pública, fiscal subnacional, aviação e mais.
 
-**66 APIs não requerem chave** · 4 usam chaves gratuitas (cadastro em 1 min)
+**66 APIs não requerem chave** · 5 usam chaves gratuitas (cadastro em 1 min)
 
 [Quick Start](#quick-start) · [Fontes de dados](#fontes-de-dados) · [Documentação](#documentação) · [Desenvolvimento](#desenvolvimento)
 
@@ -27,11 +27,11 @@ Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil 
 
 ## Features
 
-- **533 tools** em 70 features cobrindo 15 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, educação, segurança pública, compras públicas, fiscal subnacional, aviação, energia e mais
+- **537 tools** em 71 features cobrindo 15 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, educação, segurança pública, compras públicas, fiscal subnacional, aviação, energia e mais
 - **Datasets grandes com cache local** — SIAPA (~813k imóveis), TSE 2014-2024 (candidatos, bens, votação, redes sociais, FEFC), ANP preços de combustíveis, INEP Censo Escolar e ENEM, ISP-RJ segurança pública, ANAC aeronaves e voos regulares — SQL via DuckDB embedded, opt-in via env
 - **Cross-referencing** com `planejar_consulta` — cria planos de execução combinando múltiplas APIs (ex: gastos de um deputado + votações + proposições)
 - **Execução em lote** com `executar_lote` — dispara consultas em paralelo numa única chamada
-- **Smart discovery** — BM25 search transform filtra 533 tools para só mostrar as relevantes ao contexto
+- **Smart discovery** — BM25 search transform filtra 537 tools para só mostrar as relevantes ao contexto
 - **Auto-registry** — adicionar uma feature é criar uma pasta; zero configuração manual
 - **Async everywhere** — httpx async + Pydantic v2 + rate limiting com backoff
 
@@ -206,6 +206,7 @@ Conecte o server e faça perguntas em linguagem natural:
 | `inpe` | INPE — focos de queimadas, desmatamento DETER/PRODES | 4 |
 | `ana` | ANA — estações hidrológicas, telemetria, reservatórios | 3 |
 | `ibama` | IBAMA (CKAN) — autos de infração, CTF/APP, TCFA, biomas | 4 |
+| `mapbiomas_alerta` | MapBiomas Alerta — alertas validados de supressão de vegetação nativa (área, APP/RL/UC/TI, embargo, CAR cruzado) | 4 |
 
 ### Energia e Infraestrutura
 
@@ -311,8 +312,9 @@ Ver [guia de Datasets locais](docs/guide/datasets.md) para detalhes de uso.
 | Portal da Transparência | Opcional | [Cadastro gratuito](https://portaldatransparencia.gov.br/api-de-dados/cadastrar-email) |
 | DataJud/CNJ | Opcional | [Cadastro gratuito](https://datajud-wiki.cnj.jus.br/api-publica/acesso) |
 | Anúncios Eleitorais (Meta) | Opcional | [Meta Ad Library API](https://www.facebook.com/ads/library/api/) |
+| MapBiomas Alerta | Obrigatória | [Cadastro gratuito](https://plataforma.alerta.mapbiomas.org/sign-up) |
 | brapi.dev (B3) | Opcional | [Token gratuito](https://brapi.dev/dashboard) para índices e múltiplas ações |
-| Todas as outras (62) | Nenhuma chave | — |
+| Todas as outras (61) | Nenhuma chave | — |
 
 Configure via variáveis de ambiente ou `.env`:
 
@@ -320,6 +322,8 @@ Configure via variáveis de ambiente ou `.env`:
 TRANSPARENCIA_API_KEY=sua-chave
 DATAJUD_API_KEY=sua-chave
 META_ACCESS_TOKEN=seu-token
+MAPBIOMAS_EMAIL=seu-email
+MAPBIOMAS_PASSWORD=sua-senha
 ```
 
 ## Configuração
@@ -329,6 +333,8 @@ META_ACCESS_TOKEN=seu-token
 | `TRANSPARENCIA_API_KEY` | — | Chave do Portal da Transparência |
 | `DATAJUD_API_KEY` | — | Chave do DataJud/CNJ |
 | `META_ACCESS_TOKEN` | — | Token da [Meta Ad Library API](https://www.facebook.com/ads/library/api/) |
+| `MAPBIOMAS_EMAIL` | — | E-mail da conta no MapBiomas Alerta |
+| `MAPBIOMAS_PASSWORD` | — | Senha da conta no MapBiomas Alerta |
 | `MCP_BRASIL_TOOL_SEARCH` | `bm25` | Modo de discovery: `bm25`, `code_mode` ou `none` |
 | `MCP_BRASIL_HTTP_TIMEOUT` | `30.0` | Timeout HTTP em segundos |
 | `MCP_BRASIL_HTTP_MAX_RETRIES` | `3` | Máximo de retentativas HTTP |
@@ -344,7 +350,7 @@ META_ACCESS_TOKEN=seu-token
 |--------|-----------|
 | [Quick Start](docs/guide/quickstart.md) | Instalação e configuração em 2 minutos |
 | [Arquitetura](docs/concepts/architecture.md) | Como o projeto funciona por dentro |
-| [Catálogo de Features](docs/reference/features.md) | Todas as 69 features e 525 tools |
+| [Catálogo de Features](docs/reference/features.md) | Todas as 71 features e 537 tools |
 | [Datasets locais (DuckDB)](docs/guide/datasets.md) | SIAPA + TSE 2014-2024 via SQL embedded |
 | [Smart Tools](docs/reference/smart-tools.md) | Meta-tools: planner, batch, discovery |
 | [Adicionando Features](docs/guide/adding-features.md) | Guia para contribuir com novas APIs |

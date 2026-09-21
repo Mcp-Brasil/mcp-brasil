@@ -8,6 +8,8 @@
 |----------|---------|-----------|
 | `TRANSPARENCIA_API_KEY` | — | Chave do Portal da Transparencia (opcional, cadastro gratuito) |
 | `DATAJUD_API_KEY` | — | Chave do DataJud/CNJ (opcional, cadastro gratuito) |
+| `MAPBIOMAS_EMAIL` | — | E-mail da conta no MapBiomas Alerta (obrigatoria para a feature `mapbiomas_alerta`) |
+| `MAPBIOMAS_PASSWORD` | — | Senha da conta no MapBiomas Alerta (obrigatoria para a feature `mapbiomas_alerta`) |
 | `ANTHROPIC_API_KEY` | — | Necessaria para `recomendar_tools` e `planejar_consulta` |
 
 ### Configuracao do server
@@ -59,6 +61,14 @@ Chave gratuita para acesso a processos judiciais. Sem chave, a feature `datajud`
 1. Acesse [datajud-wiki.cnj.jus.br/api-publica/acesso](https://datajud-wiki.cnj.jus.br/api-publica/acesso)
 2. Siga o processo de cadastro
 3. Configure: `DATAJUD_API_KEY=sua-chave`
+
+### MapBiomas Alerta
+
+Conta gratuita para acessar os alertas de supressao de vegetacao nativa. Sem as credenciais, a feature `mapbiomas_alerta` e desativada.
+
+1. Acesse [plataforma.alerta.mapbiomas.org/sign-up](https://plataforma.alerta.mapbiomas.org/sign-up)
+2. Crie a conta e confirme o cadastro
+3. Configure: `MAPBIOMAS_EMAIL=seu-email` e `MAPBIOMAS_PASSWORD=sua-senha`
 
 ### Anthropic API
 
