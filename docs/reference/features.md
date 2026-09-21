@@ -218,6 +218,22 @@ Emendas parlamentares PIX (transferencias especiais).
 
 ---
 
+### `nucleogov` — Portais da Transparencia municipais (NucleoGov) (5 tools)
+
+Empenhos, contratos, licitacoes, dispensas e legislacao de portais municipais na plataforma NucleoGov (`acessoainformacao.<municipio>.<uf>.gov.br`).
+
+| Tool | Descricao |
+|------|-----------|
+| `nucleogov_buscar_despesas` | Empenhos/despesas por periodo, com filtro por CNPJ do fornecedor |
+| `nucleogov_buscar_contratos` | Contratos e aditivos por ano-base |
+| `nucleogov_buscar_licitacoes` | Processos licitatorios por ano-base |
+| `nucleogov_buscar_dispensas` | Dispensas e inexigibilidades de licitacao |
+| `nucleogov_buscar_legislacao` | Leis, decretos e portarias municipais |
+
+**Chave:** Nenhuma (informe o dominio do portal em cada consulta)
+
+---
+
 ### Tribunais de Contas Estaduais (10 features)
 
 | Feature | UF | Tools | Cobertura |

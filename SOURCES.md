@@ -236,6 +236,18 @@ Este documento descreve, fonte por fonte, a licença declarada e as restrições
 - **Origem**: SPU
 - **Licença**: open data; atribuição
 
+### 6.7. `nucleogov` — portais da transparência municipais (NucleoGov)
+
+- **Origem**: portais municipais da plataforma NucleoGov (a maioria dos municípios de Goiás e municípios de outros estados), no padrão `acessoainformacao.<municipio>.<uf>.gov.br`
+- **Licença**: dados públicos por força da LAI (Lei 12.527/2011); transparência ativa municipal
+- **Acesso**: sem login e sem chave; o portal pode filtrar clientes automatizados (o cliente envia User-Agent de navegador porque o dado é público)
+- **Risco**: empenhos e contratos expõem CNPJ/CPF de fornecedores e nomes de pessoas físicas; a origem pode mascarar CPF de pessoa física. Tratar como dado pessoal sob LGPD — vedado uso para perseguição/assédio
+- **Atribuição**: "Portal da Transparência do Município consultado — plataforma NucleoGov"
+
+**Disclaimer obrigatório:**
+> Dado público do Portal da Transparência do município (Lei 12.527/2011), lido na hora. **Confira no portal antes de usar** em peça, denúncia ou matéria: o portal pode estar desatualizado, incompleto ou fora do ar, e isso não aparece no resultado. Campos variam de município para município.
+
+
 ---
 
 ## 7. Economia e Finanças — Baixo Risco
