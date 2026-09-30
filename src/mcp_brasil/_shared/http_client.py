@@ -18,17 +18,36 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections import defaultdict
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
 from mcp_brasil.exceptions import HttpClientError
-from mcp_brasil.settings import HTTP_BACKOFF_BASE, HTTP_MAX_RETRIES, HTTP_TIMEOUT, USER_AGENT
+from mcp_brasil.settings import (
+    HTTP_BACKOFF_BASE,
+    HTTP_MAX_CONCURRENCY_PER_HOST,
+    HTTP_MAX_RETRIES,
+    HTTP_TIMEOUT,
+    USER_AGENT,
+)
 
 logger = logging.getLogger(__name__)
 
+
 # Status codes that trigger a retry
 _RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+
+_host_semaphores: dict[str, asyncio.Semaphore] = defaultdict(
+    lambda: asyncio.Semaphore(HTTP_MAX_CONCURRENCY_PER_HOST)
+)
+
+def _get_semaphore(url: str) -> asyncio.Semaphore:
+    parsed = urlparse(url)
+    host = parsed.hostname or "unknown"
+    return _host_semaphores[host]
+
 
 
 def create_client(
@@ -64,6 +83,7 @@ def create_client(
 async def http_get(
     url: str,
     *,
+    client: httpx.AsyncClient | None = None,
     params: dict[str, Any] | None = None,
     headers: dict[str, str] | None = None,
     timeout: float | None = None,
@@ -90,10 +110,25 @@ async def http_get(
     retries = max_retries if max_retries is not None else HTTP_MAX_RETRIES
     last_error: Exception | None = None
 
-    async with create_client(timeout=timeout, headers=headers) as client:
+    # If a shared lifespan client is provided, use it without context manager
+    # but still apply per-request headers and timeout
+    import contextlib
+    cm = contextlib.nullcontext(client) if client else create_client(
+        timeout=timeout, headers=headers
+    )
+    
+    async with cm as c:
         for attempt in range(retries + 1):
             try:
-                response = await client.get(url, params=params)
+                req_kwargs: dict[str, Any] = {"params": params}
+                if client:
+                    if headers:
+                        req_kwargs["headers"] = headers
+                    if timeout is not None:
+                        req_kwargs["timeout"] = httpx.Timeout(timeout)
+                        
+                async with _get_semaphore(url):
+                    response = await c.get(url, **req_kwargs)
 
                 if response.status_code in _RETRYABLE_STATUS_CODES:
                     if attempt < retries:
@@ -143,6 +178,7 @@ async def http_get(
 async def http_post(
     url: str,
     *,
+    client: httpx.AsyncClient | None = None,
     json_body: Any | None = None,
     params: dict[str, Any] | None = None,
     headers: dict[str, str] | None = None,
@@ -170,10 +206,23 @@ async def http_post(
     retries = max_retries if max_retries is not None else HTTP_MAX_RETRIES
     last_error: Exception | None = None
 
-    async with create_client(timeout=timeout, headers=headers) as client:
+    import contextlib
+    cm = contextlib.nullcontext(client) if client else create_client(
+        timeout=timeout, headers=headers
+    )
+    
+    async with cm as c:
         for attempt in range(retries + 1):
             try:
-                response = await client.post(url, json=json_body, params=params)
+                req_kwargs: dict[str, Any] = {"json": json_body, "params": params}
+                if client:
+                    if headers:
+                        req_kwargs["headers"] = headers
+                    if timeout is not None:
+                        req_kwargs["timeout"] = httpx.Timeout(timeout)
+                        
+                async with _get_semaphore(url):
+                    response = await c.post(url, **req_kwargs)
 
                 if response.status_code in _RETRYABLE_STATUS_CODES:
                     if attempt < retries:
