@@ -25,6 +25,7 @@ if _dotenv_path.is_file():
 HTTP_TIMEOUT: float = float(os.environ.get("MCP_BRASIL_HTTP_TIMEOUT", "30.0"))
 HTTP_MAX_RETRIES: int = int(os.environ.get("MCP_BRASIL_HTTP_MAX_RETRIES", "3"))
 HTTP_BACKOFF_BASE: float = float(os.environ.get("MCP_BRASIL_HTTP_BACKOFF_BASE", "1.0"))
+HTTP_MAX_CONCURRENCY_PER_HOST: int = int(os.environ.get("MCP_BRASIL_HTTP_MAX_CONCURRENCY_PER_HOST", "5"))
 USER_AGENT: str = os.environ.get("MCP_BRASIL_USER_AGENT", "mcp-brasil/0.1.0")
 
 # --- Tool Discovery ---

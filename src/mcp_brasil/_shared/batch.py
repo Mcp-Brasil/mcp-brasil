@@ -12,6 +12,7 @@ import inspect
 import json
 import logging
 import pkgutil
+import time
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _dispatch: dict[str, Any] = {}
+BATCH_TIMEOUT = 45.0
 
 
 def build_dispatch(registry: FeatureRegistry) -> dict[str, Any]:
@@ -119,10 +121,31 @@ async def execute_batch(
         except Exception as exc:
             return tool_name, f"Erro ao executar '{tool_name}': {exc}"
 
-    results = await asyncio.gather(*[_run_one(q) for q in queries])
+    tasks = [asyncio.create_task(_run_one(q)) for q in queries]
+    task_to_name = {tasks[i]: queries[i].get("tool", "desconhecido") for i in range(len(queries))}
+
+    done, pending = await asyncio.wait(tasks, timeout=BATCH_TIMEOUT)
+
+    # Cancel pending tasks to prevent them from executing after timeout
+    for p in pending:
+        p.cancel()
+    if pending:
+        await asyncio.gather(*pending, return_exceptions=True)
 
     parts: list[str] = []
-    for tool_name, output in results:
-        parts.append(f"## {tool_name}\n\n{output}")
+    # Preserve order of original queries
+    for task in tasks:
+        tool_name = task_to_name[task]
+        if task in done:
+            try:
+                # _run_one returns (tool_name, output)
+                _, output = task.result()
+                parts.append(f"## {tool_name}\n\n{output}")
+            except Exception as e:
+                parts.append(f"## {tool_name}\n\nErro inesperado na execucao: {e}")
+        else:
+            parts.append(
+                f"## {tool_name}\n\nErro: Expirou (limite de tempo atingido antes da conclusao)."
+            )
 
     return "\n\n---\n\n".join(parts)
