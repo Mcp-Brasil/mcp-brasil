@@ -227,7 +227,7 @@ Emendas parlamentares PIX (transferencias especiais).
 | `tce_rs` | Rio Grande do Sul | 5 | Educacao, saude, gestao fiscal (LRF) |
 | `tce_sc` | Santa Catarina | 2 | Municipios, unidades gestoras |
 | `tce_pe` | Pernambuco | 5 | Licitacoes, contratos, despesas, fornecedores |
-| `tce_ce` | Ceara | 4 | Municipios, licitacoes, contratos, empenhos |
+| `tce_ce` | Ceara | 4 | Municipios, licitacoes, contratos com contratado, empenhos (SIM 2.0) |
 | `tce_rn` | Rio Grande do Norte | 5 | Jurisdicionados, licitacoes, contratos |
 | `tce_pi` | Piaui | 5 | Prefeituras, despesas, receitas |
 | `tce_to` | Tocantins | 3 | Processos, pautas de sessoes |
