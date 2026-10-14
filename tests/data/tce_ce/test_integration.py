@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from fastmcp import Client
 
-from mcp_brasil.data.tce_ce.schemas import Municipio
+from mcp_brasil.data.tce_ce.schemas import LicitacaoResultado, Municipio
 from mcp_brasil.data.tce_ce.server import mcp
 
 CLIENT_MODULE = "mcp_brasil.data.tce_ce.client"
@@ -81,7 +81,7 @@ class TestToolExecution:
         with patch(
             f"{CLIENT_MODULE}.buscar_licitacoes",
             new_callable=AsyncMock,
-            return_value=[],
+            return_value=LicitacaoResultado(),
         ):
             async with Client(mcp) as c:
                 result = await c.call_tool(

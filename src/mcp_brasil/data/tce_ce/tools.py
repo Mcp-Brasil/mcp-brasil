@@ -15,30 +15,49 @@ from mcp_brasil._shared.formatting import format_brl
 from . import client
 
 
-async def listar_municipios_ce(ctx: Context) -> str:
+def _cabecalho(total: int, tem_mais: bool, rotulo: str) -> str:
+    if tem_mais:
+        return f"**{total} {rotulo} no TCE-CE nesta página (há mais páginas):**\n"
+    return f"**{total} {rotulo} no TCE-CE:**\n"
+
+
+def _rodape_paginacao(mostrados: int, total: int, tem_mais: bool, deslocamento: int) -> str | None:
+    if tem_mais:
+        return (
+            f"*Página com {total} registros (mostrando {mostrados}). Há mais resultados: "
+            f"use deslocamento={deslocamento + total}.*"
+        )
+    if total > mostrados:
+        return f"*Mostrando {mostrados} de {total}.*"
+    return None
+
+
+async def listar_municipios_ce(ctx: Context, nome_municipio: str | None = None) -> str:
     """Lista os municípios cearenses sob jurisdição do TCE-CE.
 
-    Retorna código e nome de cada município. O código é usado
-    como parâmetro nas demais consultas.
+    Retorna código SIM, nome e código IBGE de cada município. O código SIM
+    (3 dígitos, ex: "057" Fortaleza, "134" Pentecoste) é usado nas demais consultas.
 
     Args:
         ctx: Contexto MCP.
+        nome_municipio: Nome exato do município para filtrar (ex: "PENTECOSTE").
 
     Returns:
         Lista de municípios com código e nome.
     """
     await ctx.info("Listando municípios do TCE-CE...")
-    municipios = await client.listar_municipios()
+    municipios = await client.listar_municipios(nome_municipio=nome_municipio)
 
     if not municipios:
         return "Nenhum município encontrado no TCE-CE."
 
+    limite = 200
     lines: list[str] = [f"**{len(municipios)} municípios no TCE-CE:**\n"]
-    for m in municipios[:50]:
-        lines.append(f"- **{m.nome_municipio or '—'}** (código: `{m.codigo_municipio}`)")
-
-    if len(municipios) > 50:
-        lines.append(f"\n*Mostrando 50 de {len(municipios)} municípios.*")
+    for m in municipios[:limite]:
+        ibge = f", IBGE {m.codigo_municipio_ibge}" if m.codigo_municipio_ibge else ""
+        lines.append(f"- **{m.nome_municipio or '—'}** (código: `{m.codigo_municipio}`{ibge})")
+    if len(municipios) > limite:
+        lines.append(f"\n*Mostrando {limite} de {len(municipios)} municípios.*")
     return "\n".join(lines)
 
 
@@ -46,46 +65,54 @@ async def buscar_licitacoes_ce(
     ctx: Context,
     codigo_municipio: str,
     data_realizacao: str,
+    deslocamento: int = 0,
 ) -> str:
-    """Busca licitações de um município cearense por período.
+    """Busca processos de contratação de um município cearense por período.
 
-    Dados do SIM (Sistema de Informações Municipais) do TCE-CE.
-    Inclui modalidade, objeto, valor estimado e homologação.
+    Licitações, dispensas, inexigibilidades e adesões a atas registradas no SIM
+    do TCE-CE, com objeto, valor estimado e homologação.
 
     Args:
         ctx: Contexto MCP.
-        codigo_municipio: Código do município (ex: "057" para Fortaleza).
+        codigo_municipio: Código SIM do município (ex: "057" para Fortaleza).
             Use listar_municipios_ce para obter códigos.
-        data_realizacao: Data ou intervalo no formato yyyy-mm-dd
-            ou yyyy-mm-dd_yyyy-mm-dd (ex: "2024-01-01_2024-12-31").
+        data_realizacao: Período: ano ("2026"), dia ("2026-08-05") ou intervalo
+            ("2026-01-01_2026-12-31").
+        deslocamento: Offset para paginação.
 
     Returns:
-        Lista de licitações com objeto, modalidade e valores.
+        Lista de processos com objeto, modalidade e valores.
     """
     await ctx.info(f"Buscando licitações no TCE-CE (município {codigo_municipio})...")
-    licitacoes = await client.buscar_licitacoes(
+    resultado = await client.buscar_licitacoes(
         codigo_municipio=codigo_municipio,
         data_realizacao=data_realizacao,
+        deslocamento=deslocamento,
     )
 
-    if not licitacoes:
-        return "Nenhuma licitação encontrada no TCE-CE."
+    if not resultado.licitacoes:
+        return "Nenhuma licitação encontrada no TCE-CE para o período."
 
-    lines: list[str] = [f"**{len(licitacoes)} licitações no TCE-CE:**\n"]
-    for lic in licitacoes[:20]:
+    limite = 20
+    lines: list[str] = [
+        _cabecalho(resultado.total, resultado.tem_mais, "processos de contratação")
+    ]
+    for lic in resultado.licitacoes[:limite]:
         valor = format_brl(lic.valor_orcado_estimado) if lic.valor_orcado_estimado else "—"
-        objeto = (lic.objeto or "—")[:200]
         lines.append(f"### {lic.numero_licitacao or '—'}")
         lines.append(f"- **Data:** {lic.data_realizacao or '—'}")
         lines.append(f"- **Modalidade:** {lic.modalidade_licitacao or '—'}")
-        lines.append(f"- **Objeto:** {objeto}")
+        lines.append(f"- **Objeto:** {(lic.objeto or '—')[:300]}")
         lines.append(f"- **Valor estimado:** {valor}")
         if lic.data_homologacao:
             lines.append(f"- **Homologação:** {lic.data_homologacao}")
         lines.append("")
 
-    if len(licitacoes) > 20:
-        lines.append(f"*Mostrando 20 de {len(licitacoes)} licitações.*")
+    rodape = _rodape_paginacao(
+        min(limite, resultado.total), resultado.total, resultado.tem_mais, deslocamento
+    )
+    if rodape:
+        lines.append(rodape)
     return "\n".join(lines)
 
 
@@ -95,20 +122,20 @@ async def buscar_contratos_ce(
     data_contrato: str,
     deslocamento: int = 0,
 ) -> str:
-    """Busca contratos de um município cearense por período.
+    """Busca contratos de um município cearense por período, com o contratado.
 
-    Dados do SIM do TCE-CE. Inclui objeto, valor total,
-    tipo e vigência do contrato.
+    Dados do SIM do TCE-CE: objeto, valor, vigência, tipo e o contratado
+    (nome e CNPJ/CPF, cruzados com o cadastro de contratados do SIM).
 
     Args:
         ctx: Contexto MCP.
-        codigo_municipio: Código do município (ex: "057" para Fortaleza).
-        data_contrato: Data ou intervalo no formato yyyy-mm-dd
-            ou yyyy-mm-dd_yyyy-mm-dd.
+        codigo_municipio: Código SIM do município (ex: "057" para Fortaleza).
+        data_contrato: Período: ano ("2026"), dia ("2026-08-31") ou intervalo
+            ("2026-01-01_2026-12-31").
         deslocamento: Offset para paginação.
 
     Returns:
-        Lista de contratos com objeto, valor e vigência.
+        Lista de contratos com contratado, objeto, valor e vigência.
     """
     await ctx.info(f"Buscando contratos no TCE-CE (município {codigo_municipio})...")
     resultado = await client.buscar_contratos(
@@ -118,46 +145,59 @@ async def buscar_contratos_ce(
     )
 
     if not resultado.contratos:
-        return "Nenhum contrato encontrado no TCE-CE."
+        return "Nenhum contrato encontrado no TCE-CE para o período."
 
-    lines: list[str] = [f"**{resultado.total} contratos no TCE-CE:**\n"]
-    for c in resultado.contratos[:20]:
+    limite = 20
+    lines: list[str] = [_cabecalho(resultado.total, resultado.tem_mais, "contratos")]
+    for c in resultado.contratos[:limite]:
         valor = format_brl(c.valor_total_contrato) if c.valor_total_contrato else "—"
-        objeto = (c.objeto or "—")[:200]
         lines.append(f"### {c.numero_contrato or '—'}")
         lines.append(f"- **Data:** {c.data_contrato or '—'}")
+        if c.nome_contratado:
+            doc = f" ({c.documento_contratado})" if c.documento_contratado else ""
+            lines.append(f"- **Contratado:** {c.nome_contratado}{doc}")
         lines.append(f"- **Tipo:** {c.tipo_contrato or '—'}")
-        lines.append(f"- **Objeto:** {objeto}")
+        lines.append(f"- **Objeto:** {(c.objeto or '—')[:300]}")
         lines.append(f"- **Valor:** {valor}")
-        if c.data_fim_vigencia:
-            lines.append(f"- **Vigência até:** {c.data_fim_vigencia}")
+        if c.data_inicio_vigencia or c.data_fim_vigencia:
+            lines.append(
+                f"- **Vigência:** {c.data_inicio_vigencia or '—'} a {c.data_fim_vigencia or '—'}"
+            )
+        if c.numero_processo_adm:
+            lines.append(f"- **Processo administrativo:** {c.numero_processo_adm}")
         lines.append("")
 
-    if resultado.total > 20:
+    if resultado.contratado_incompleto:
         lines.append(
-            f"*Mostrando 20 de {resultado.total}. "
-            f"Use deslocamento={deslocamento + 50} para próxima página.*"
+            "*Atenção: o cruzamento com o cadastro de contratados parou no limite de leitura. "
+            "Contrato sem contratado aqui NÃO significa contratado ausente no SIM; "
+            "consulte um período menor.*"
         )
+    rodape = _rodape_paginacao(
+        min(limite, resultado.total), resultado.total, resultado.tem_mais, deslocamento
+    )
+    if rodape:
+        lines.append(rodape)
     return "\n".join(lines)
 
 
 async def buscar_empenhos_ce(
     ctx: Context,
-    codigo_municipio: int,
+    codigo_municipio: str,
     data_referencia: int,
-    codigo_orgao: str = "02",
+    codigo_orgao: str | None = None,
     deslocamento: int = 0,
 ) -> str:
-    """Busca notas de empenho de um município cearense.
+    """Busca notas de empenho de um município cearense em um mês.
 
-    Empenhos são o primeiro estágio da despesa pública.
-    Dados do SIM do TCE-CE.
+    Empenhos são o primeiro estágio da despesa pública. Dados do SIM do TCE-CE,
+    com credor (nome e CNPJ/CPF), valor e histórico.
 
     Args:
         ctx: Contexto MCP.
-        codigo_municipio: Código numérico do município (ex: 57 para Fortaleza).
-        data_referencia: Ano-mês no formato yyyymm (ex: 202401 para jan/2024).
-        codigo_orgao: Código do órgão ("01" = Câmara, "02" = Prefeitura).
+        codigo_municipio: Código SIM do município (ex: "057" para Fortaleza).
+        data_referencia: Ano-mês no formato AAAAMM (ex: 202608 para ago/2026).
+        codigo_orgao: Código do órgão no SIM (opcional; varia por município).
         deslocamento: Offset para paginação.
 
     Returns:
@@ -172,22 +212,23 @@ async def buscar_empenhos_ce(
     )
 
     if not resultado.empenhos:
-        return "Nenhum empenho encontrado no TCE-CE."
+        return "Nenhum empenho encontrado no TCE-CE para o mês."
 
-    lines: list[str] = [f"**{resultado.total} empenhos no TCE-CE:**\n"]
-    for e in resultado.empenhos[:20]:
+    limite = 20
+    lines: list[str] = [_cabecalho(resultado.total, resultado.tem_mais, "empenhos")]
+    for e in resultado.empenhos[:limite]:
         valor = format_brl(e.valor_empenho) if e.valor_empenho else "—"
-        historico = (e.historico or "—")[:150]
+        doc = f" ({e.numero_documento_negociante})" if e.numero_documento_negociante else ""
         lines.append(f"### Empenho {e.numero_empenho or '—'}")
         lines.append(f"- **Data:** {e.data_emissao or '—'}")
-        lines.append(f"- **Credor:** {e.nome_negociante or '—'}")
+        lines.append(f"- **Credor:** {e.nome_negociante or '—'}{doc}")
         lines.append(f"- **Valor:** {valor}")
-        lines.append(f"- **Descrição:** {historico}")
+        lines.append(f"- **Descrição:** {(e.historico or '—')[:200]}")
         lines.append("")
 
-    if resultado.total > 20:
-        lines.append(
-            f"*Mostrando 20 de {resultado.total}. "
-            f"Use deslocamento={deslocamento + 50} para próxima página.*"
-        )
+    rodape = _rodape_paginacao(
+        min(limite, resultado.total), resultado.total, resultado.tem_mais, deslocamento
+    )
+    if rodape:
+        lines.append(rodape)
     return "\n".join(lines)

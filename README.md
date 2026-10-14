@@ -173,7 +173,7 @@ Conecte o server e faça perguntas em linguagem natural:
 | `tce_rj` | TCE-RJ — licitações, contratos, obras, penalidades, concessões | 7 |
 | `tce_rs` | TCE-RS — educação, saúde, gestão fiscal (LRF) | 5 |
 | `tce_pe` | TCE-PE — licitações, contratos, despesas, fornecedores | 5 |
-| `tce_ce` | TCE-CE — licitações, contratos, empenhos | 4 |
+| `tce_ce` | TCE-CE — licitações, contratos (com contratado), empenhos (SIM 2.0) | 4 |
 | `tce_es` | TCE-ES — licitações, contratos, obras públicas | 4 |
 | `tce_rn` | TCE-RN — jurisdicionados, licitações, contratos | 5 |
 | `tce_pi` | TCE-PI — prefeituras, despesas, receitas | 5 |
