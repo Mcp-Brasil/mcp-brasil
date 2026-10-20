@@ -11,6 +11,7 @@ import pytest
 from mcp_brasil.data.brasilapi import tools
 from mcp_brasil.data.brasilapi.schemas import (
     Banco,
+    Cotacao,
     DddInfo,
     EmpresaCnpj,
     Endereco,
@@ -241,6 +242,47 @@ class TestConsultarFeriados:
         ):
             result = await tools.consultar_feriados(1800, ctx)
         assert isinstance(result, str)
+
+
+# ---------------------------------------------------------------------------
+# consultar_cotacao
+# ---------------------------------------------------------------------------
+
+
+class TestConsultarCotacao:
+    @pytest.mark.asyncio
+    async def test_formats_rate_and_bulletin(self) -> None:
+        mock_data = Cotacao(
+            moeda="USD",
+            data="2026-10-09",
+            valor_compra=4.9886,
+            valor_venda=4.9892,
+            tipo_boletim="FECHAMENTO PTAX",
+            data_hora="2026-10-09 13:07:30.746597",
+        )
+        ctx = _mock_ctx()
+        with patch(
+            f"{CLIENT_MODULE}.consultar_cotacao",
+            new_callable=AsyncMock,
+            return_value=mock_data,
+        ):
+            result = await tools.consultar_cotacao("USD", "2026-10-09", ctx)
+        assert "R$ 4,9886" in result
+        assert "R$ 4,9892" in result
+        assert "**Boletim:** FECHAMENTO PTAX (2026-10-09 13:07:30.746597)" in result
+
+    @pytest.mark.asyncio
+    async def test_no_rate_for_the_day(self) -> None:
+        mock_data = Cotacao(moeda="USD", data="2026-10-11")
+        ctx = _mock_ctx()
+        with patch(
+            f"{CLIENT_MODULE}.consultar_cotacao",
+            new_callable=AsyncMock,
+            return_value=mock_data,
+        ):
+            result = await tools.consultar_cotacao("USD", "2026-10-11", ctx)
+        assert "**Venda:** R$ N/A" in result
+        assert "Boletim" not in result
 
 
 # ---------------------------------------------------------------------------

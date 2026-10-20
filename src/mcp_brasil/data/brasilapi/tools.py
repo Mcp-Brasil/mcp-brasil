@@ -164,7 +164,8 @@ async def consultar_cotacao(moeda: str, data: str, ctx: Context) -> str:
         data: Data no formato YYYY-MM-DD (ex: 2024-01-15).
 
     Returns:
-        Cotação de compra e venda da moeda.
+        Cotação de compra e venda do boletim de fechamento (PTAX) do dia. Se o
+        fechamento ainda não foi publicado, o boletim mais recente, identificado.
     """
     await ctx.info(f"Consultando cotação {moeda} em {data}...")
     cotacao = await client.consultar_cotacao(moeda, data)
@@ -176,6 +177,8 @@ async def consultar_cotacao(moeda: str, data: str, ctx: Context) -> str:
         f"**Compra:** R$ {compra}",
         f"**Venda:** R$ {venda}",
     ]
+    if cotacao.tipo_boletim:
+        lines.append(f"**Boletim:** {cotacao.tipo_boletim} ({cotacao.data_hora or 'sem horário'})")
     return "\n".join(lines)
 
 

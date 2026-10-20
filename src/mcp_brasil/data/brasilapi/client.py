@@ -120,13 +120,20 @@ async def consultar_cotacao(moeda: str, data_ref: str) -> Cotacao:
     """Fetch exchange rate for a currency on a specific date."""
     url = f"{CAMBIO_COTACAO_URL}/{moeda.upper()}/{data_ref}"
     raw: dict[str, Any] = await _get(url)
-    cotacoes = raw.get("cotacoes", [])
-    cotacao = cotacoes[0] if cotacoes else {}
+    cotacoes: list[dict[str, Any]] = raw.get("cotacoes", [])
+    # The API lists every bulletin of the day (opening, intermediates, closing).
+    # The day's PTAX is the closing one; before it is published, use the latest.
+    cotacao = next(
+        (c for c in cotacoes if "FECHAMENTO" in str(c.get("tipo_boletim", "")).upper()),
+        cotacoes[-1] if cotacoes else {},
+    )
     return Cotacao(
         moeda=raw.get("moeda", moeda),
         data=raw.get("data", data_ref),
         valor_compra=cotacao.get("cotacao_compra") or cotacao.get("valor_compra"),
         valor_venda=cotacao.get("cotacao_venda") or cotacao.get("valor_venda"),
+        tipo_boletim=cotacao.get("tipo_boletim"),
+        data_hora=cotacao.get("data_hora_cotacao"),
     )
 
 

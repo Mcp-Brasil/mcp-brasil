@@ -11,6 +11,7 @@ from mcp_brasil._shared.rate_limiter import RateLimiter
 from mcp_brasil.data.brasilapi import client
 from mcp_brasil.data.brasilapi.constants import (
     BANKS_URL,
+    CAMBIO_COTACAO_URL,
     CEP_URL,
     CNPJ_URL,
     FERIADOS_URL,
@@ -229,3 +230,79 @@ class TestConsultarFeriados:
         respx.get(f"{FERIADOS_URL}/1800").mock(return_value=httpx.Response(200, json=[]))
         result = await client.consultar_feriados(1800)
         assert result == []
+
+
+# ---------------------------------------------------------------------------
+# consultar_cotacao
+# ---------------------------------------------------------------------------
+
+
+def _boletim(tipo: str, hora: str, compra: float, venda: float) -> dict[str, object]:
+    return {
+        "paridade_compra": 1,
+        "paridade_venda": 1,
+        "cotacao_compra": compra,
+        "cotacao_venda": venda,
+        "data_hora_cotacao": f"2026-10-09 {hora}",
+        "tipo_boletim": tipo,
+    }
+
+
+# Real BrasilAPI response for USD on 2026-10-09: five bulletins, closing last.
+BOLETINS_USD_2026_10_09 = [
+    _boletim("ABERTURA", "10:10:14.047225", 5.0012, 5.0018),
+    _boletim("INTERMEDIÁRIO", "11:04:12.553856", 4.9906, 4.9912),
+    _boletim("INTERMEDIÁRIO", "12:02:23.4373", 4.9855, 4.9861),
+    _boletim("INTERMEDIÁRIO", "13:07:30.550247", 4.977, 4.9776),
+    _boletim("FECHAMENTO PTAX", "13:07:30.746597", 4.9886, 4.9892),
+]
+
+
+class TestConsultarCotacao:
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_returns_closing_ptax_bulletin(self) -> None:
+        respx.get(f"{CAMBIO_COTACAO_URL}/USD/2026-10-09").mock(
+            return_value=httpx.Response(
+                200,
+                json={"cotacoes": BOLETINS_USD_2026_10_09, "moeda": "USD", "data": "2026-10-09"},
+            )
+        )
+        result = await client.consultar_cotacao("usd", "2026-10-09")
+        assert result.valor_compra == 4.9886
+        assert result.valor_venda == 4.9892
+        assert result.tipo_boletim == "FECHAMENTO PTAX"
+        assert result.data_hora == "2026-10-09 13:07:30.746597"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_closing_bulletin_is_found_in_any_position(self) -> None:
+        boletins = list(reversed(BOLETINS_USD_2026_10_09))
+        respx.get(f"{CAMBIO_COTACAO_URL}/USD/2026-10-09").mock(
+            return_value=httpx.Response(200, json={"cotacoes": boletins})
+        )
+        result = await client.consultar_cotacao("USD", "2026-10-09")
+        assert result.valor_venda == 4.9892
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_without_closing_uses_latest_bulletin(self) -> None:
+        # During the day the closing bulletin is not published yet.
+        respx.get(f"{CAMBIO_COTACAO_URL}/USD/2026-10-09").mock(
+            return_value=httpx.Response(200, json={"cotacoes": BOLETINS_USD_2026_10_09[:3]})
+        )
+        result = await client.consultar_cotacao("USD", "2026-10-09")
+        assert result.valor_venda == 4.9861
+        assert result.tipo_boletim == "INTERMEDIÁRIO"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_no_bulletins(self) -> None:
+        respx.get(f"{CAMBIO_COTACAO_URL}/USD/2026-10-11").mock(
+            return_value=httpx.Response(200, json={"cotacoes": []})
+        )
+        result = await client.consultar_cotacao("USD", "2026-10-11")
+        assert result.moeda == "USD"
+        assert result.data == "2026-10-11"
+        assert result.valor_venda is None
+        assert result.tipo_boletim is None

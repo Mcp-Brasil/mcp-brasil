@@ -72,6 +72,8 @@ class Cotacao(BaseModel):
     data: str
     valor_compra: float | None = None
     valor_venda: float | None = None
+    tipo_boletim: str | None = None
+    data_hora: str | None = None
 
 
 class Feriado(BaseModel):
