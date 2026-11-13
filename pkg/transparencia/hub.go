@@ -178,6 +178,66 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 				h.applyServidoresPostProcess(res, opts)
 				return res, nil
 			}
+		case "nucleogov":
+			if res, err := QueryNucleoGovServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "diretoriodigital_sistp":
+			if res, err := QueryDiretorioDigitalServidores(ctx, h.HTTPClient, m, p, disc.TenantID); err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "infbr_netuse":
+			if res, err := QueryInfBrServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "assesi_portal":
+			if res, err := QueryAssesiServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "centi_api":
+			if res, err := QueryCentiServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "fator_sistemas":
+			if res, err := QueryFatorServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "smarapd_pai":
+			if res, err := QuerySmarapdServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "memory_openknowledge":
+			if res, err := QueryMemoryServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "facil_transparencia":
+			if res, err := QueryFacilServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "publicsoft_api":
+			if res, err := QueryPublicsoftServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "cittaweb_api":
+			if res, err := QueryCittaWebServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "topsolutions_rn":
+			if res, err := QueryTopSolutionsServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
 		}
 	}
 
@@ -312,6 +372,71 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 			}
 		case "thema_apigw":
 			if res, err := QueryThemaDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "nucleogov":
+			if res, err := QueryNucleoGovDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "aspec_gt":
+			if res, err := QueryAspecDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "assesi_portal":
+			if res, err := QueryAssesiDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "centi_api":
+			if res, err := QueryCentiDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "fator_sistemas":
+			if res, err := QueryFatorDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "smarapd_pai":
+			if res, err := QuerySmarapdDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "memory_openknowledge":
+			if res, err := QueryMemoryDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "facil_transparencia":
+			if res, err := QueryFacilDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "publicsoft_api":
+			if res, err := QueryPublicsoftDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "tomeconta_appbr":
+			if res, err := QueryTomeContaDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "cittaweb_api":
+			if res, err := QueryCittaWebDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "geosiap_api":
+			if res, err := QueryGeoSiapDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "topsolutions_rn":
+			if res, err := QueryTopSolutionsDespesas(ctx, h.HTTPClient, m, p); err == nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
@@ -469,6 +594,62 @@ func (h *Hub) queryReceitasWithDiscovery(ctx context.Context, m *Municipio, disc
 			if res, err := QueryGovBRReceitas(ctx, h.HTTPClient, m, p, disc.TenantID); err == nil {
 				return res, nil
 			}
+		case "nucleogov":
+			if res, err := QueryNucleoGovReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "aspec_gt":
+			if res, err := QueryAspecReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "assesi_portal":
+			if res, err := QueryAssesiReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "centi_api":
+			if res, err := QueryCentiReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "fator_sistemas":
+			if res, err := QueryFatorReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "smarapd_pai":
+			if res, err := QuerySmarapdReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "memory_openknowledge":
+			if res, err := QueryMemoryReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "facil_transparencia":
+			if res, err := QueryFacilReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "publicsoft_api":
+			if res, err := QueryPublicsoftReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "tomeconta_appbr":
+			if res, err := QueryTomeContaReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "cittaweb_api":
+			if res, err := QueryCittaWebReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "geosiap_api":
+			if res, err := QueryGeoSiapReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "multi24h_xml":
+			if res, err := QueryMulti24hReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "topsolutions_rn":
+			if res, err := QueryTopSolutionsReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
 		}
 	}
 
@@ -570,6 +751,54 @@ func (h *Hub) queryLicitacoesWithDiscovery(ctx context.Context, m *Municipio, di
 			if res, err := QueryEPublicaLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
 				return res, nil
 			}
+		case "nucleogov":
+			if res, err := QueryNucleoGovLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "aspec_gt":
+			if res, err := QueryAspecLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "assesi_portal":
+			if res, err := QueryAssesiLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "centi_api":
+			if res, err := QueryCentiLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "fator_sistemas":
+			if res, err := QueryFatorLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "smarapd_pai":
+			if res, err := QuerySmarapdLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "memory_openknowledge":
+			if res, err := QueryMemoryLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "facil_transparencia":
+			if res, err := QueryFacilLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "publicsoft_api":
+			if res, err := QueryPublicsoftLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "tomeconta_appbr":
+			if res, err := QueryTomeContaLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "cittaweb_api":
+			if res, err := QueryCittaWebLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "topsolutions_rn":
+			if res, err := QueryTopSolutionsLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
 		}
 	}
 
@@ -654,6 +883,54 @@ func (h *Hub) queryContratosWithDiscovery(ctx context.Context, m *Municipio, dis
 			}
 		case "epublica_portal":
 			if res, err := QueryEPublicaContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "nucleogov":
+			if res, err := QueryNucleoGovContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "aspec_gt":
+			if res, err := QueryAspecContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "assesi_portal":
+			if res, err := QueryAssesiContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "centi_api":
+			if res, err := QueryCentiContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "fator_sistemas":
+			if res, err := QueryFatorContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "smarapd_pai":
+			if res, err := QuerySmarapdContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "memory_openknowledge":
+			if res, err := QueryMemoryContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "publicsoft_api":
+			if res, err := QueryPublicsoftContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "tomeconta_appbr":
+			if res, err := QueryTomeContaContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "cittaweb_api":
+			if res, err := QueryCittaWebContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "geosiap_api":
+			if res, err := QueryGeoSiapContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "topsolutions_rn":
+			if res, err := QueryTopSolutionsContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
 				return res, nil
 			}
 		}

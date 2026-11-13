@@ -157,32 +157,38 @@ func ProbeElotech(ctx context.Context, client *http.Client, baseURL string) bool
 		return false
 	}
 
-	// 1. Verifica /v3/api-docs (OpenAPI 3.0 oficial da Elotech)
+	// 1. Verifica /v3/api-docs (OpenAPI 3.0 JSON oficial da Elotech)
 	if body, status, err := doElotechGet(ctx, client, base+"/v3/api-docs", nil); err == nil && status == http.StatusOK {
-		low := strings.ToLower(string(body))
-		if strings.Contains(low, "elotech") ||
-			strings.Contains(low, "portaltransparencia-api") ||
-			(strings.Contains(low, "/api/servidores") && strings.Contains(low, "/empenhos/lista")) {
-			return true
+		trimmed := strings.TrimSpace(string(body))
+		if strings.HasPrefix(trimmed, "{") {
+			low := strings.ToLower(trimmed)
+			if strings.Contains(low, `"openapi"`) && (strings.Contains(low, "elotech") ||
+				strings.Contains(low, "portaltransparencia-api") ||
+				(strings.Contains(low, "/api/servidores") && strings.Contains(low, "/empenhos/lista"))) {
+				return true
+			}
 		}
 	}
 
-	// 2. Verifica /swagger-ui.html
-	if body, status, err := doElotechGet(ctx, client, base+"/swagger-ui.html", nil); err == nil && status == http.StatusOK {
-		low := strings.ToLower(string(body))
-		if strings.Contains(low, "elotech") || strings.Contains(low, "portaltransparencia") {
-			return true
-		}
-	}
-
-	// 3. Fallback: testa /api/servidores com headers obrigatórios
+	// 2. Fallback: testa /api/servidores com headers obrigatórios exigindo payload JSON paginado
 	headers := map[string]string{
 		"entidade":  "1",
 		"exercicio": strconv.Itoa(time.Now().Year()),
 	}
 	if body, status, err := doElotechGet(ctx, client, base+"/api/servidores?page=0&size=1&entidade=1", headers); err == nil && status == http.StatusOK {
+		trimmed := strings.TrimSpace(string(body))
+		if strings.HasPrefix(trimmed, "{") {
+			low := strings.ToLower(trimmed)
+			if strings.Contains(low, `"content"`) && (strings.Contains(low, `"totalelements"`) || strings.Contains(low, `"matricula"`)) {
+				return true
+			}
+		}
+	}
+
+	// 3. Fallback final: verifica /swagger-ui.html apenas quando houver assinatura real de Swagger UI + Elotech
+	if body, status, err := doElotechGet(ctx, client, base+"/swagger-ui.html", nil); err == nil && status == http.StatusOK {
 		low := strings.ToLower(string(body))
-		if strings.Contains(low, `"content"`) && (strings.Contains(low, `"totalelements"`) || strings.Contains(low, `"matricula"`)) {
+		if strings.Contains(low, "swagger-ui") && (strings.Contains(low, "elotech") || strings.Contains(low, "portaltransparencia-api")) {
 			return true
 		}
 	}

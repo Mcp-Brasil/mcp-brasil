@@ -24,8 +24,10 @@ type Engine struct {
 	estadosByUF    map[string]*Estado
 	estadosByCode  map[int]*Estado
 	muniNormIndex  []*indexedMuni
-	megasoftList   []MegasoftMunicipio
-	megasoftByIBGE map[string]MegasoftMunicipio
+	megasoftList      []MegasoftMunicipio
+	megasoftByIBGE    map[string]MegasoftMunicipio
+	portalCatalogList []PortalCatalogMunicipio
+	portalCatalogIBGE map[string]PortalCatalogMunicipio
 }
 
 type indexedMuni struct {
@@ -35,8 +37,10 @@ type indexedMuni struct {
 }
 
 var (
-	globalMegaMu     sync.RWMutex
-	globalMegaByIBGE = make(map[string]MegasoftMunicipio)
+	globalMegaMu           sync.RWMutex
+	globalMegaByIBGE       = make(map[string]MegasoftMunicipio)
+	globalPortalCatMu      sync.RWMutex
+	globalPortalCatByIBGE  = make(map[string]PortalCatalogMunicipio)
 )
 
 // LookupMegasoftByIBGE consulta o catálogo nacional embutido de portais Megasoft pelo código IBGE.
@@ -47,20 +51,30 @@ func LookupMegasoftByIBGE(codIBGE string) (MegasoftMunicipio, bool) {
 	return m, ok
 }
 
+// LookupPortalCatalogByIBGE consulta o catálogo nacional embutido de portais municipais verificados pelo código IBGE.
+func LookupPortalCatalogByIBGE(codIBGE string) (PortalCatalogMunicipio, bool) {
+	globalPortalCatMu.RLock()
+	defer globalPortalCatMu.RUnlock()
+	m, ok := globalPortalCatByIBGE[strings.TrimSpace(codIBGE)]
+	return m, ok
+}
+
 // NewEngine inicializa o motor carregando os dados oficiais embutidos de UFs e municípios.
 func NewEngine() (*Engine, error) {
 	e := &Engine{
-		estados:        make([]*Estado, 0, 27),
-		municipios:     make([]*Municipio, 0, 5571),
-		byIBGE:         make(map[string]*Municipio, 5571),
-		bySIAFI:        make(map[string]*Municipio, 5571),
-		byCNPJ:         make(map[string]*Municipio, 5571),
-		byUF:           make(map[string][]*Municipio, 27),
-		estadosByUF:    make(map[string]*Estado, 27),
-		estadosByCode:  make(map[int]*Estado, 27),
-		muniNormIndex:  make([]*indexedMuni, 0, 5571),
-		megasoftList:   make([]MegasoftMunicipio, 0, 256),
-		megasoftByIBGE: make(map[string]MegasoftMunicipio, 256),
+		estados:           make([]*Estado, 0, 27),
+		municipios:        make([]*Municipio, 0, 5571),
+		byIBGE:            make(map[string]*Municipio, 5571),
+		bySIAFI:           make(map[string]*Municipio, 5571),
+		byCNPJ:            make(map[string]*Municipio, 5571),
+		byUF:              make(map[string][]*Municipio, 27),
+		estadosByUF:       make(map[string]*Estado, 27),
+		estadosByCode:     make(map[int]*Estado, 27),
+		muniNormIndex:     make([]*indexedMuni, 0, 5571),
+		megasoftList:      make([]MegasoftMunicipio, 0, 256),
+		megasoftByIBGE:    make(map[string]MegasoftMunicipio, 256),
+		portalCatalogList: make([]PortalCatalogMunicipio, 0, 2200),
+		portalCatalogIBGE: make(map[string]PortalCatalogMunicipio, 2200),
 	}
 
 	if err := e.loadEstados(); err != nil {
@@ -73,6 +87,10 @@ func NewEngine() (*Engine, error) {
 
 	if err := e.loadMegasoftMunicipios(); err != nil {
 		return nil, fmt.Errorf("falha ao carregar catálogo Megasoft: %w", err)
+	}
+
+	if err := e.loadPortaisMunicipais(); err != nil {
+		return nil, fmt.Errorf("falha ao carregar catálogo nacional de portais: %w", err)
 	}
 
 	// Atualiza totais de municípios por estado
@@ -344,6 +362,99 @@ func (e *Engine) GetMegasoftMunicipio(codigoIBGE string) (MegasoftMunicipio, boo
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 	item, ok := e.megasoftByIBGE[strings.TrimSpace(codigoIBGE)]
+	return item, ok
+}
+
+func (e *Engine) loadPortaisMunicipais() error {
+	if len(portaisMunicipaisCSV) == 0 {
+		return nil
+	}
+	r := csv.NewReader(bytes.NewReader(portaisMunicipaisCSV))
+	r.LazyQuotes = true
+	r.TrimLeadingSpace = true
+
+	header, err := r.Read()
+	if err == io.EOF {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	_ = header
+
+	globalPortalCatMu.Lock()
+	defer globalPortalCatMu.Unlock()
+
+	for {
+		rec, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if len(rec) < 5 {
+			continue
+		}
+		tenantID := ""
+		if len(rec) >= 6 {
+			tenantID = strings.TrimSpace(rec[5])
+		}
+		entNome := ""
+		if len(rec) >= 7 {
+			entNome = strings.TrimSpace(rec[6])
+		}
+		item := PortalCatalogMunicipio{
+			CodigoIBGE:   strings.TrimSpace(rec[0]),
+			Nome:         strings.TrimSpace(rec[1]),
+			UF:           strings.ToUpper(strings.TrimSpace(rec[2])),
+			Plataforma:   strings.TrimSpace(rec[3]),
+			PortalURL:    strings.TrimSpace(rec[4]),
+			TenantID:     tenantID,
+			EntidadeNome: entNome,
+		}
+		if item.CodigoIBGE == "" || item.Plataforma == "" || item.PortalURL == "" {
+			continue
+		}
+		e.portalCatalogList = append(e.portalCatalogList, item)
+		e.portalCatalogIBGE[item.CodigoIBGE] = item
+		globalPortalCatByIBGE[item.CodigoIBGE] = item
+	}
+
+	sort.Slice(e.portalCatalogList, func(i, j int) bool {
+		if e.portalCatalogList[i].UF != e.portalCatalogList[j].UF {
+			return e.portalCatalogList[i].UF < e.portalCatalogList[j].UF
+		}
+		return e.portalCatalogList[i].Nome < e.portalCatalogList[j].Nome
+	})
+	return nil
+}
+
+// ListPortaisCatalogMunicipios retorna os municípios do catálogo nacional verificado (filtro opcional por UF).
+func (e *Engine) ListPortaisCatalogMunicipios(uf string) []PortalCatalogMunicipio {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	ufUp := strings.ToUpper(strings.TrimSpace(uf))
+	if ufUp == "" {
+		res := make([]PortalCatalogMunicipio, len(e.portalCatalogList))
+		copy(res, e.portalCatalogList)
+		return res
+	}
+	res := make([]PortalCatalogMunicipio, 0)
+	for _, it := range e.portalCatalogList {
+		if it.UF == ufUp {
+			res = append(res, it)
+		}
+	}
+	return res
+}
+
+// GetPortalCatalogMunicipio busca um portal verificado no catálogo nacional pelo código IBGE.
+func (e *Engine) GetPortalCatalogMunicipio(codigoIBGE string) (PortalCatalogMunicipio, bool) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	item, ok := e.portalCatalogIBGE[strings.TrimSpace(codigoIBGE)]
 	return item, ok
 }
 

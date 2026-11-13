@@ -183,7 +183,7 @@ Conecte o server e faça perguntas em linguagem natural:
 | `spu_geo` | SPU GeoPortal — terrenos de marinha, acrescidos, marginais, ilhas federais, praias, manguezais e localização de imóveis da União | 4 |
 | `spu_imoveis` | Imóveis da União (Raio-X APF / Gov360) — busca por órgão, UF, município, regime e agregações institucionais | 4 |
 | `siconfi` | SICONFI/Tesouro Nacional — RREO, RGF, DCA e MSC de municípios/estados (LRF, LC 101) | 7 |
-| `transparencia_municipios` | Transparência e Servidores de todos os 5.570 Municípios e 27 UFs — descoberta de portais, folha/servidores, contracheque detalhado, diárias, obras, convênios, legislação, concursos, despesas, receitas, licitações, contratos via **Betha Cloud, Megasoft, Ágili, Elotech, IPM/Atende.Net, Equiplano Cloud, E&L PortalTP, Sonner GRP, e-Pública, GovBR/Cidade360, Coplan, Thema, Quasar, Fiorilli**, TCEs/TCMs, SICONFI e PNCP (Go Engine) | 24 |
+| `transparencia_municipios` | Transparência e Servidores de todos os 5.570 Municípios e 27 UFs — catálogo nacional com **2.183 portais verificados (`39,19%`)** via API aberta + descoberta dinâmica em **30 conectores** (**Betha Cloud, Elotech, Megasoft, IPM/Atende.Net, Assesi, Aspec, GovBR/Cidade360, Fácil Transparência, Ágili, TopSolutions RN, E&L PortalTP, Publicsoft, Fator Sistemas, Memory/OpenKnowledge, NúcleoGov, Fiorilli, CittaWeb, Centi, Quasar, SMARAPD PAI, TomeConta, Equiplano Cloud, Sonner GRP, Coplan, GeoSiap, InfBr/Netuse, Multi24h XML, Thema, Diretório Digital/SisTP e e-Pública**) + fallback universal TCEs/TCMs, SICONFI e PNCP (Go Engine) | 24 |
 | `mj` | MJSP (CKAN) — SINESP, INFOPEN, PROCONs/Sindec, armas, sistema prisional | 4 |
 
 

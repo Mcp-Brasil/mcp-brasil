@@ -283,6 +283,64 @@ func TestCNPJLookup(t *testing.T) {
 	}
 }
 
+func TestPortaisCatalogAndDiscovery(t *testing.T) {
+	engine, err := transparencia.NewEngine()
+	if err != nil {
+		t.Fatalf("Falha ao criar Engine: %v", err)
+	}
+
+	all := engine.ListPortaisCatalogMunicipios("")
+	if len(all) < 2180 {
+		t.Fatalf("Esperava >= 2180 municípios no catálogo nacional verificado, obteve %d", len(all))
+	}
+
+	ufs := make(map[string]struct{}, 27)
+	for _, it := range all {
+		if it.CodigoIBGE == "" || it.Plataforma == "" || it.PortalURL == "" {
+			t.Errorf("Registro inválido no catálogo: %+v", it)
+		}
+		if it.UF != "" {
+			ufs[it.UF] = struct{}{}
+		}
+	}
+	if len(ufs) < 25 {
+		t.Errorf("Esperava cobertura em >= 25 UFs no catálogo, obteve %d", len(ufs))
+	}
+
+	goList := engine.ListPortaisCatalogMunicipios("GO")
+	if len(goList) == 0 {
+		t.Fatalf("Esperava municípios de GO no catálogo nacional")
+	}
+
+	// Município com suporte a servidores no catálogo (Anápolis - GO, nucleogov)
+	catAnapolis, ok := engine.GetPortalCatalogMunicipio("5201108")
+	if !ok || catAnapolis.Plataforma != "nucleogov" {
+		t.Fatalf("Esperava Anápolis (5201108) como nucleogov no catálogo, obteve ok=%v item=%+v", ok, catAnapolis)
+	}
+	mAnapolis, err := engine.GetMunicipioByIBGE("5201108")
+	if err != nil {
+		t.Fatalf("GetMunicipioByIBGE(5201108) erro: %v", err)
+	}
+	discAnapolis := transparencia.DiscoverPortal(t.Context(), mAnapolis, transparencia.DiscoverOptions{})
+	if discAnapolis.FonteDescoberta != "portal_catalog" || discAnapolis.Plataforma != "nucleogov" || !discAnapolis.ServidoresSuportado {
+		t.Fatalf("DiscoverPortal(Anápolis) inesperado: %+v", discAnapolis)
+	}
+
+	// Município sem API aberta de servidores no catálogo (Acopiara - CE, aspec_gt)
+	catAcopiara, ok := engine.GetPortalCatalogMunicipio("2300309")
+	if !ok || catAcopiara.Plataforma != "aspec_gt" {
+		t.Fatalf("Esperava Acopiara (2300309) como aspec_gt no catálogo, obteve ok=%v item=%+v", ok, catAcopiara)
+	}
+	mAcopiara, err := engine.GetMunicipioByIBGE("2300309")
+	if err != nil {
+		t.Fatalf("GetMunicipioByIBGE(2300309) erro: %v", err)
+	}
+	discAcopiara := transparencia.DiscoverPortal(t.Context(), mAcopiara, transparencia.DiscoverOptions{})
+	if discAcopiara.FonteDescoberta != "portal_catalog" || discAcopiara.Plataforma != "aspec_gt" || discAcopiara.ServidoresSuportado {
+		t.Fatalf("DiscoverPortal(Acopiara) inesperado: %+v", discAcopiara)
+	}
+}
+
 func BenchmarkSearchSpeed(b *testing.B) {
 	engine, err := transparencia.NewEngine()
 	if err != nil {

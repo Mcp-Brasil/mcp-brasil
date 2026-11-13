@@ -494,6 +494,17 @@ type MegasoftMunicipio struct {
 	SitePrefeitura string `json:"site_prefeitura,omitempty"`
 }
 
+// PortalCatalogMunicipio representa um município com portal/API municipal verificado no catálogo nacional.
+type PortalCatalogMunicipio struct {
+	CodigoIBGE   string `json:"codigo_ibge"`
+	Nome         string `json:"nome"`
+	UF           string `json:"uf"`
+	Plataforma   string `json:"plataforma"`
+	PortalURL    string `json:"portal_url"`
+	TenantID     string `json:"tenant_id,omitempty"`
+	EntidadeNome string `json:"entidade_nome,omitempty"`
+}
+
 // TransparenciaCompletaReport consolida toda a transparência disponível para um município.
 type TransparenciaCompletaReport struct {
 	Dossier           *MunicipioDossier      `json:"dossier"`

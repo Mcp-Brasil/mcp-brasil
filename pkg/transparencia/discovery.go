@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -30,10 +31,36 @@ type QuasarEntidade struct {
 }
 
 var (
-	hrefRegex          = regexp.MustCompile(`(?i)href\s*=\s*["']([^"']+)["']`)
-	antiBotMarkers     = []string{"cf-turnstile", "g-recaptcha", "hcaptcha", "challenge-platform", "just a moment..."}
-	quasarVersaoRegex  = regexp.MustCompile(`^v?\d+\.\d+`)
+	hrefRegex         = regexp.MustCompile(`(?i)(?:href|src)\s*=\s*["']([^"']+)["']`)
+	antiBotMarkers    = []string{"cf-turnstile", "g-recaptcha", "hcaptcha", "challenge-platform", "just a moment..."}
+	quasarVersaoRegex = regexp.MustCompile(`^v?\d+\.\d+`)
+	bethaHashRegex    = regexp.MustCompile(`(?i)https?://transparencia\.betha\.cloud/#/([a-zA-Z0-9_-]{6,})`)
 )
+
+func supportsServidoresForPlatform(plataforma string) bool {
+	switch strings.TrimSpace(plataforma) {
+	case "megasoft", "quasar_publico", "fiorilli_scpi", "elotech_oxy", "betha_cloud",
+		"agili_blue", "ipm_atende", "el_portaltp", "sonner_grp", "epublica_portal",
+		"govbr_cidade360", "nucleogov", "diretoriodigital_sistp", "infbr_netuse",
+		"assesi_portal", "centi_api", "fator_sistemas", "smarapd_pai",
+		"memory_openknowledge", "facil_transparencia", "publicsoft_api",
+		"cittaweb_api", "topsolutions_rn":
+		return true
+	default:
+		return false
+	}
+}
+
+func hasActiveSaaSTestOverride() bool {
+	return getBethaAPIBaseURL() != defaultBethaAPIBaseURL ||
+		getAgiliAPIBaseURL() != defaultAgiliAPIBaseURL ||
+		getEPublicaBaseURL() != "https://transparencia.e-publica.net/epublica-portal" ||
+		equiplanoAPIBaseURL != equiplanoDefaultAPIBaseURL ||
+		getPublicsoftBaseURL() != defaultPublicsoftBaseURL ||
+		getCentiAPIBaseURL() != defaultCentiAPIBaseURL ||
+		getMemoryAPIBaseURL() != defaultMemoryAPIBaseURL ||
+		getFacilBaseURL() != defaultFacilBaseURL
+}
 
 // CandidatePortalURLs gera as variações mais comuns de URL de portal de transparência municipal.
 func CandidatePortalURLs(m *Municipio) []string {
@@ -63,6 +90,7 @@ func CandidatePortalURLs(m *Municipio) []string {
 	raw = append(raw,
 		fmt.Sprintf("https://%s.megasofttransparencia.com.br", compact),
 		fmt.Sprintf("https://%s.oxy.elotech.com.br/portaltransparencia-api", compact),
+		fmt.Sprintf("https://%s.eloweb.net/portaltransparencia-api", compact),
 		fmt.Sprintf("https://transparencia.%s.%s.gov.br/portaltransparencia-api", compact, ufLower),
 		fmt.Sprintf("https://%s-%s.portaltp.com.br", compact, ufLower),
 		fmt.Sprintf("https://%s.atende.net", compact),
@@ -70,7 +98,14 @@ func CandidatePortalURLs(m *Municipio) []string {
 		fmt.Sprintf("https://grp.%s.%s.gov.br", compact, ufLower),
 		fmt.Sprintf("https://webapp1-%s.cidade360.cloud/dadosabertos", compact),
 		fmt.Sprintf("https://www.gp.srv.br/transparencia_%s", compact),
+		fmt.Sprintf("https://%s.cittaweb.com.br", compact),
 	)
+	if ufLower == "rn" {
+		raw = append(raw,
+			fmt.Sprintf("https://pm%srn.apitransparencia.topsolutionsrn.com.br", compact),
+			fmt.Sprintf("https://%srn.apitransparencia.topsolutionsrn.com.br", compact),
+		)
+	}
 	if slug != compact {
 		raw = append(raw,
 			fmt.Sprintf("https://%s.megasofttransparencia.com.br", slug),
@@ -173,6 +208,35 @@ func DiscoverPortal(ctx context.Context, m *Municipio, opts DiscoverOptions) *Po
 			CandidatosTestados:  []string{mega.PortalURL},
 			TempoMs:             time.Since(start).Milliseconds(),
 			Observacoes:         "Portal Megasoft (MegaAdmWeb) verificado no catálogo nacional integrado.",
+		}
+	}
+
+	// 1b-bis. Catálogo nacional verificado de portais municipais (API aberta estritamente validada).
+	if !hasActiveSaaSTestOverride() {
+		if cat, ok := LookupPortalCatalogByIBGE(m.CodigoIBGE); ok && cat.PortalURL != "" && cat.Plataforma != "" {
+			entNome := strings.TrimSpace(cat.EntidadeNome)
+			if entNome == "" {
+				entNome = fmt.Sprintf("%s (%s)", m.Nome, m.UF)
+			}
+			var codAdm int
+			if cat.Plataforma == "cittaweb_api" || cat.Plataforma == "geosiap_api" || cat.Plataforma == "coplan_gp" || cat.Plataforma == "thema_apigw" {
+				if n, err := strconv.Atoi(strings.TrimSpace(cat.TenantID)); err == nil && n > 0 {
+					codAdm = n
+				}
+			}
+			return &PortalDiscoveryResult{
+				Municipio:           m,
+				URLResolvida:        cat.PortalURL,
+				Plataforma:          cat.Plataforma,
+				CodAdministracao:    codAdm,
+				TenantID:            cat.TenantID,
+				EntidadeNome:        entNome,
+				FonteDescoberta:     "portal_catalog",
+				ServidoresSuportado: supportsServidoresForPlatform(cat.Plataforma),
+				CandidatosTestados:  []string{cat.PortalURL},
+				TempoMs:             time.Since(start).Milliseconds(),
+				Observacoes:         fmt.Sprintf("Portal %s verificado no catálogo nacional integrado.", cat.Plataforma),
+			}
 		}
 	}
 
@@ -314,6 +378,41 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		FonteDescoberta: source,
 	}
 
+	// 0) URLs SaaS dedicadas com padrão inequívoco (Betha Cloud, Memory ILAI, Fácil Transparência, TomeConta)
+	if mHash := bethaHashRegex.FindStringSubmatch(base); len(mHash) >= 2 {
+		det.URLResolvida = "https://transparencia.betha.cloud/#/" + mHash[1]
+		det.Plataforma = "betha_cloud"
+		det.TenantID = mHash[1]
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal Betha Cloud com API JSON pública anônima."
+		return det, true
+	}
+	if t, ent := ExtractMemoryTenant(base); t != "" && ProbeMemory(ctx, client, t, ent) {
+		det.Plataforma = "memory_openknowledge"
+		if ent != "" {
+			det.TenantID = t + "/" + ent
+		} else {
+			det.TenantID = t
+		}
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal Memory OpenKnowledge com API REST pública."
+		return det, true
+	}
+	if dbID := ExtractFacilDatabaseID(base); dbID != "" && ProbeFacil(ctx, client, base, dbID) {
+		det.Plataforma = "facil_transparencia"
+		det.TenantID = dbID
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal Fácil Transparência com API JSON pública."
+		return det, true
+	}
+	if tcID := ExtractTomeContaID(base); tcID != "" && ProbeTomeConta(ctx, client, base, tcID) {
+		det.Plataforma = "tomeconta_appbr"
+		det.TenantID = tcID
+		det.ServidoresSuportado = false
+		det.Observacoes = "Portal TomeConta (portaltransparencia.app.br) com API JSON pública."
+		return det, true
+	}
+
 	// 1) Checa assinatura Quasar /publico/versao
 	if ver, ok := probeQuasarVersao(ctx, client, base); ok {
 		det.Plataforma = "quasar_publico"
@@ -371,6 +470,10 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	if !strings.HasSuffix(strings.ToLower(base), "/portaltransparencia-api") {
 		elotechCandidates = append(elotechCandidates, base+"/portaltransparencia-api")
 	}
+	if pu, pErr := url.Parse(base); pErr == nil && pu.Scheme != "" && pu.Host != "" {
+		rootAPI := pu.Scheme + "://" + pu.Host + "/portaltransparencia-api"
+		elotechCandidates = dedupeStrings(append(elotechCandidates, rootAPI))
+	}
 	for _, eloBase := range elotechCandidates {
 		if ProbeElotech(ctx, client, eloBase) {
 			det.URLResolvida = eloBase
@@ -378,23 +481,6 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 			det.ServidoresSuportado = true
 			det.Observacoes = "Portal Elotech Gestão Pública (oxy.elotech.com.br) com API OpenAPI 3.0 pública."
 			return det, true
-		}
-	}
-
-	// 2d) Checa URL direta Betha Cloud (https://transparencia.betha.cloud/#/<hash>)
-	if strings.Contains(strings.ToLower(base), "transparencia.betha.cloud") {
-		if idx := strings.Index(base, "#/"); idx != -1 {
-			rest := strings.TrimPrefix(base[idx+2:], "/")
-			if slash := strings.IndexByte(rest, '/'); slash != -1 {
-				rest = rest[:slash]
-			}
-			if rest != "" {
-				det.Plataforma = "betha_cloud"
-				det.TenantID = rest
-				det.ServidoresSuportado = true
-				det.Observacoes = "Portal Betha Cloud com API JSON pública anônima."
-				return det, true
-			}
 		}
 	}
 
@@ -434,22 +520,44 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	}
 
 	// 2i) Checa assinatura GovBR / Pronim / Cidade360 (/dadosabertos/swagger/v1/swagger.json)
-	if ent, ok := ProbeGovBRCidade360(ctx, client, base); ok {
-		det.Plataforma = "govbr_cidade360"
-		det.TenantID = ent
-		det.EntidadeNome = ent
-		det.ServidoresSuportado = true
-		det.Observacoes = "Portal GovBR / Pronim Cidade360 com API OpenAPI pública."
-		return det, true
+	govCands := []string{base}
+	lowBase := strings.ToLower(base)
+	if strings.Contains(lowBase, "cidade360") || strings.Contains(lowBase, "/pronimtb") {
+		if pu, pErr := url.Parse(base); pErr == nil && pu.Scheme != "" && pu.Host != "" {
+			govCands = dedupeStrings(append(govCands, pu.Scheme+"://"+pu.Host+"/dadosabertos"))
+		}
+	}
+	for _, gc := range govCands {
+		if ent, ok := ProbeGovBRCidade360(ctx, client, gc); ok {
+			det.URLResolvida = gc
+			det.Plataforma = "govbr_cidade360"
+			det.TenantID = ent
+			det.EntidadeNome = ent
+			det.ServidoresSuportado = true
+			det.Observacoes = "Portal GovBR / Pronim Cidade360 com API OpenAPI pública."
+			return det, true
+		}
 	}
 
 	// 2j) Checa assinatura Coplan (/servlet/api_consulta?unidade_gestora)
-	if ugID, ugDesc, ok := ProbeCoplan(ctx, client, base); ok {
-		det.Plataforma = "coplan_gp"
-		det.CodAdministracao = ugID
-		det.EntidadeNome = ugDesc
-		det.Observacoes = "Portal Coplan com API JSON pública (api_consulta)."
-		return det, true
+	coplanCands := []string{base}
+	if strings.Contains(lowBase, "gp.srv.br/") {
+		if pu, pErr := url.Parse(base); pErr == nil && pu.Scheme != "" && pu.Host != "" {
+			segs := strings.Split(strings.Trim(pu.Path, "/"), "/")
+			if len(segs) > 0 && segs[0] != "" {
+				coplanCands = dedupeStrings(append(coplanCands, pu.Scheme+"://"+pu.Host+"/"+segs[0]))
+			}
+		}
+	}
+	for _, cc := range coplanCands {
+		if ugID, ugDesc, ok := ProbeCoplan(ctx, client, cc); ok {
+			det.URLResolvida = cc
+			det.Plataforma = "coplan_gp"
+			det.CodAdministracao = ugID
+			det.EntidadeNome = ugDesc
+			det.Observacoes = "Portal Coplan com API JSON pública (api_consulta)."
+			return det, true
+		}
 	}
 
 	// 2k) Checa assinatura Thema API Gateway (/infra/apigw/transparencia/service/...)
@@ -461,7 +569,123 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		return det, true
 	}
 
-	// 3) Fallback HTML / portal genérico (detecção de vendor e anti-bot)
+	isOverride := source == "override"
+	// 2l) Conectores especializados por domínio ou OverrideURL
+	if isOverride || strings.Contains(lowBase, "publicsoft") || publicsoftLegadoRegex.MatchString(base) {
+		if hid, entName, ok := ProbePublicsoft(ctx, client, base, "", ""); ok {
+			det.Plataforma = "publicsoft_api"
+			det.TenantID = hid
+			det.EntidadeNome = entName
+			det.ServidoresSuportado = true
+			det.Observacoes = "Portal Publicsoft com API REST v1 pública."
+			return det, true
+		}
+	}
+	if isOverride || strings.Contains(lowBase, "topsolutions") {
+		if apiBase, ok := ProbeTopSolutions(ctx, client, base); ok {
+			det.URLResolvida = apiBase
+			det.Plataforma = "topsolutions_rn"
+			det.ServidoresSuportado = true
+			det.Observacoes = "Portal TopSolutionsRN com API REST pública."
+			return det, true
+		}
+	}
+	if isOverride || strings.Contains(lowBase, "cittaweb") {
+		if apiBase, ugID, entName, ok := ProbeCittaWeb(ctx, client, base); ok {
+			det.URLResolvida = apiBase
+			det.Plataforma = "cittaweb_api"
+			det.CodAdministracao = ugID
+			det.EntidadeNome = entName
+			det.ServidoresSuportado = true
+			det.Observacoes = "Portal CittaWeb com API REST pública."
+			return det, true
+		}
+	}
+	if isOverride || strings.Contains(lowBase, "geosiap") {
+		if apiBase, eid, entName, ok := ProbeGeoSiap(ctx, client, base); ok {
+			det.URLResolvida = apiBase
+			det.Plataforma = "geosiap_api"
+			det.CodAdministracao = eid
+			det.EntidadeNome = entName
+			det.ServidoresSuportado = false
+			det.Observacoes = "Portal GeoSiap com API REST pública."
+			return det, true
+		}
+	}
+	if isOverride || strings.Contains(lowBase, "multi24") {
+		if wsBase, ok := ProbeMulti24h(ctx, client, base); ok {
+			det.URLResolvida = wsBase
+			det.Plataforma = "multi24h_xml"
+			det.ServidoresSuportado = false
+			det.Observacoes = "Portal Multi24h com WebService XML público."
+			return det, true
+		}
+	}
+
+	// 2m) Demais conectores municipais com endpoints estruturados padronizados
+	if ProbeNucleoGov(ctx, client, base) {
+		det.Plataforma = "nucleogov"
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal NúcleoGov com API REST pública."
+		return det, true
+	}
+	if clienteSlug, ok := ProbeDiretorioDigital(ctx, client, base); ok {
+		det.Plataforma = "diretoriodigital_sistp"
+		det.TenantID = clienteSlug
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal Diretório Digital (SisTP) com API pública."
+		return det, true
+	}
+	if portalBase, ok := ProbeInfBr(ctx, client, base); ok {
+		det.URLResolvida = portalBase
+		det.Plataforma = "infbr_netuse"
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal InfBr / Netuse com endpoint JSON público."
+		return det, true
+	}
+	if ProbeAssesi(ctx, client, base) {
+		det.Plataforma = "assesi_portal"
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal Assesi Transparência com API pública."
+		return det, true
+	}
+	if entityCode, ok := ProbeAspec(ctx, client, base, ExtractAspecEntityCode(base)); ok {
+		det.Plataforma = "aspec_gt"
+		det.TenantID = entityCode
+		det.ServidoresSuportado = false
+		det.Observacoes = "Portal Aspec Governo Transparente com API JSON pública."
+		return det, true
+	}
+	if ProbeSmarapd(ctx, client, base) {
+		det.Plataforma = "smarapd_pai"
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal SMARAPD (PAI) com API REST pública."
+		return det, true
+	}
+	if tid, ok := ProbeFatorSistemas(ctx, client, base); ok {
+		det.Plataforma = "fator_sistemas"
+		det.TenantID = tid
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal Fator Sistemas com exportação JSON pública."
+		return det, true
+	}
+	if isOverride || strings.Contains(lowBase, "acessoainformacao.") {
+		if pu, pErr := url.Parse(base); pErr == nil {
+			parts := strings.Split(strings.ToLower(pu.Hostname()), ".")
+			// acessoainformacao.<slug>.<uf>.gov.br
+			if len(parts) >= 4 && parts[0] == "acessoainformacao" && len(parts[2]) == 2 {
+				if resolved, ok := ProbeCenti(ctx, client, strings.ToUpper(parts[2]), parts[1]); ok {
+					det.Plataforma = "centi_api"
+					det.TenantID = resolved
+					det.ServidoresSuportado = true
+					det.Observacoes = "Portal Centi Soluções com API REST pública."
+					return det, true
+				}
+			}
+		}
+	}
+
+	// 3) Fallback HTML / portal genérico (detecção de vendor, links embutidos e anti-bot)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base, nil)
 	if err != nil {
 		return nil, false
@@ -479,10 +703,19 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		if finalBase != "" {
 			det.URLResolvida = finalBase
 		}
+		if tcID := ExtractTomeContaID(resp.Request.URL.String()); tcID != "" && ProbeTomeConta(ctx, client, "https://portaltransparencia.app.br", tcID) {
+			det.URLResolvida = "https://portaltransparencia.app.br"
+			det.Plataforma = "tomeconta_appbr"
+			det.TenantID = tcID
+			det.ServidoresSuportado = false
+			det.Observacoes = "Portal TomeConta localizado via redirecionamento."
+			return det, true
+		}
 	}
 
 	bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 65536))
-	bodyLow := strings.ToLower(string(bodyBytes))
+	bodyStr := string(bodyBytes)
+	bodyLow := strings.ToLower(bodyStr)
 
 	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusServiceUnavailable {
 		for _, m := range antiBotMarkers {
@@ -495,6 +728,42 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	}
 
 	if resp.StatusCode < 400 {
+		if mHash := bethaHashRegex.FindStringSubmatch(bodyStr); len(mHash) >= 2 {
+			det.URLResolvida = "https://transparencia.betha.cloud/#/" + mHash[1]
+			det.Plataforma = "betha_cloud"
+			det.TenantID = mHash[1]
+			det.ServidoresSuportado = true
+			det.Observacoes = "Portal Betha Cloud incorporado via link/iframe."
+			return det, true
+		}
+		if t, ent := ExtractMemoryTenant(bodyStr); t != "" && ProbeMemory(ctx, client, t, ent) {
+			det.Plataforma = "memory_openknowledge"
+			if ent != "" {
+				det.TenantID = t + "/" + ent
+			} else {
+				det.TenantID = t
+			}
+			det.ServidoresSuportado = true
+			det.Observacoes = "Portal Memory OpenKnowledge incorporado via link/iframe."
+			return det, true
+		}
+		if dbID := ExtractFacilDatabaseID(bodyStr); dbID != "" && ProbeFacil(ctx, client, "http://www.transparenciafacil.com.br", dbID) {
+			det.URLResolvida = "http://www.transparenciafacil.com.br/" + dbID
+			det.Plataforma = "facil_transparencia"
+			det.TenantID = dbID
+			det.ServidoresSuportado = true
+			det.Observacoes = "Portal Fácil Transparência incorporado via link/iframe."
+			return det, true
+		}
+		if tcID := ExtractTomeContaID(bodyStr); tcID != "" && ProbeTomeConta(ctx, client, "https://portaltransparencia.app.br", tcID) {
+			det.URLResolvida = "https://portaltransparencia.app.br"
+			det.Plataforma = "tomeconta_appbr"
+			det.TenantID = tcID
+			det.ServidoresSuportado = false
+			det.Observacoes = "Portal TomeConta incorporado via link/iframe."
+			return det, true
+		}
+
 		switch {
 		case strings.Contains(bodyLow, "atende.net") || strings.Contains(bodyLow, "ipm"):
 			det.Plataforma = "ipm_atende"
@@ -671,7 +940,8 @@ func scrapeTransparencyLinks(ctx context.Context, client *http.Client, siteURLs 
 				return
 			}
 			b, _ := io.ReadAll(io.LimitReader(resp.Body, 128*1024))
-			matches := hrefRegex.FindAllStringSubmatch(string(b), -1)
+			bodyStr := string(b)
+			matches := hrefRegex.FindAllStringSubmatch(bodyStr, -1)
 			baseParsed, err := url.Parse(u)
 			if err != nil {
 				return
@@ -682,7 +952,22 @@ func scrapeTransparencyLinks(ctx context.Context, client *http.Client, siteURLs 
 				}
 				href := strings.TrimSpace(m[1])
 				low := strings.ToLower(href)
-				if !strings.Contains(low, "transparencia") && !strings.Contains(low, "portal-da-transparencia") {
+				if !strings.Contains(low, "transparencia") &&
+					!strings.Contains(low, "portal-da-transparencia") &&
+					!strings.Contains(low, "dadosabertos") &&
+					!strings.Contains(low, "dados-abertos") &&
+					!strings.Contains(low, "betha.cloud") &&
+					!strings.Contains(low, "ilai.memory.com.br") &&
+					!strings.Contains(low, "portalfacil.com.br") &&
+					!strings.Contains(low, "portaltransparencia.app.br") &&
+					!strings.Contains(low, "cittaweb.com.br") &&
+					!strings.Contains(low, "geosiap.net.br") &&
+					!strings.Contains(low, "publicsoft.com.br") &&
+					!strings.Contains(low, "topsolutionsrn.com.br") &&
+					!strings.Contains(low, "gp.srv.br") &&
+					!strings.Contains(low, "cidade360.cloud") &&
+					!strings.Contains(low, "eloweb.net") &&
+					!strings.Contains(low, "acessoainformacao.") {
 					continue
 				}
 				parsed, err := url.Parse(href)
@@ -695,6 +980,22 @@ func scrapeTransparencyLinks(ctx context.Context, client *http.Client, siteURLs 
 					found = append(found, resolved)
 					mu.Unlock()
 				}
+			}
+			for _, bm := range bethaHashRegex.FindAllStringSubmatch(bodyStr, -1) {
+				if len(bm) >= 2 {
+					mu.Lock()
+					found = append(found, "https://transparencia.betha.cloud/#/"+bm[1])
+					mu.Unlock()
+				}
+			}
+			if t, ent := ExtractMemoryTenant(bodyStr); t != "" {
+				mu.Lock()
+				if ent != "" {
+					found = append(found, "https://ilai.memory.com.br/#/entidades/login/"+t+"/"+ent)
+				} else {
+					found = append(found, "https://ilai.memory.com.br/#/entidades/login/"+t+"/1")
+				}
+				mu.Unlock()
 			}
 		}(site)
 	}

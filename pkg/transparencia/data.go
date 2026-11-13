@@ -13,3 +13,6 @@ var municipiosCSV []byte
 //go:embed data/megasoft_municipios.csv
 var megasoftMunicipiosCSV []byte
 
+//go:embed data/portais_municipais.csv
+var portaisMunicipaisCSV []byte
+

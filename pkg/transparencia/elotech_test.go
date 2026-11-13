@@ -40,7 +40,7 @@ func TestProbeElotech(t *testing.T) {
 	t.Run("swagger_ui_fallback", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/swagger-ui.html" {
-				_, _ = w.Write([]byte(`<html><title>Elotech PortalTransparencia-API</title></html>`))
+				_, _ = w.Write([]byte(`<html><title>Elotech PortalTransparencia-API</title><div id="swagger-ui"></div></html>`))
 				return
 			}
 			http.NotFound(w, r)
@@ -76,6 +76,17 @@ func TestProbeElotech(t *testing.T) {
 
 		if transparencia.ProbeElotech(ctx, client, srv.URL) {
 			t.Fatalf("esperava ProbeElotech=false para servidor não-Elotech")
+		}
+	})
+
+	t.Run("spa_catchall_html_rejected", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte(`<html><title>PortalTransparencia Generico</title></html>`))
+		}))
+		defer srv.Close()
+
+		if transparencia.ProbeElotech(ctx, client, srv.URL) {
+			t.Fatalf("esperava ProbeElotech=false para SPA catch-all HTML")
 		}
 	})
 }
