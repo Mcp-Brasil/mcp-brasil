@@ -31,7 +31,17 @@ test: ## Run all tests
 test-feature: ## Run tests for a specific feature (usage: make test-feature F=ibge)
 	uv run pytest tests/data/$(F)/ -v 2>/dev/null || uv run pytest tests/agentes/$(F)/ -v
 
-ci: lint types test ## Full CI pipeline: lint + types + test
+test-go: ## Run Go tests
+	go test -v ./...
+
+bench-go: ## Run Go benchmarks
+	go test -bench=. ./pkg/transparencia/...
+
+build-go: ## Build native Go engine binary
+	mkdir -p bin && go build -o bin/transparencia-go ./cmd/transparencia-go
+
+ci: lint types test-go test ## Full CI pipeline: lint + types + test-go + test
+
 
 ## —— Server ——
 

@@ -27,3 +27,8 @@ AGENTS.md
 .idea/
 .vscode/
 *.swp
+
+# Go binaries
+bin/
+*.exe
+

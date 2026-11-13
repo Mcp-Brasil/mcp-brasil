@@ -236,7 +236,23 @@ Este documento descreve, fonte por fonte, a licença declarada e as restrições
 - **Origem**: SPU
 - **Licença**: open data; atribuição
 
+### 6.7. `transparencia_municipios` — Transparência e Servidores de todos os 5.570 Municípios e 27 UFs (Go Engine)
+
+- **Origem**:
+  - **IBGE**: malha territorial oficial (5.571 municípios/unidades territoriais), códigos IBGE e coordenadas
+  - **SICONFI (Secretaria do Tesouro Nacional)**: CNPJs oficiais das prefeituras, populações oficiais, Declaração de Contas Anuais (DCA), RREO, Relatório de Gestão Fiscal (RGF / despesa com pessoal LRF) e Extrato de Entregas da LRF
+  - **PNCP (Portal Nacional de Contratações Públicas)**: editais, licitações e contratos municipais por CNPJ da Prefeitura (Lei 14.133/2021)
+  - **Portais Municipais Diretos (Descoberta Dinâmica)**: conectores nativos em Go para APIs abertas padronizadas de portais municipais (Quasar `/publico/*` — servidores, despesas, receitas, licitações, contratos; Fiorilli SCPI `/VersaoJson/*`), com detecção de plataformas HTML e bloqueios anti-bot
+  - **Tribunais de Contas (TCEs/TCMs)**: todos os 27 TCEs e tribunais municipais, com APIs abertas integradas para servidores/despesas/receitas no **TCE-PI** (224 municípios), **TCE-CE SIM** (184 municípios, incluindo folha salarial) e **TCE-SP** (645 municípios, despesas e receitas)
+  - **ATRICON**: Radar Nacional da Transparência Pública
+- **Licença**: Dados Abertos Governamentais / LAI (Lei 12.527/2011) / LC 131/2009 / Lei 14.133/2021
+- **Atribuição**: "IBGE / Tesouro Nacional (SICONFI) / PNCP / Tribunais de Contas (TCE-PI, TCE-CE, TCE-SP e demais TCEs/TCMs) / ATRICON / Portais Municipais da Transparência"
+
+**Disclaimer obrigatório (LGPD):**
+> Consultas a servidores públicos municipais exibem apenas dados funcionais e remuneratórios públicos nos termos da LAI e **sempre mascaram CPFs** (`***.XXX.XXX-**`). Portais protegidos por autenticação ou verificação anti-bot/CAPTCHA não são contornados.
+
 ---
+
 
 ## 7. Economia e Finanças — Baixo Risco
 
