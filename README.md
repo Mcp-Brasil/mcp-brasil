@@ -183,7 +183,7 @@ Conecte o server e faça perguntas em linguagem natural:
 | `spu_geo` | SPU GeoPortal — terrenos de marinha, acrescidos, marginais, ilhas federais, praias, manguezais e localização de imóveis da União | 4 |
 | `spu_imoveis` | Imóveis da União (Raio-X APF / Gov360) — busca por órgão, UF, município, regime e agregações institucionais | 4 |
 | `siconfi` | SICONFI/Tesouro Nacional — RREO, RGF, DCA e MSC de municípios/estados (LRF, LC 101) | 7 |
-| `transparencia_municipios` | Transparência e Servidores de todos os 5.570 Municípios e 27 UFs — descoberta de portais, folha/servidores, contracheque detalhado, diárias, obras, convênios, legislação, concursos, despesas, receitas, licitações, contratos, Megasoft Tecnologia (MegaAdmWeb), TCEs/TCMs, SICONFI (DCA/RREO/RGF) e PNCP (Go Engine) | 24 |
+| `transparencia_municipios` | Transparência e Servidores de todos os 5.570 Municípios e 27 UFs — descoberta de portais, folha/servidores, contracheque detalhado, diárias, obras, convênios, legislação, concursos, despesas, receitas, licitações, contratos via **Betha Cloud, Megasoft, Ágili, Elotech, IPM/Atende.Net, Equiplano Cloud, E&L PortalTP, Sonner GRP, e-Pública, GovBR/Cidade360, Coplan, Thema, Quasar, Fiorilli**, TCEs/TCMs, SICONFI e PNCP (Go Engine) | 24 |
 | `mj` | MJSP (CKAN) — SINESP, INFOPEN, PROCONs/Sindec, armas, sistema prisional | 4 |
 
 

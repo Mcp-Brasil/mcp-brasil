@@ -64,11 +64,20 @@ func CandidatePortalURLs(m *Municipio) []string {
 		fmt.Sprintf("https://%s.megasofttransparencia.com.br", compact),
 		fmt.Sprintf("https://%s.oxy.elotech.com.br/portaltransparencia-api", compact),
 		fmt.Sprintf("https://transparencia.%s.%s.gov.br/portaltransparencia-api", compact, ufLower),
+		fmt.Sprintf("https://%s-%s.portaltp.com.br", compact, ufLower),
+		fmt.Sprintf("https://%s.atende.net", compact),
+		fmt.Sprintf("https://%s.sonner.com.br", compact),
+		fmt.Sprintf("https://grp.%s.%s.gov.br", compact, ufLower),
+		fmt.Sprintf("https://webapp1-%s.cidade360.cloud/dadosabertos", compact),
+		fmt.Sprintf("https://www.gp.srv.br/transparencia_%s", compact),
 	)
 	if slug != compact {
 		raw = append(raw,
 			fmt.Sprintf("https://%s.megasofttransparencia.com.br", slug),
 			fmt.Sprintf("https://%s.oxy.elotech.com.br/portaltransparencia-api", slug),
+			fmt.Sprintf("https://%s-%s.portaltp.com.br", slug, ufLower),
+			fmt.Sprintf("https://%s.atende.net", slug),
+			fmt.Sprintf("https://webapp1-%s.cidade360.cloud/dadosabertos", slug),
 		)
 	}
 
@@ -170,6 +179,16 @@ func DiscoverPortal(ctx context.Context, m *Municipio, opts DiscoverOptions) *Po
 	// Orçamento máximo de descoberta automática para não bloquear fallbacks (TCE/SICONFI/PNCP)
 	discCtx, discCancel := context.WithTimeout(ctx, timeout*2)
 	defer discCancel()
+
+	// 1c. Descoberta paralela em diretórios SaaS multi-tenant (Betha, Ágili, e-Pública, Equiplano Cloud)
+	saasCtx, saasCancel := context.WithTimeout(discCtx, timeout)
+	saasHit := probeSaaSDirectoriesConcurrently(saasCtx, client, m)
+	saasCancel()
+	if saasHit != nil {
+		saasHit.Municipio = m
+		saasHit.TempoMs = time.Since(start).Milliseconds()
+		return saasHit
+	}
 
 	// 2. Candidatos de URL + enriquecimento com TCE-PI para municípios do Piauí.
 	candidates := CandidatePortalURLs(m)
@@ -362,6 +381,86 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		}
 	}
 
+	// 2d) Checa URL direta Betha Cloud (https://transparencia.betha.cloud/#/<hash>)
+	if strings.Contains(strings.ToLower(base), "transparencia.betha.cloud") {
+		if idx := strings.Index(base, "#/"); idx != -1 {
+			rest := strings.TrimPrefix(base[idx+2:], "/")
+			if slash := strings.IndexByte(rest, '/'); slash != -1 {
+				rest = rest[:slash]
+			}
+			if rest != "" {
+				det.Plataforma = "betha_cloud"
+				det.TenantID = rest
+				det.ServidoresSuportado = true
+				det.Observacoes = "Portal Betha Cloud com API JSON pública anônima."
+				return det, true
+			}
+		}
+	}
+
+	// 2e) Checa assinatura IPM / Atende.Net (/api/WCPDadosAbertos e /api/transparencia-pessoal-funcionarios)
+	if ProbeIPM(ctx, client, base) {
+		det.Plataforma = "ipm_atende"
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal IPM / Atende.Net com API REST pública de Dados Abertos."
+		return det, true
+	}
+
+	// 2f) Checa assinatura E&L PortalTP (/api/transparencia.asmx)
+	if ProbePortalTP(ctx, client, base) {
+		det.Plataforma = "el_portaltp"
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal E&L PortalTP com WebService ASMX JSON público."
+		return det, true
+	}
+
+	// 2g) Checa assinatura Sonner GRP (/GRP/pic/api/config/contexto)
+	if ent, ok := ProbeSonner(ctx, client, base); ok {
+		det.Plataforma = "sonner_grp"
+		det.EntidadeNome = ent
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal Sonner GRP com API REST pública (/GRP/pic/api)."
+		return det, true
+	}
+
+	// 2h) Checa assinatura e-Pública (/rest/{alias}/public/user/attr/exercicios)
+	if alias, ent, ok := ProbeEPublicaURL(ctx, client, base); ok {
+		det.Plataforma = "epublica_portal"
+		det.TenantID = alias
+		det.EntidadeNome = ent
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal e-Pública com API REST multi-tenant pública."
+		return det, true
+	}
+
+	// 2i) Checa assinatura GovBR / Pronim / Cidade360 (/dadosabertos/swagger/v1/swagger.json)
+	if ent, ok := ProbeGovBRCidade360(ctx, client, base); ok {
+		det.Plataforma = "govbr_cidade360"
+		det.TenantID = ent
+		det.EntidadeNome = ent
+		det.ServidoresSuportado = true
+		det.Observacoes = "Portal GovBR / Pronim Cidade360 com API OpenAPI pública."
+		return det, true
+	}
+
+	// 2j) Checa assinatura Coplan (/servlet/api_consulta?unidade_gestora)
+	if ugID, ugDesc, ok := ProbeCoplan(ctx, client, base); ok {
+		det.Plataforma = "coplan_gp"
+		det.CodAdministracao = ugID
+		det.EntidadeNome = ugDesc
+		det.Observacoes = "Portal Coplan com API JSON pública (api_consulta)."
+		return det, true
+	}
+
+	// 2k) Checa assinatura Thema API Gateway (/infra/apigw/transparencia/service/...)
+	if adminCode, adminName, ok := ProbeThemaAPIGW(ctx, client, base); ok {
+		det.Plataforma = "thema_apigw"
+		det.CodAdministracao = adminCode
+		det.EntidadeNome = adminName
+		det.Observacoes = "Portal Thema API Gateway com endpoints JSON públicos."
+		return det, true
+	}
+
 	// 3) Fallback HTML / portal genérico (detecção de vendor e anti-bot)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base, nil)
 	if err != nil {
@@ -399,7 +498,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		switch {
 		case strings.Contains(bodyLow, "atende.net") || strings.Contains(bodyLow, "ipm"):
 			det.Plataforma = "ipm_atende"
-			det.Observacoes = "Portal IPM/Atende.Net detectado (requer navegação HTML ou sessão própria)."
+			det.Observacoes = "Portal IPM/Atende.Net detectado (sem endpoints abertos de Dados Abertos neste endereço)."
 		case strings.Contains(bodyLow, "betha"):
 			det.Plataforma = "betha"
 			det.Observacoes = "Portal Betha Sistemas detectado."
@@ -418,6 +517,83 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	}
 
 	return nil, false
+}
+
+func probeSaaSDirectoriesConcurrently(ctx context.Context, client *http.Client, m *Municipio) *PortalDiscoveryResult {
+	type saasSlot struct {
+		idx int
+		res *PortalDiscoveryResult
+	}
+
+	probeCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	probes := []func(context.Context, *http.Client, *Municipio) (*PortalDiscoveryResult, bool){
+		DiscoverBethaByIBGE,
+		DiscoverAgiliByMunicipio,
+		DiscoverEPublica,
+		DiscoverEquiplanoCloud,
+	}
+
+	ch := make(chan saasSlot, len(probes))
+	for i, fn := range probes {
+		go func(idx int, probeFn func(context.Context, *http.Client, *Municipio) (*PortalDiscoveryResult, bool)) {
+			res, ok := probeFn(probeCtx, client, m)
+			if !ok {
+				res = nil
+			}
+			ch <- saasSlot{idx: idx, res: res}
+		}(i, fn)
+	}
+
+	slots := make([]*PortalDiscoveryResult, len(probes))
+	var graceTimer *time.Timer
+	var graceCh <-chan time.Time
+	defer func() {
+		if graceTimer != nil {
+			graceTimer.Stop()
+		}
+	}()
+
+	for completed := 0; completed < len(probes); {
+		select {
+		case item := <-ch:
+			completed++
+			if item.res != nil {
+				slots[item.idx] = item.res
+				if item.idx == 0 {
+					cancel()
+					return item.res
+				}
+				if graceTimer == nil {
+					graceTimer = time.NewTimer(150 * time.Millisecond)
+					graceCh = graceTimer.C
+				}
+			}
+		case <-graceCh:
+			cancel()
+			for _, r := range slots {
+				if r != nil {
+					return r
+				}
+			}
+			return nil
+		case <-probeCtx.Done():
+			for _, r := range slots {
+				if r != nil {
+					return r
+				}
+			}
+			return nil
+		}
+	}
+
+	for _, res := range slots {
+		if res != nil {
+			return res
+		}
+	}
+	return nil
 }
 
 func probeQuasarVersao(ctx context.Context, client *http.Client, baseURL string) (string, bool) {

@@ -100,6 +100,7 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 	p := PortalQueryParams{
 		BaseURL:          disc.URLResolvida,
 		CodAdministracao: disc.CodAdministracao,
+		TenantID:         disc.TenantID,
 		NomeFiltro:       opts.NomeFiltro,
 		Inicio:           opts.Inicio,
 		Fim:              opts.Fim,
@@ -108,7 +109,7 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 		Limit:            opts.Limit,
 	}
 
-	// 1. Conector direto do portal municipal (Megasoft, Quasar ou Fiorilli)
+	// 1. Conector direto do portal municipal
 	if disc.URLResolvida != "" {
 		switch disc.Plataforma {
 		case "megasoft":
@@ -131,6 +132,48 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 			}
 		case "elotech_oxy":
 			res, err := QueryElotechServidores(ctx, h.HTTPClient, m, p)
+			if err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "betha_cloud":
+			res, err := QueryBethaServidores(ctx, h.HTTPClient, m, p)
+			if err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "agili_blue":
+			res, err := QueryAgiliServidores(ctx, h.HTTPClient, m, p)
+			if err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "ipm_atende":
+			res, err := QueryIPMServidores(ctx, h.HTTPClient, m, p)
+			if err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "el_portaltp":
+			res, err := QueryPortalTPServidores(ctx, h.HTTPClient, m, p)
+			if err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "sonner_grp":
+			res, err := QuerySonnerServidores(ctx, h.HTTPClient, m, p)
+			if err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "epublica_portal":
+			res, err := QueryEPublicaServidores(ctx, h.HTTPClient, m, p)
+			if err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
+		case "govbr_cidade360":
+			res, err := QueryGovBRServidores(ctx, h.HTTPClient, m, p, disc.TenantID)
 			if err == nil && res != nil {
 				h.applyServidoresPostProcess(res, opts)
 				return res, nil
@@ -196,6 +239,7 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 	p := PortalQueryParams{
 		BaseURL:          disc.URLResolvida,
 		CodAdministracao: disc.CodAdministracao,
+		TenantID:         disc.TenantID,
 		NomeFiltro:       opts.NomeFiltro,
 		Inicio:           opts.Inicio,
 		Fim:              opts.Fim,
@@ -223,6 +267,51 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 			}
 		case "elotech_oxy":
 			if res, err := QueryElotechDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "betha_cloud":
+			if res, err := QueryBethaDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "agili_blue":
+			if res, err := QueryAgiliDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "ipm_atende":
+			if res, err := QueryIPMDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "equiplano_cloud":
+			if res, err := QueryEquiplanoDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "el_portaltp":
+			if res, err := QueryPortalTPDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "sonner_grp":
+			if res, err := QuerySonnerDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "epublica_portal":
+			if res, err := QueryEPublicaDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "coplan_gp":
+			if res, err := QueryCoplanDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
+		case "thema_apigw":
+			if res, err := QueryThemaDespesas(ctx, h.HTTPClient, m, p); err == nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
@@ -322,6 +411,7 @@ func (h *Hub) queryReceitasWithDiscovery(ctx context.Context, m *Municipio, disc
 	p := PortalQueryParams{
 		BaseURL:          disc.URLResolvida,
 		CodAdministracao: disc.CodAdministracao,
+		TenantID:         disc.TenantID,
 		Inicio:           opts.Inicio,
 		Fim:              opts.Fim,
 		Ano:              opts.Ano,
@@ -345,6 +435,38 @@ func (h *Hub) queryReceitasWithDiscovery(ctx context.Context, m *Municipio, disc
 			}
 		case "elotech_oxy":
 			if res, err := QueryElotechReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "betha_cloud":
+			if res, err := QueryBethaReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "agili_blue":
+			if res, err := QueryAgiliReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "ipm_atende":
+			if res, err := QueryIPMReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "equiplano_cloud":
+			if res, err := QueryEquiplanoReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "el_portaltp":
+			if res, err := QueryPortalTPReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "sonner_grp":
+			if res, err := QuerySonnerReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "epublica_portal":
+			if res, err := QueryEPublicaReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "govbr_cidade360":
+			if res, err := QueryGovBRReceitas(ctx, h.HTTPClient, m, p, disc.TenantID); err == nil {
 				return res, nil
 			}
 		}
@@ -404,6 +526,7 @@ func (h *Hub) queryLicitacoesWithDiscovery(ctx context.Context, m *Municipio, di
 		p := PortalQueryParams{
 			BaseURL:          disc.URLResolvida,
 			CodAdministracao: disc.CodAdministracao,
+			TenantID:         disc.TenantID,
 			NomeFiltro:       opts.NomeFiltro,
 			Inicio:           opts.Inicio,
 			Fim:              opts.Fim,
@@ -421,6 +544,30 @@ func (h *Hub) queryLicitacoesWithDiscovery(ctx context.Context, m *Municipio, di
 			}
 		case "elotech_oxy":
 			if res, err := QueryElotechLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "betha_cloud":
+			if res, err := QueryBethaLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "agili_blue":
+			if res, err := QueryAgiliLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "ipm_atende":
+			if res, err := QueryIPMLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "el_portaltp":
+			if res, err := QueryPortalTPLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "sonner_grp":
+			if res, err := QuerySonnerLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		case "epublica_portal":
+			if res, err := QueryEPublicaLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
 				return res, nil
 			}
 		}
@@ -465,6 +612,7 @@ func (h *Hub) queryContratosWithDiscovery(ctx context.Context, m *Municipio, dis
 		p := PortalQueryParams{
 			BaseURL:          disc.URLResolvida,
 			CodAdministracao: disc.CodAdministracao,
+			TenantID:         disc.TenantID,
 			NomeFiltro:       opts.NomeFiltro,
 			Inicio:           opts.Inicio,
 			Fim:              opts.Fim,
@@ -478,6 +626,34 @@ func (h *Hub) queryContratosWithDiscovery(ctx context.Context, m *Municipio, dis
 			}
 		case "quasar_publico":
 			if res, err := QueryQuasarContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "betha_cloud":
+			if res, err := QueryBethaContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "agili_blue":
+			if res, err := QueryAgiliContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "ipm_atende":
+			if res, err := QueryIPMContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "equiplano_cloud":
+			if res, err := QueryEquiplanoContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "el_portaltp":
+			if res, err := QueryPortalTPContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "sonner_grp":
+			if res, err := QuerySonnerContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
+				return res, nil
+			}
+		case "epublica_portal":
+			if res, err := QueryEPublicaContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
 				return res, nil
 			}
 		}
@@ -517,14 +693,28 @@ func (h *Hub) QueryDiarias(ctx context.Context, query string, opts QueryOptions)
 }
 
 func (h *Hub) queryDiariasWithDiscovery(ctx context.Context, m *Municipio, disc *PortalDiscoveryResult, opts QueryOptions) (*DiariasResult, error) {
-	if disc.URLResolvida != "" && disc.Plataforma == "megasoft" {
-		if res, err := QueryMegasoftDiarias(ctx, h.HTTPClient, m, PortalQueryParams{
+	if disc.URLResolvida != "" {
+		p := PortalQueryParams{
 			BaseURL:    disc.URLResolvida,
+			TenantID:   disc.TenantID,
 			NomeFiltro: opts.NomeFiltro,
 			Ano:        opts.Ano,
+			Mes:        opts.Mes,
 			Limit:      opts.Limit,
-		}); err == nil {
-			return res, nil
+		}
+		switch disc.Plataforma {
+		case "megasoft":
+			if res, err := QueryMegasoftDiarias(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "betha_cloud":
+			if res, err := QueryBethaDiarias(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "el_portaltp":
+			if res, err := QueryPortalTPDiarias(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
 		}
 	}
 	return &DiariasResult{
@@ -534,11 +724,11 @@ func (h *Hub) queryDiariasWithDiscovery(ctx context.Context, m *Municipio, disc 
 		PortalURL:  disc.URLResolvida,
 		Diarias:    []DiariaItem{},
 		Disponivel: false,
-		Mensagem:   fmt.Sprintf("Consulta direta de diárias via API está disponível para portais Megasoft; plataforma detectada: %s.", disc.Plataforma),
+		Mensagem:   fmt.Sprintf("Consulta direta de diárias via API está disponível para portais Megasoft, Betha Cloud e E&L PortalTP; plataforma detectada: %s.", disc.Plataforma),
 	}, nil
 }
 
-// QueryObras consulta obras públicas municipais (portais Megasoft).
+// QueryObras consulta obras públicas municipais.
 func (h *Hub) QueryObras(ctx context.Context, query string, opts QueryOptions) (*ObrasResult, error) {
 	m, _, err := h.resolveMunicipio(query, opts.UF)
 	if err != nil {
@@ -554,13 +744,36 @@ func (h *Hub) QueryObras(ctx context.Context, query string, opts QueryOptions) (
 }
 
 func (h *Hub) queryObrasWithDiscovery(ctx context.Context, m *Municipio, disc *PortalDiscoveryResult, opts QueryOptions) (*ObrasResult, error) {
-	if disc.URLResolvida != "" && disc.Plataforma == "megasoft" {
-		if res, err := QueryMegasoftObras(ctx, h.HTTPClient, m, PortalQueryParams{
+	if disc.URLResolvida != "" {
+		p := PortalQueryParams{
 			BaseURL:    disc.URLResolvida,
+			TenantID:   disc.TenantID,
 			NomeFiltro: opts.NomeFiltro,
+			Ano:        opts.Ano,
+			Mes:        opts.Mes,
 			Limit:      opts.Limit,
-		}); err == nil {
-			return res, nil
+		}
+		switch disc.Plataforma {
+		case "megasoft":
+			if res, err := QueryMegasoftObras(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "agili_blue":
+			if res, err := QueryAgiliObras(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "equiplano_cloud":
+			if res, err := QueryEquiplanoObras(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "el_portaltp":
+			if res, err := QueryPortalTPObras(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "sonner_grp":
+			if res, err := QuerySonnerObras(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
 		}
 	}
 	if m.UF == "RJ" {
@@ -575,11 +788,11 @@ func (h *Hub) queryObrasWithDiscovery(ctx context.Context, m *Municipio, disc *P
 		PortalURL:  disc.URLResolvida,
 		Obras:      []ObraItem{},
 		Disponivel: false,
-		Mensagem:   fmt.Sprintf("Consulta direta de obras via API está disponível para portais Megasoft; plataforma detectada: %s.", disc.Plataforma),
+		Mensagem:   fmt.Sprintf("Consulta direta de obras via API está disponível para portais Megasoft, Ágili, Equiplano, PortalTP, Sonner e TCE-RJ; plataforma detectada: %s.", disc.Plataforma),
 	}, nil
 }
 
-// QueryConvenios consulta convênios e transferências firmados pelo município (portais Megasoft).
+// QueryConvenios consulta convênios e transferências firmados pelo município.
 func (h *Hub) QueryConvenios(ctx context.Context, query string, opts QueryOptions) (*ConveniosResult, error) {
 	m, _, err := h.resolveMunicipio(query, opts.UF)
 	if err != nil {
@@ -595,13 +808,23 @@ func (h *Hub) QueryConvenios(ctx context.Context, query string, opts QueryOption
 }
 
 func (h *Hub) queryConveniosWithDiscovery(ctx context.Context, m *Municipio, disc *PortalDiscoveryResult, opts QueryOptions) (*ConveniosResult, error) {
-	if disc.URLResolvida != "" && disc.Plataforma == "megasoft" {
-		if res, err := QueryMegasoftConvenios(ctx, h.HTTPClient, m, PortalQueryParams{
+	if disc.URLResolvida != "" {
+		p := PortalQueryParams{
 			BaseURL:    disc.URLResolvida,
+			TenantID:   disc.TenantID,
 			NomeFiltro: opts.NomeFiltro,
+			Ano:        opts.Ano,
 			Limit:      opts.Limit,
-		}); err == nil {
-			return res, nil
+		}
+		switch disc.Plataforma {
+		case "megasoft":
+			if res, err := QueryMegasoftConvenios(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
+		case "sonner_grp":
+			if res, err := QuerySonnerConvenios(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
 		}
 	}
 	return &ConveniosResult{
@@ -611,7 +834,7 @@ func (h *Hub) queryConveniosWithDiscovery(ctx context.Context, m *Municipio, dis
 		PortalURL:  disc.URLResolvida,
 		Convenios:  []ConvenioItem{},
 		Disponivel: false,
-		Mensagem:   fmt.Sprintf("Consulta direta de convênios via API está disponível para portais Megasoft; plataforma detectada: %s.", disc.Plataforma),
+		Mensagem:   fmt.Sprintf("Consulta direta de convênios via API está disponível para portais Megasoft e Sonner; plataforma detectada: %s.", disc.Plataforma),
 	}, nil
 }
 

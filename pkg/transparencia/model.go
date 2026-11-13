@@ -169,6 +169,7 @@ type PortalDiscoveryResult struct {
 	Plataforma          string     `json:"plataforma"`
 	Versao              string     `json:"versao,omitempty"`
 	CodAdministracao    int        `json:"cod_administracao,omitempty"`
+	TenantID            string     `json:"tenant_id,omitempty"`
 	EntidadeNome        string     `json:"entidade_nome,omitempty"`
 	FonteDescoberta     string     `json:"fonte_descoberta,omitempty"`
 	ServidoresSuportado bool       `json:"servidores_suportado"`

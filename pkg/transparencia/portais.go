@@ -17,6 +17,7 @@ import (
 type PortalQueryParams struct {
 	BaseURL          string
 	CodAdministracao int
+	TenantID         string
 	NomeFiltro       string
 	Inicio           string
 	Fim              string
