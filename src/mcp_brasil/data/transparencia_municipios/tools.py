@@ -586,24 +586,26 @@ async def consultar_servidores_municipio(
     mes: int = 0,
     limite: int = 20,
     url: str | None = None,
+    ordem_salario_desc: bool = False,
 ) -> str:
     """Consulta servidores públicos municipais, cargos, lotação e remuneração em tempo real.
 
     Conecta automaticamente via melhor rota disponível: portal municipal estruturado
-    (Quasar `/publico/servidor`, Fiorilli SCPI) ou API aberta de Tribunal de Contas estadual
-    (TCE-PI Portal da Cidadania para os 224 municípios do Piauí; TCE-CE Dados Abertos SIM + folha
-    para os 184 municípios do Ceará). CPFs são sempre mascarados em conformidade com a LGPD.
+    (Megasoft Tecnologia, Quasar `/publico/servidor`, Fiorilli SCPI) ou API aberta de Tribunal
+    de Contas estadual (TCE-PI, TCE-CE). CPFs são sempre mascarados em conformidade com a LGPD.
 
     Args:
-        municipio: Nome do município ou código IBGE (ex: "Serra da Saudade", "Araxá", "Teresina").
-        uf: Sigla da UF (ex: "MG", "PI", "CE"). Recomendado.
-        nome: Filtro por nome do servidor (ex: "Maria", "Silva"). Opcional.
+        municipio: Nome do município ou código IBGE (ex: "Tacuru", "Serra da Saudade", "Araxá").
+        uf: Sigla da UF (ex: "MS", "MG", "PI", "CE"). Recomendado.
+        nome: Filtro por nome do servidor (ex: "Maria", "Silva", "Rogerio"). Opcional.
         inicio: Data/competência inicial (ex: "2025-01-01" ou "202501"). Opcional.
         fim: Data/competência final (ex: "2025-12-31"). Opcional.
         ano: Ano de referência (opcional; busca automático do mais recente se omitido).
         mes: Mês de competência (1 a 12). Opcional.
         limite: Quantidade máxima de servidores na tabela (padrão: 20).
         url: URL explícita do portal municipal, caso conhecida (opcional).
+        ordem_salario_desc: Se True, ordena os servidores pela maior remuneração bruta
+            (ideal para identificar os mais bem remunerados).
     """
     try:
         res = await client.consultar_servidores_municipio(
@@ -616,6 +618,7 @@ async def consultar_servidores_municipio(
             mes=mes,
             limit=limite,
             url=url,
+            ordem_salario_desc=ordem_salario_desc,
         )
     except Exception as err:
         return f"Erro ao consultar servidores de '{municipio}': {err}"
@@ -685,15 +688,16 @@ async def consultar_despesas_municipio(
     mes: int = 0,
     limite: int = 20,
     url: str | None = None,
+    ordem_valor_desc: bool = False,
 ) -> str:
     """Consulta despesas e empenhos detalhados de qualquer município brasileiro.
 
-    Conecta aos portais municipais (Quasar/Fiorilli) ou às APIs abertas dos Tribunais de Contas
+    Conecta aos portais municipais (Megasoft/Quasar/Fiorilli) ou aos Tribunais de Contas
     (TCE-SP para os 645 municípios paulistas e TCE-PI para os 224 municípios piauienses).
 
     Args:
-        municipio: Nome do município ou código IBGE (ex: "Serra da Saudade", "Adamantina").
-        uf: Sigla da UF (ex: "MG", "SP", "PI"). Opcional.
+        municipio: Nome do município ou código IBGE (ex: "Tacuru", "Adamantina").
+        uf: Sigla da UF (ex: "MS", "MG", "SP", "PI"). Opcional.
         nome: Filtro por fornecedor/credor ou histórico (opcional).
         inicio: Data inicial `YYYY-MM-DD` (opcional).
         fim: Data final `YYYY-MM-DD` (opcional).
@@ -701,6 +705,7 @@ async def consultar_despesas_municipio(
         mes: Mês (1 a 12). Opcional.
         limite: Quantidade máxima de despesas exibidas (padrão: 20).
         url: URL explícita do portal municipal (opcional).
+        ordem_valor_desc: Se True, ordena as despesas pelo maior valor pago/empenhado.
     """
     try:
         res = await client.consultar_despesas_municipio(
@@ -713,6 +718,7 @@ async def consultar_despesas_municipio(
             mes=mes,
             limit=limite,
             url=url,
+            ordem_valor_desc=ordem_valor_desc,
         )
     except Exception as err:
         return f"Erro ao consultar despesas de '{municipio}': {err}"

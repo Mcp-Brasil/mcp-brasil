@@ -4,21 +4,24 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sort"
 	"sync"
 	"time"
 )
 
 // QueryOptions define parâmetros unificados para consulta de dados de transparência municipal.
 type QueryOptions struct {
-	UF         string
-	OverrideURL string
-	NomeFiltro string
-	Inicio     string
-	Fim        string
-	Ano        int
-	Mes        int
-	Limit      int
-	Timeout    time.Duration
+	UF               string
+	OverrideURL      string
+	NomeFiltro       string
+	Inicio           string
+	Fim              string
+	Ano              int
+	Mes              int
+	Limit            int
+	Timeout          time.Duration
+	OrdemSalarioDesc bool
+	OrdemValorDesc   bool
 }
 
 // Hub orquestra o motor territorial + descoberta de portais + conectores municipais, estaduais (TCEs) e federais (SICONFI/PNCP).
@@ -111,16 +114,19 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 		case "megasoft":
 			res, err := QueryMegasoftServidores(ctx, h.HTTPClient, m, p)
 			if err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
 				return res, nil
 			}
 		case "quasar_publico":
 			res, err := QueryQuasarServidores(ctx, h.HTTPClient, m, p)
 			if err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
 				return res, nil
 			}
 		case "fiorilli_scpi":
 			res, err := QueryFiorilliServidores(ctx, h.HTTPClient, m, p)
 			if err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
 				return res, nil
 			}
 		}
@@ -130,10 +136,12 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 	switch m.UF {
 	case "PI":
 		if res, err := h.TCE.FetchTCEPIServidores(ctx, m, opts.Ano, opts.NomeFiltro, opts.Limit); err == nil {
+			h.applyServidoresPostProcess(res, opts)
 			return res, nil
 		}
 	case "CE":
 		if res, err := h.TCE.FetchTCECEServidores(ctx, m, opts.Ano, opts.Mes, opts.NomeFiltro, opts.Limit); err == nil {
+			h.applyServidoresPostProcess(res, opts)
 			return res, nil
 		}
 	}
@@ -194,14 +202,17 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 		switch disc.Plataforma {
 		case "megasoft":
 			if res, err := QueryMegasoftDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "quasar_publico":
 			if res, err := QueryQuasarDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "fiorilli_scpi":
 			if res, err := QueryFiorilliDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		}
@@ -210,10 +221,12 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 	switch m.UF {
 	case "SP":
 		if res, err := h.TCE.FetchTCESPDespesas(ctx, m, opts.Ano, opts.Mes, opts.Limit); err == nil {
+			h.applyDespesasPostProcess(res, opts)
 			return res, nil
 		}
 	case "PI":
 		if res, err := h.TCE.FetchTCEPIDespesas(ctx, m, opts.Ano, opts.Limit); err == nil {
+			h.applyDespesasPostProcess(res, opts)
 			return res, nil
 		}
 	}
@@ -227,6 +240,36 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 		Disponivel: false,
 		Mensagem:   "Portal municipal sem API JSON aberta suportada; os dados orçamentários anuais/bimestrais estão disponíveis no SICONFI.",
 	}, nil
+}
+
+func (h *Hub) applyServidoresPostProcess(res *ServidoresResult, opts QueryOptions) {
+	if res == nil || len(res.Servidores) <= 1 {
+		return
+	}
+	if opts.OrdemSalarioDesc {
+		sort.SliceStable(res.Servidores, func(i, j int) bool {
+			return res.Servidores[i].SalarioBruto > res.Servidores[j].SalarioBruto
+		})
+	}
+}
+
+func (h *Hub) applyDespesasPostProcess(res *DespesasResult, opts QueryOptions) {
+	if res == nil || len(res.Despesas) <= 1 {
+		return
+	}
+	if opts.OrdemValorDesc {
+		sort.SliceStable(res.Despesas, func(i, j int) bool {
+			vi := res.Despesas[i].ValorPago
+			if vi == 0 {
+				vi = res.Despesas[i].ValorEmpenhado
+			}
+			vj := res.Despesas[j].ValorPago
+			if vj == 0 {
+				vj = res.Despesas[j].ValorEmpenhado
+			}
+			return vi > vj
+		})
+	}
 }
 
 // QueryReceitas consulta receitas municipais (Portal Municipal -> TCE-SP / TCE-PI).

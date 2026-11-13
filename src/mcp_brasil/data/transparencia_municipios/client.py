@@ -567,6 +567,8 @@ def _build_hub_args(
     mes: int = 0,
     limit: int = 20,
     url: str | None = None,
+    ordem_salario_desc: bool = False,
+    ordem_valor_desc: bool = False,
 ) -> list[str]:
     args = [cmd, municipio]
     if uf:
@@ -585,6 +587,10 @@ def _build_hub_args(
         args.extend(["--limit", str(limit)])
     if url:
         args.extend(["--url", url.strip()])
+    if ordem_salario_desc:
+        args.append("--ordem-salario-desc")
+    if ordem_valor_desc:
+        args.append("--ordem-valor-desc")
     return args
 
 
@@ -623,6 +629,7 @@ async def consultar_servidores_municipio(
     mes: int = 0,
     limit: int = 20,
     url: str | None = None,
+    ordem_salario_desc: bool = False,
 ) -> ServidoresResult:
     """Consulta servidores públicos e remuneração de um município brasileiro."""
     if GO_BINARY_PATH.exists():
@@ -637,6 +644,7 @@ async def consultar_servidores_municipio(
             mes=mes,
             limit=limit,
             url=url,
+            ordem_salario_desc=ordem_salario_desc,
         )
         data = await _run_go_binary(args)
         return ServidoresResult(**data)  # type: ignore[arg-type]
@@ -662,6 +670,7 @@ async def consultar_despesas_municipio(
     mes: int = 0,
     limit: int = 20,
     url: str | None = None,
+    ordem_valor_desc: bool = False,
 ) -> DespesasResult:
     """Consulta despesas e empenhos de um município brasileiro."""
     if GO_BINARY_PATH.exists():
@@ -676,6 +685,7 @@ async def consultar_despesas_municipio(
             mes=mes,
             limit=limit,
             url=url,
+            ordem_valor_desc=ordem_valor_desc,
         )
         data = await _run_go_binary(args)
         return DespesasResult(**data)  # type: ignore[arg-type]

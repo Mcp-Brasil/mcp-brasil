@@ -388,7 +388,17 @@ func resolveMegasoftCompetencias(ano, mes int) [][2]int {
 // QueryMegasoftServidores consulta a folha de pagamento de servidores públicos no portal Megasoft.
 func QueryMegasoftServidores(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*ServidoresResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
-	limit := normalizeLimit(p.Limit)
+	maxLimit := p.Limit
+	if maxLimit <= 0 {
+		maxLimit = 25
+	}
+	if maxLimit > 1000 {
+		maxLimit = 1000
+	}
+	pageSize := 200
+	if maxLimit < 200 {
+		pageSize = maxLimit
+	}
 	competencias := resolveMegasoftCompetencias(p.Ano, p.Mes)
 
 	var bestNonEmpty *ServidoresResult
@@ -396,7 +406,7 @@ func QueryMegasoftServidores(ctx context.Context, client *http.Client, m *Munici
 	for _, comp := range competencias {
 		q := url.Values{}
 		q.Set("pagina", "1")
-		q.Set("tamanhoDaPagina", strconv.Itoa(limit))
+		q.Set("tamanhoDaPagina", strconv.Itoa(pageSize))
 		q.Set("ano", strconv.Itoa(comp[0]))
 		q.Set("mes", fmt.Sprintf("%02d", comp[1]))
 		if strings.TrimSpace(p.NomeFiltro) != "" {
@@ -421,31 +431,53 @@ func QueryMegasoftServidores(ctx context.Context, client *http.Client, m *Munici
 
 		hasPositiveSalary := false
 		items := make([]ServidorItem, 0, len(page.Registros))
-		for _, r := range page.Registros {
-			if r.Proventos > 0 || r.TotalLiquido > 0 {
-				hasPositiveSalary = true
+		addServidorItems := func(regs []megaServidorRaw) {
+			for _, r := range regs {
+				if r.Proventos > 0 || r.TotalLiquido > 0 {
+					hasPositiveSalary = true
+				}
+				compStr := strings.TrimSpace(r.MesAno)
+				if compStr == "" {
+					compStr = fmt.Sprintf("%02d/%04d", comp[1], comp[0])
+				}
+				items = append(items, ServidorItem{
+					Nome:           strings.TrimSpace(r.Nome),
+					Matricula:      anyToString(r.Matricula),
+					CPFParcial:     maskCPF(r.CPF, ""),
+					Cargo:          strings.TrimSpace(r.Cargo),
+					Lotacao:        strings.TrimSpace(r.Departamento),
+					Vinculo:        strings.TrimSpace(r.TipoDeVinculo),
+					Situacao:       strings.TrimSpace(r.Situacao),
+					SalarioBruto:   r.Proventos,
+					Descontos:      r.Descontos,
+					SalarioLiquido: r.TotalLiquido,
+					Competencia:    compStr,
+					CargaHoraria:   anyToString(r.CargaHoraria),
+					DataAdmissao:   strings.TrimSpace(r.DataAdmissao),
+					Fonte:          "Portal Municipal (Megasoft)",
+					PortalURL:      base,
+				})
+				if len(items) >= maxLimit {
+					break
+				}
 			}
-			compStr := strings.TrimSpace(r.MesAno)
-			if compStr == "" {
-				compStr = fmt.Sprintf("%02d/%04d", comp[1], comp[0])
+		}
+
+		addServidorItems(page.Registros)
+
+		if maxLimit > len(items) && page.Total > len(items) {
+			for pageNum := 2; len(items) < maxLimit && (pageNum-1)*pageSize < page.Total; pageNum++ {
+				q.Set("pagina", strconv.Itoa(pageNum))
+				subBody, subStatus, subErr := doMegasoftRequest(ctx, client, base, http.MethodGet, "/api/orgaos-e-servidores/servidor/paginado?"+q.Encode(), nil)
+				if subErr != nil || subStatus != http.StatusOK {
+					break
+				}
+				var subPage megaPage[megaServidorRaw]
+				if err := json.Unmarshal(subBody, &subPage); err != nil || len(subPage.Registros) == 0 {
+					break
+				}
+				addServidorItems(subPage.Registros)
 			}
-			items = append(items, ServidorItem{
-				Nome:           strings.TrimSpace(r.Nome),
-				Matricula:      anyToString(r.Matricula),
-				CPFParcial:     maskCPF(r.CPF, ""),
-				Cargo:          strings.TrimSpace(r.Cargo),
-				Lotacao:        strings.TrimSpace(r.Departamento),
-				Vinculo:        strings.TrimSpace(r.TipoDeVinculo),
-				Situacao:       strings.TrimSpace(r.Situacao),
-				SalarioBruto:   r.Proventos,
-				Descontos:      r.Descontos,
-				SalarioLiquido: r.TotalLiquido,
-				Competencia:    compStr,
-				CargaHoraria:   anyToString(r.CargaHoraria),
-				DataAdmissao:   strings.TrimSpace(r.DataAdmissao),
-				Fonte:          "Portal Municipal (Megasoft)",
-				PortalURL:      base,
-			})
 		}
 
 		res := &ServidoresResult{

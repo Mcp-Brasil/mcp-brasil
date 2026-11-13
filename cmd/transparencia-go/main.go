@@ -1001,6 +1001,8 @@ func parseHubCommandFlags(name string, args []string) (string, transparencia.Que
 	ano := fs.Int("ano", 0, "Ano de referência")
 	mes := fs.Int("mes", 0, "Mês de referência (1-12)")
 	limit := fs.Int("limit", 20, "Limite de registros")
+	ordemSalarioDesc := fs.Bool("ordem-salario-desc", false, "Ordenar servidores pela maior remuneração bruta")
+	ordemValorDesc := fs.Bool("ordem-valor-desc", false, "Ordenar despesas pelo maior valor")
 	asJSON := fs.Bool("json", false, "Exibir em formato JSON")
 	posArgs, _ := parseFlexibleArgs(fs, args)
 
@@ -1010,14 +1012,16 @@ func parseHubCommandFlags(name string, args []string) (string, transparencia.Que
 		os.Exit(1)
 	}
 	return target, transparencia.QueryOptions{
-		UF:          *uf,
-		OverrideURL: *overrideURL,
-		NomeFiltro:  *nome,
-		Inicio:      *inicio,
-		Fim:         *fim,
-		Ano:         *ano,
-		Mes:         *mes,
-		Limit:       *limit,
+		UF:               *uf,
+		OverrideURL:      *overrideURL,
+		NomeFiltro:       *nome,
+		Inicio:           *inicio,
+		Fim:              *fim,
+		Ano:              *ano,
+		Mes:              *mes,
+		Limit:            *limit,
+		OrdemSalarioDesc: *ordemSalarioDesc,
+		OrdemValorDesc:   *ordemValorDesc,
 	}, *asJSON
 }
 
