@@ -242,11 +242,11 @@ Este documento descreve, fonte por fonte, a licença declarada e as restrições
   - **IBGE**: malha territorial oficial (5.571 municípios/unidades territoriais), códigos IBGE e coordenadas
   - **SICONFI (Secretaria do Tesouro Nacional)**: CNPJs oficiais das prefeituras, populações oficiais, Declaração de Contas Anuais (DCA), RREO, Relatório de Gestão Fiscal (RGF / despesa com pessoal LRF) e Extrato de Entregas da LRF
   - **PNCP (Portal Nacional de Contratações Públicas)**: editais, licitações e contratos municipais por CNPJ da Prefeitura (Lei 14.133/2021)
-  - **Portais Municipais Diretos (Descoberta Dinâmica)**: conectores nativos em Go para APIs abertas padronizadas de portais municipais (Quasar `/publico/*` — servidores, despesas, receitas, licitações, contratos; Fiorilli SCPI `/VersaoJson/*`), com detecção de plataformas HTML e bloqueios anti-bot
-  - **Tribunais de Contas (TCEs/TCMs)**: todos os 27 TCEs e tribunais municipais, com APIs abertas integradas para servidores/despesas/receitas no **TCE-PI** (224 municípios), **TCE-CE SIM** (184 municípios, incluindo folha salarial) e **TCE-SP** (645 municípios, despesas e receitas)
+  - **Portais Municipais Diretos (Descoberta Dinâmica e Catálogos)**: conectores nativos em Go para APIs abertas padronizadas de portais municipais (**Megasoft MegaAdmWeb** — 268 municípios catalogados em 11 módulos; **Elotech Gestão Pública** `/portaltransparencia-api` OpenAPI 3.0 — servidores, despesas RSQL, receitas e licitações; **Quasar** `/publico/*`; **Fiorilli SCPI** `/VersaoJson/*`), com detecção de plataformas HTML/autenticadas (Betha, IPM/Atende.Net, E&L, Sonner) e bloqueios anti-bot
+  - **Tribunais de Contas (TCEs/TCMs)**: todos os 27 TCEs e tribunais municipais, com APIs abertas integradas para dados municipais no **TCE-PI** (224), **TCE-CE SIM** (184), **TCE-SP** (645), **TCE-RS** (497), **TCE-PR** (399, SIOPE), **TCE-PE** (184), **TCE-RN** (167), **TCE-RJ** (92), **TCE-SC** (295), **TCE-TO** (139) e **TCE-PA** (144), além de conectores institucionais para TCE-MS e TCE-SE
   - **ATRICON**: Radar Nacional da Transparência Pública
 - **Licença**: Dados Abertos Governamentais / LAI (Lei 12.527/2011) / LC 131/2009 / Lei 14.133/2021
-- **Atribuição**: "IBGE / Tesouro Nacional (SICONFI) / PNCP / Tribunais de Contas (TCE-PI, TCE-CE, TCE-SP e demais TCEs/TCMs) / ATRICON / Portais Municipais da Transparência"
+- **Atribuição**: "IBGE / Tesouro Nacional (SICONFI) / PNCP / Tribunais de Contas (TCEs/TCMs) / ATRICON / Portais Municipais da Transparência"
 
 **Disclaimer obrigatório (LGPD):**
 > Consultas a servidores públicos municipais exibem apenas dados funcionais e remuneratórios públicos nos termos da LAI e **sempre mascaram CPFs** (`***.XXX.XXX-**`). Portais protegidos por autenticação ou verificação anti-bot/CAPTCHA não são contornados.

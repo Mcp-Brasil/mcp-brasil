@@ -129,6 +129,12 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 				h.applyServidoresPostProcess(res, opts)
 				return res, nil
 			}
+		case "elotech_oxy":
+			res, err := QueryElotechServidores(ctx, h.HTTPClient, m, p)
+			if err == nil && res != nil {
+				h.applyServidoresPostProcess(res, opts)
+				return res, nil
+			}
 		}
 	}
 
@@ -215,6 +221,11 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
+		case "elotech_oxy":
+			if res, err := QueryElotechDespesas(ctx, h.HTTPClient, m, p); err == nil {
+				h.applyDespesasPostProcess(res, opts)
+				return res, nil
+			}
 		}
 	}
 
@@ -226,6 +237,26 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 		}
 	case "PI":
 		if res, err := h.TCE.FetchTCEPIDespesas(ctx, m, opts.Ano, opts.Limit); err == nil {
+			h.applyDespesasPostProcess(res, opts)
+			return res, nil
+		}
+	case "PE":
+		if res, err := h.TCE.FetchTCEPEDespesas(ctx, m, opts.Ano, opts.Mes, opts.Limit); err == nil {
+			h.applyDespesasPostProcess(res, opts)
+			return res, nil
+		}
+	case "RN":
+		if res, err := h.TCE.FetchTCERNDespesas(ctx, m, opts.Ano, 0, opts.Limit); err == nil {
+			h.applyDespesasPostProcess(res, opts)
+			return res, nil
+		}
+	case "RS":
+		if res, err := h.TCE.FetchTCERSDespesas(ctx, m, opts.Ano, opts.Limit); err == nil {
+			h.applyDespesasPostProcess(res, opts)
+			return res, nil
+		}
+	case "PR":
+		if res, err := h.TCE.FetchTCEPRDespesas(ctx, m, opts.Ano, 0, opts.Limit); err == nil {
 			h.applyDespesasPostProcess(res, opts)
 			return res, nil
 		}
@@ -312,6 +343,10 @@ func (h *Hub) queryReceitasWithDiscovery(ctx context.Context, m *Municipio, disc
 			if res, err := QueryFiorilliReceitas(ctx, h.HTTPClient, m, p); err == nil {
 				return res, nil
 			}
+		case "elotech_oxy":
+			if res, err := QueryElotechReceitas(ctx, h.HTTPClient, m, p); err == nil {
+				return res, nil
+			}
 		}
 	}
 
@@ -322,6 +357,18 @@ func (h *Hub) queryReceitasWithDiscovery(ctx context.Context, m *Municipio, disc
 		}
 	case "PI":
 		if res, err := h.TCE.FetchTCEPIReceitas(ctx, m, opts.Ano, opts.Limit); err == nil {
+			return res, nil
+		}
+	case "RN":
+		if res, err := h.TCE.FetchTCERNReceitas(ctx, m, opts.Ano, 0, opts.Limit); err == nil {
+			return res, nil
+		}
+	case "RS":
+		if res, err := h.TCE.FetchTCERSReceitas(ctx, m, opts.Ano, opts.Limit); err == nil {
+			return res, nil
+		}
+	case "PR":
+		if res, err := h.TCE.FetchTCEPRReceitas(ctx, m, opts.Ano, 0, opts.Limit); err == nil {
 			return res, nil
 		}
 	}
@@ -372,6 +419,25 @@ func (h *Hub) queryLicitacoesWithDiscovery(ctx context.Context, m *Municipio, di
 			if res, err := QueryQuasarLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
 				return res, nil
 			}
+		case "elotech_oxy":
+			if res, err := QueryElotechLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
+				return res, nil
+			}
+		}
+	}
+
+	switch m.UF {
+	case "PE":
+		if res, err := h.TCE.FetchTCEPELicitacoes(ctx, m, opts.Ano, opts.Limit); err == nil && res != nil && len(res.Licitacoes) > 0 {
+			return res, nil
+		}
+	case "RJ":
+		if res, err := h.TCE.FetchTCERJLicitacoes(ctx, m, opts.Ano, opts.Limit); err == nil && res != nil && len(res.Licitacoes) > 0 {
+			return res, nil
+		}
+	case "RN":
+		if res, err := h.TCE.FetchTCERNLicitacoes(ctx, m, opts.Ano, opts.Limit); err == nil && res != nil && len(res.Licitacoes) > 0 {
+			return res, nil
 		}
 	}
 
@@ -414,6 +480,21 @@ func (h *Hub) queryContratosWithDiscovery(ctx context.Context, m *Municipio, dis
 			if res, err := QueryQuasarContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
 				return res, nil
 			}
+		}
+	}
+
+	switch m.UF {
+	case "PE":
+		if res, err := h.TCE.FetchTCEPEContratos(ctx, m, opts.Ano, opts.Limit); err == nil && res != nil && len(res.Contratos) > 0 {
+			return res, nil
+		}
+	case "RJ":
+		if res, err := h.TCE.FetchTCERJContratos(ctx, m, opts.Ano, opts.Limit); err == nil && res != nil && len(res.Contratos) > 0 {
+			return res, nil
+		}
+	case "RN":
+		if res, err := h.TCE.FetchTCERNContratos(ctx, m, opts.Limit); err == nil && res != nil && len(res.Contratos) > 0 {
+			return res, nil
 		}
 	}
 
@@ -479,6 +560,11 @@ func (h *Hub) queryObrasWithDiscovery(ctx context.Context, m *Municipio, disc *P
 			NomeFiltro: opts.NomeFiltro,
 			Limit:      opts.Limit,
 		}); err == nil {
+			return res, nil
+		}
+	}
+	if m.UF == "RJ" {
+		if res, err := h.TCE.FetchTCERJObrasParalisadas(ctx, m, opts.Limit); err == nil {
 			return res, nil
 		}
 	}

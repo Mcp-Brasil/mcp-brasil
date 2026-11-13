@@ -62,9 +62,14 @@ func CandidatePortalURLs(m *Municipio) []string {
 	}
 	raw = append(raw,
 		fmt.Sprintf("https://%s.megasofttransparencia.com.br", compact),
+		fmt.Sprintf("https://%s.oxy.elotech.com.br/portaltransparencia-api", compact),
+		fmt.Sprintf("https://transparencia.%s.%s.gov.br/portaltransparencia-api", compact, ufLower),
 	)
 	if slug != compact {
-		raw = append(raw, fmt.Sprintf("https://%s.megasofttransparencia.com.br", slug))
+		raw = append(raw,
+			fmt.Sprintf("https://%s.megasofttransparencia.com.br", slug),
+			fmt.Sprintf("https://%s.oxy.elotech.com.br/portaltransparencia-api", slug),
+		)
 	}
 
 	return dedupeStrings(raw)
@@ -312,7 +317,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	}
 
 	// 2) Checa assinatura Fiorilli SCPI (/versaoJson/DadosAbertos/ ou /VersaoJson/DadosAbertos/)
-	for _, path := range []string{"/versaoJson/DadosAbertos/", "/VersaoJson/DadosAbertos/"} {
+	for _, path := range []string{"/versaoJson/DadosAbertos/", "/VersaoJson/DadosAbertos/", "/Transparencia/VersaoJson/DadosAbertos/"} {
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+path, nil)
 		if err != nil {
 			continue
@@ -340,6 +345,21 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		det.SitePrefeitura = strings.TrimSpace(cfg.LinkDoSiteDoOrgao)
 		det.Observacoes = "Portal Megasoft (MegaAdmWeb) com API REST pública completa."
 		return det, true
+	}
+
+	// 2c) Checa assinatura Elotech Gestão Pública (portaltransparencia-api OpenAPI 3.0)
+	elotechCandidates := []string{base}
+	if !strings.HasSuffix(strings.ToLower(base), "/portaltransparencia-api") {
+		elotechCandidates = append(elotechCandidates, base+"/portaltransparencia-api")
+	}
+	for _, eloBase := range elotechCandidates {
+		if ProbeElotech(ctx, client, eloBase) {
+			det.URLResolvida = eloBase
+			det.Plataforma = "elotech_oxy"
+			det.ServidoresSuportado = true
+			det.Observacoes = "Portal Elotech Gestão Pública (oxy.elotech.com.br) com API OpenAPI 3.0 pública."
+			return det, true
+		}
 	}
 
 	// 3) Fallback HTML / portal genérico (detecção de vendor e anti-bot)
