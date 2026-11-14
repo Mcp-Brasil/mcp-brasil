@@ -238,6 +238,18 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 				h.applyServidoresPostProcess(res, opts)
 				return res, nil
 			}
+		default:
+			if IsHTMLPortalPlatform(disc.Plataforma) {
+				if res, err := QueryHTMLPortalServidores(ctx, h.HTTPClient, m, p, disc.Plataforma); err == nil && res != nil {
+					h.applyServidoresPostProcess(res, opts)
+					return res, nil
+				} else if res != nil && res.PortalURL != "" {
+					disc.URLResolvida = res.PortalURL
+					if res.Mensagem != "" {
+						disc.Observacoes = res.Mensagem
+					}
+				}
+			}
 		}
 	}
 
@@ -439,6 +451,13 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 			if res, err := QueryTopSolutionsDespesas(ctx, h.HTTPClient, m, p); err == nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
+			}
+		default:
+			if IsHTMLPortalPlatform(disc.Plataforma) {
+				if res, err := QueryHTMLPortalDespesas(ctx, h.HTTPClient, m, p, disc.Plataforma); err == nil && res != nil {
+					h.applyDespesasPostProcess(res, opts)
+					return res, nil
+				}
 			}
 		}
 	}
@@ -650,6 +669,12 @@ func (h *Hub) queryReceitasWithDiscovery(ctx context.Context, m *Municipio, disc
 			if res, err := QueryTopSolutionsReceitas(ctx, h.HTTPClient, m, p); err == nil {
 				return res, nil
 			}
+		default:
+			if IsHTMLPortalPlatform(disc.Plataforma) {
+				if res, err := QueryHTMLPortalReceitas(ctx, h.HTTPClient, m, p, disc.Plataforma); err == nil && res != nil {
+					return res, nil
+				}
+			}
 		}
 	}
 
@@ -799,6 +824,12 @@ func (h *Hub) queryLicitacoesWithDiscovery(ctx context.Context, m *Municipio, di
 			if res, err := QueryTopSolutionsLicitacoes(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Licitacoes) > 0 {
 				return res, nil
 			}
+		default:
+			if IsHTMLPortalPlatform(disc.Plataforma) {
+				if res, err := QueryHTMLPortalLicitacoes(ctx, h.HTTPClient, m, p, disc.Plataforma); err == nil && res != nil && len(res.Licitacoes) > 0 {
+					return res, nil
+				}
+			}
 		}
 	}
 
@@ -933,6 +964,12 @@ func (h *Hub) queryContratosWithDiscovery(ctx context.Context, m *Municipio, dis
 			if res, err := QueryTopSolutionsContratos(ctx, h.HTTPClient, m, p); err == nil && res != nil && len(res.Contratos) > 0 {
 				return res, nil
 			}
+		default:
+			if IsHTMLPortalPlatform(disc.Plataforma) {
+				if res, err := QueryHTMLPortalContratos(ctx, h.HTTPClient, m, p, disc.Plataforma); err == nil && res != nil && len(res.Contratos) > 0 {
+					return res, nil
+				}
+			}
 		}
 	}
 
@@ -991,6 +1028,14 @@ func (h *Hub) queryDiariasWithDiscovery(ctx context.Context, m *Municipio, disc 
 		case "el_portaltp":
 			if res, err := QueryPortalTPDiarias(ctx, h.HTTPClient, m, p); err == nil {
 				return res, nil
+			}
+		default:
+			if IsHTMLPortalPlatform(disc.Plataforma) {
+				if res, err := QueryHTMLPortalDiarias(ctx, h.HTTPClient, m, p, disc.Plataforma); err == nil && res != nil {
+					return res, nil
+				} else if res != nil && res.PortalURL != "" {
+					disc.URLResolvida = res.PortalURL
+				}
 			}
 		}
 	}

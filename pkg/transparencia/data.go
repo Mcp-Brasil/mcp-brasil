@@ -16,3 +16,5 @@ var megasoftMunicipiosCSV []byte
 //go:embed data/portais_municipais.csv
 var portaisMunicipaisCSV []byte
 
+//go:embed data/portais_html_municipais.csv
+var portaisHTMLMunicipaisCSV []byte

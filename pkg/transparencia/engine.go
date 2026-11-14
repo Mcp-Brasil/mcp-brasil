@@ -28,6 +28,8 @@ type Engine struct {
 	megasoftByIBGE    map[string]MegasoftMunicipio
 	portalCatalogList []PortalCatalogMunicipio
 	portalCatalogIBGE map[string]PortalCatalogMunicipio
+	portalHTMLList    []PortalHTMLMunicipio
+	portalHTMLIBGE    map[string]PortalHTMLMunicipio
 }
 
 type indexedMuni struct {
@@ -41,6 +43,8 @@ var (
 	globalMegaByIBGE       = make(map[string]MegasoftMunicipio)
 	globalPortalCatMu      sync.RWMutex
 	globalPortalCatByIBGE  = make(map[string]PortalCatalogMunicipio)
+	globalPortalHTMLMu     sync.RWMutex
+	globalPortalHTMLByIBGE = make(map[string]PortalHTMLMunicipio)
 )
 
 // LookupMegasoftByIBGE consulta o catálogo nacional embutido de portais Megasoft pelo código IBGE.
@@ -56,6 +60,14 @@ func LookupPortalCatalogByIBGE(codIBGE string) (PortalCatalogMunicipio, bool) {
 	globalPortalCatMu.RLock()
 	defer globalPortalCatMu.RUnlock()
 	m, ok := globalPortalCatByIBGE[strings.TrimSpace(codIBGE)]
+	return m, ok
+}
+
+// LookupPortalHTMLByIBGE consulta o catálogo nacional embutido de portais municipais HTML (sem API estruturada) pelo código IBGE.
+func LookupPortalHTMLByIBGE(codIBGE string) (PortalHTMLMunicipio, bool) {
+	globalPortalHTMLMu.RLock()
+	defer globalPortalHTMLMu.RUnlock()
+	m, ok := globalPortalHTMLByIBGE[strings.TrimSpace(codIBGE)]
 	return m, ok
 }
 
@@ -75,6 +87,8 @@ func NewEngine() (*Engine, error) {
 		megasoftByIBGE:    make(map[string]MegasoftMunicipio, 256),
 		portalCatalogList: make([]PortalCatalogMunicipio, 0, 2200),
 		portalCatalogIBGE: make(map[string]PortalCatalogMunicipio, 2200),
+		portalHTMLList:    make([]PortalHTMLMunicipio, 0, 2500),
+		portalHTMLIBGE:    make(map[string]PortalHTMLMunicipio, 2500),
 	}
 
 	if err := e.loadEstados(); err != nil {
@@ -91,6 +105,10 @@ func NewEngine() (*Engine, error) {
 
 	if err := e.loadPortaisMunicipais(); err != nil {
 		return nil, fmt.Errorf("falha ao carregar catálogo nacional de portais: %w", err)
+	}
+
+	if err := e.loadPortaisHTMLMunicipais(); err != nil {
+		return nil, fmt.Errorf("falha ao carregar catálogo de portais HTML: %w", err)
 	}
 
 	// Atualiza totais de municípios por estado
@@ -455,6 +473,99 @@ func (e *Engine) GetPortalCatalogMunicipio(codigoIBGE string) (PortalCatalogMuni
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 	item, ok := e.portalCatalogIBGE[strings.TrimSpace(codigoIBGE)]
+	return item, ok
+}
+
+func (e *Engine) loadPortaisHTMLMunicipais() error {
+	if len(portaisHTMLMunicipaisCSV) == 0 {
+		return nil
+	}
+	r := csv.NewReader(bytes.NewReader(portaisHTMLMunicipaisCSV))
+	r.LazyQuotes = true
+	r.TrimLeadingSpace = true
+
+	header, err := r.Read()
+	if err == io.EOF {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	_ = header
+
+	globalPortalHTMLMu.Lock()
+	defer globalPortalHTMLMu.Unlock()
+
+	for {
+		rec, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if len(rec) < 5 {
+			continue
+		}
+		sitePref := ""
+		if len(rec) >= 6 {
+			sitePref = strings.TrimSpace(rec[5])
+		}
+		obs := ""
+		if len(rec) >= 7 {
+			obs = strings.TrimSpace(rec[6])
+		}
+		item := PortalHTMLMunicipio{
+			CodigoIBGE:     strings.TrimSpace(rec[0]),
+			Nome:           strings.TrimSpace(rec[1]),
+			UF:             strings.ToUpper(strings.TrimSpace(rec[2])),
+			Plataforma:     strings.TrimSpace(rec[3]),
+			PortalURL:      strings.TrimSpace(rec[4]),
+			SitePrefeitura: sitePref,
+			Observacoes:    obs,
+		}
+		if item.CodigoIBGE == "" || item.Plataforma == "" || item.PortalURL == "" {
+			continue
+		}
+		e.portalHTMLList = append(e.portalHTMLList, item)
+		e.portalHTMLIBGE[item.CodigoIBGE] = item
+		globalPortalHTMLByIBGE[item.CodigoIBGE] = item
+	}
+
+	sort.Slice(e.portalHTMLList, func(i, j int) bool {
+		if e.portalHTMLList[i].UF != e.portalHTMLList[j].UF {
+			return e.portalHTMLList[i].UF < e.portalHTMLList[j].UF
+		}
+		return e.portalHTMLList[i].Nome < e.portalHTMLList[j].Nome
+	})
+	return nil
+}
+
+// ListPortaisHTMLMunicipios retorna os municípios do catálogo de portais HTML sem API estruturada (filtro opcional por UF).
+func (e *Engine) ListPortaisHTMLMunicipios(uf string) []PortalHTMLMunicipio {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	ufUp := strings.ToUpper(strings.TrimSpace(uf))
+	if ufUp == "" {
+		res := make([]PortalHTMLMunicipio, len(e.portalHTMLList))
+		copy(res, e.portalHTMLList)
+		return res
+	}
+	res := make([]PortalHTMLMunicipio, 0)
+	for _, it := range e.portalHTMLList {
+		if it.UF == ufUp {
+			res = append(res, it)
+		}
+	}
+	return res
+}
+
+// GetPortalHTMLMunicipio busca um portal HTML municipal catalogado pelo código IBGE.
+func (e *Engine) GetPortalHTMLMunicipio(codigoIBGE string) (PortalHTMLMunicipio, bool) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	item, ok := e.portalHTMLIBGE[strings.TrimSpace(codigoIBGE)]
 	return item, ok
 }
 

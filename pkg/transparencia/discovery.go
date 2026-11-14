@@ -254,6 +254,28 @@ func DiscoverPortal(ctx context.Context, m *Municipio, opts DiscoverOptions) *Po
 		return saasHit
 	}
 
+	// 1d. Catálogo nacional de portais municipais HTML (sem API JSON/XML estruturada).
+	if !hasActiveSaaSTestOverride() {
+		if htmlCat, ok := LookupPortalHTMLByIBGE(m.CodigoIBGE); ok && htmlCat.PortalURL != "" {
+			obs := strings.TrimSpace(htmlCat.Observacoes)
+			if obs == "" {
+				obs = "Portal municipal HTML sem API JSON/XML estruturada; consulta via extração HTML."
+			}
+			return &PortalDiscoveryResult{
+				Municipio:           m,
+				URLResolvida:        htmlCat.PortalURL,
+				SitePrefeitura:      htmlCat.SitePrefeitura,
+				Plataforma:          htmlCat.Plataforma,
+				EntidadeNome:        fmt.Sprintf("%s (%s)", m.Nome, m.UF),
+				FonteDescoberta:     "portal_html_catalog",
+				ServidoresSuportado: true,
+				CandidatosTestados:  []string{htmlCat.PortalURL},
+				TempoMs:             time.Since(start).Milliseconds(),
+				Observacoes:         obs,
+			}
+		}
+	}
+
 	// 2. Candidatos de URL + enriquecimento com TCE-PI para municípios do Piauí.
 	candidates := CandidatePortalURLs(m)
 	prefSites := CandidatePrefeituraURLs(m)

@@ -505,6 +505,17 @@ type PortalCatalogMunicipio struct {
 	EntidadeNome string `json:"entidade_nome,omitempty"`
 }
 
+// PortalHTMLMunicipio representa um município com portal HTML verificado (sem API JSON/XML estruturada).
+type PortalHTMLMunicipio struct {
+	CodigoIBGE     string `json:"codigo_ibge"`
+	Nome           string `json:"nome"`
+	UF             string `json:"uf"`
+	Plataforma     string `json:"plataforma"`
+	PortalURL      string `json:"portal_url"`
+	SitePrefeitura string `json:"site_prefeitura,omitempty"`
+	Observacoes    string `json:"observacoes,omitempty"`
+}
+
 // TransparenciaCompletaReport consolida toda a transparência disponível para um município.
 type TransparenciaCompletaReport struct {
 	Dossier           *MunicipioDossier      `json:"dossier"`
