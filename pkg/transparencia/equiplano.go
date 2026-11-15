@@ -482,36 +482,75 @@ func QueryEquiplanoDespesas(ctx context.Context, client *http.Client, m *Municip
 	apiBase := resolveEquiplanoAPIBase(p)
 	portalURL := resolveEquiplanoPortalURL(p, apiBase)
 	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+	pageSize := normalizePageSize(scanLimit, 200)
 	ano := resolveEquiplanoYear(p)
 	dataInicial, dataFinal := resolveEquiplanoDateRange(p, ano)
 	entityUUID, _, _ := parseEquiplanoTenantID(p.TenantID)
 
-	q := url.Values{}
-	if entityUUID != "" {
-		q.Set("entidadeUuid", entityUUID)
-	}
-	q.Set("exercicio", strconv.Itoa(ano))
-	q.Set("dataInicial", dataInicial)
-	q.Set("dataFinal", dataFinal)
-	q.Set("nrPaginaInicial", "1")
-	q.Set("size", strconv.Itoa(limit))
+	var rows []map[string]any
+	total := 0
+	prevBody := ""
+	headers := equiplanoTenantHeaders(p.TenantID)
 
-	u := fmt.Sprintf("%s/transparencia/ordem_cronologica_de_pagamentos?%s", apiBase, q.Encode())
-	body, status, err := doEquiplanoGet(ctx, client, u, equiplanoTenantHeaders(p.TenantID))
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("Equiplano ordem_cronologica_de_pagamentos retornou HTTP %d", status)
+	for pagina := 1; pagina <= 10; pagina++ {
+		q := url.Values{}
+		if entityUUID != "" {
+			q.Set("entidadeUuid", entityUUID)
+		}
+		q.Set("exercicio", strconv.Itoa(ano))
+		q.Set("dataInicial", dataInicial)
+		q.Set("dataFinal", dataFinal)
+		q.Set("nrPaginaInicial", strconv.Itoa(pagina))
+		q.Set("size", strconv.Itoa(pageSize))
+
+		u := fmt.Sprintf("%s/transparencia/ordem_cronologica_de_pagamentos?%s", apiBase, q.Encode())
+		body, status, err := doEquiplanoGet(ctx, client, u, headers)
+		if err != nil {
+			if pagina == 1 {
+				return nil, err
+			}
+			break
+		}
+		if status != http.StatusOK {
+			if pagina == 1 {
+				return nil, fmt.Errorf("Equiplano ordem_cronologica_de_pagamentos retornou HTTP %d", status)
+			}
+			break
+		}
+		bodyStr := strings.TrimSpace(string(body))
+		if pagina > 1 && (bodyStr == "" || bodyStr == prevBody) {
+			break
+		}
+		prevBody = bodyStr
+
+		pageRows, pageTotal, err := decodeEquiplanoRecords(body, "pagamentos")
+		if err != nil {
+			if pagina == 1 {
+				return nil, fmt.Errorf("erro ao decodificar Equiplano despesas: %w", err)
+			}
+			break
+		}
+		if pagina == 1 {
+			total = pageTotal
+		} else if pageTotal > total {
+			total = pageTotal
+		}
+		if len(pageRows) == 0 {
+			break
+		}
+		rows = append(rows, pageRows...)
+		if len(rows) >= scanLimit || len(pageRows) < pageSize || (total > 0 && len(rows) >= total) {
+			break
+		}
 	}
 
-	rows, total, err := decodeEquiplanoRecords(body, "pagamentos")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Equiplano despesas: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "nomeFornecedor", "fornecedor", "credor", "nomeCredor", "nmFornecedor", "razaoSocial")
 		historico := mapGetStr(r, "historico", "objeto", "descricao", "observacao", "justificativa")
@@ -520,6 +559,10 @@ func QueryEquiplanoDespesas(ctx context.Context, client *http.Client, m *Municip
 			!strings.Contains(strings.ToLower(fornecedor), filtro) &&
 			!strings.Contains(strings.ToLower(historico), filtro) &&
 			!strings.Contains(strings.ToLower(numEmpenho), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -549,13 +592,10 @@ func QueryEquiplanoDespesas(ctx context.Context, client *http.Client, m *Municip
 			ValorPago:           mapGetFloat(r, "valorPago", "vlPago", "valorPagamento", "valor"),
 			Fonte:               equiplanoFonte,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	if filtro != "" {
-		total = len(items)
+		total = matchedTotal
 	} else if total == 0 {
 		total = len(rows)
 	}
@@ -774,6 +814,7 @@ func QueryEquiplanoObras(ctx context.Context, client *http.Client, m *Municipio,
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ObraItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		titulo := mapGetStr(r, "titulo", "nome", "nmObra", "descricao", "objeto")
 		objeto := mapGetStr(r, "objeto", "dsObjeto", "descricao", "detalhamento")
@@ -784,6 +825,10 @@ func QueryEquiplanoObras(ctx context.Context, client *http.Client, m *Municipio,
 			!strings.Contains(strings.ToLower(objeto), filtro) &&
 			!strings.Contains(strings.ToLower(bairro), filtro) &&
 			!strings.Contains(strings.ToLower(orgao), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -800,13 +845,10 @@ func QueryEquiplanoObras(ctx context.Context, client *http.Client, m *Municipio,
 			Valor:       mapGetFloat(r, "valor", "vlObra", "valorObra", "valorTotal", "valorContratado", "valorPrevisto"),
 			Fonte:       equiplanoFonte,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	if filtro != "" {
-		total = len(items)
+		total = matchedTotal
 	} else if total == 0 {
 		total = len(rows)
 	}

@@ -107,30 +107,31 @@ func unwrapPortalTPXML(body []byte) ([]byte, error) {
 	return []byte(trimmed), nil
 }
 
-func decodePortalTPRecords(body []byte) ([]map[string]any, int, error) {
+func decodePortalTPRecordsMeta(body []byte) ([]map[string]any, int, bool, error) {
 	raw, err := unwrapPortalTPXML(body)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, false, err
 	}
 	trimmed := strings.TrimSpace(string(raw))
 	if trimmed == "" || strings.EqualFold(trimmed, "null") || trimmed == "[]" {
-		return nil, 0, nil
+		return nil, 0, false, nil
 	}
 
 	if strings.HasPrefix(trimmed, "[") {
 		var rows []map[string]any
 		if err := json.Unmarshal([]byte(trimmed), &rows); err != nil {
-			return nil, 0, fmt.Errorf("erro ao decodificar JSON array PortalTP: %w", err)
+			return nil, 0, false, fmt.Errorf("erro ao decodificar JSON array PortalTP: %w", err)
 		}
-		return rows, len(rows), nil
+		return rows, 0, false, nil
 	}
 
 	if strings.HasPrefix(trimmed, "{") {
 		var obj map[string]any
 		if err := json.Unmarshal([]byte(trimmed), &obj); err != nil {
-			return nil, 0, fmt.Errorf("erro ao decodificar JSON objeto PortalTP: %w", err)
+			return nil, 0, false, fmt.Errorf("erro ao decodificar JSON objeto PortalTP: %w", err)
 		}
-		total := mapGetInt(obj, "total", "Total", "totalRegistros", "TotalRegistros", "totalElements", "count")
+		total := mapGetInt(obj, "total", "Total", "totalRegistros", "TotalRegistros", "totalElements", "TotalElements", "count", "Count")
+		hasExplicitTotal := total > 0
 		for _, key := range []string{"registros", "Registros", "dados", "data", "items", "content", "rows", "lista", "result"} {
 			if rawArr, ok := obj[key]; ok {
 				if arr, ok := rawArr.([]any); ok {
@@ -140,17 +141,25 @@ func decodePortalTPRecords(body []byte) ([]map[string]any, int, error) {
 							rows = append(rows, item)
 						}
 					}
-					if total == 0 {
-						total = len(rows)
-					}
-					return rows, total, nil
+					return rows, total, hasExplicitTotal, nil
 				}
 			}
 		}
-		return nil, total, nil
+		return nil, total, hasExplicitTotal, nil
 	}
 
-	return nil, 0, fmt.Errorf("payload PortalTP inesperado: %.64s", trimmed)
+	return nil, 0, false, fmt.Errorf("payload PortalTP inesperado: %.64s", trimmed)
+}
+
+func decodePortalTPRecords(body []byte) ([]map[string]any, int, error) {
+	rows, total, hasTotal, err := decodePortalTPRecordsMeta(body)
+	if err != nil {
+		return nil, 0, err
+	}
+	if !hasTotal {
+		total = len(rows)
+	}
+	return rows, total, nil
 }
 
 func resolvePortalTPYears(p PortalQueryParams) []int {
@@ -199,44 +208,83 @@ func maskPortalTPDoc(doc string) string {
 	return clean
 }
 
-// fetchPortalTPMethod consulta um método ASMX tentando paginação (pagina=1&tamanho=limit) e fallback sem paginação.
+// fetchPortalTPMethod consulta um método ASMX tentando paginação (pagina=1..N&tamanho=pageSize) e fallback sem paginação.
 func fetchPortalTPMethod(ctx context.Context, client *http.Client, base, method string, baseParams url.Values, limit int) ([]map[string]any, int, int, error) {
-	pagParams := url.Values{}
-	for k, vals := range baseParams {
-		pagParams[k] = append([]string(nil), vals...)
-	}
-	pagParams.Set("pagina", "1")
-	pagParams.Set("tamanho", strconv.Itoa(limit))
+	pageSize := normalizePageSize(limit, 200)
+	var allRows []map[string]any
+	total := 0
+	hasTotal := false
+	prevBody := ""
 
-	pagURL := fmt.Sprintf("%s/api/transparencia.asmx/%s?%s", base, method, pagParams.Encode())
-	body, status, err := doPortalTPGet(ctx, client, pagURL)
-	if err != nil {
-		return nil, 0, 0, err
-	}
-	if status == http.StatusOK {
-		if rows, total, decErr := decodePortalTPRecords(body); decErr == nil {
-			return rows, total, status, nil
+	for pagina := 1; pagina <= 10; pagina++ {
+		pagParams := url.Values{}
+		for k, vals := range baseParams {
+			pagParams[k] = append([]string(nil), vals...)
 		}
+		pagParams.Set("pagina", strconv.Itoa(pagina))
+		pagParams.Set("tamanho", strconv.Itoa(pageSize))
+
+		pagURL := fmt.Sprintf("%s/api/transparencia.asmx/%s?%s", base, method, pagParams.Encode())
+		body, status, err := doPortalTPGet(ctx, client, pagURL)
+		if err != nil {
+			if pagina == 1 {
+				return nil, 0, 0, err
+			}
+			break
+		}
+		bodyStr := strings.TrimSpace(string(body))
+		if status == http.StatusOK {
+			if pagina > 1 && (bodyStr == "" || bodyStr == prevBody) {
+				break
+			}
+			prevBody = bodyStr
+			if rows, pageTotal, pageHasTotal, decErr := decodePortalTPRecordsMeta(body); decErr == nil {
+				if pageHasTotal && pageTotal > total {
+					total = pageTotal
+					hasTotal = true
+				}
+				if len(rows) == 0 {
+					break
+				}
+				allRows = append(allRows, rows...)
+				if len(allRows) >= limit || (hasTotal && total > 0 && len(allRows) >= total) {
+					break
+				}
+				continue
+			}
+		}
+
+		if pagina > 1 {
+			break
+		}
+
+		if ctx.Err() != nil {
+			return nil, 0, status, ctx.Err()
+		}
+
+		// Fallback sem paginação para servidores ASMX que não aceitam pagina/tamanho
+		unpagURL := fmt.Sprintf("%s/api/transparencia.asmx/%s?%s", base, method, baseParams.Encode())
+		body2, status2, err2 := doPortalTPGet(ctx, client, unpagURL)
+		if err2 != nil {
+			return nil, 0, 0, err2
+		}
+		if status2 != http.StatusOK {
+			return nil, 0, status2, nil
+		}
+		rows, total2, decErr := decodePortalTPRecords(body2)
+		if decErr != nil {
+			return nil, 0, status2, decErr
+		}
+		return rows, total2, status2, nil
 	}
 
-	if ctx.Err() != nil {
-		return nil, 0, status, ctx.Err()
+	if !hasTotal {
+		total = len(allRows)
 	}
-
-	// Fallback sem paginação para servidores ASMX que não aceitam pagina/tamanho
-	unpagURL := fmt.Sprintf("%s/api/transparencia.asmx/%s?%s", base, method, baseParams.Encode())
-	body2, status2, err2 := doPortalTPGet(ctx, client, unpagURL)
-	if err2 != nil {
-		return nil, 0, 0, err2
+	if len(allRows) > limit {
+		allRows = allRows[:limit]
 	}
-	if status2 != http.StatusOK {
-		return nil, 0, status2, nil
-	}
-	rows, total, decErr := decodePortalTPRecords(body2)
-	if decErr != nil {
-		return nil, 0, status2, decErr
-	}
-	return rows, total, status2, nil
+	return allRows, total, http.StatusOK, nil
 }
 
 func extractPortalTPRemuneracao(r map[string]any) (salBase, salBruto, descontos, salLiquido float64) {
@@ -285,6 +333,10 @@ func QueryPortalTPServidores(ctx context.Context, client *http.Client, m *Munici
 	base := normalizePortalTPBase(p.BaseURL)
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	fetchLimit := limit
+	if filtro != "" && fetchLimit < 500 {
+		fetchLimit = 500
+	}
 
 	var lastErr error
 	var lastStatus int
@@ -298,7 +350,7 @@ func QueryPortalTPServidores(ctx context.Context, client *http.Client, m *Munici
 		params.Set("ano", strconv.Itoa(ano))
 		params.Set("mes", strconv.Itoa(mes))
 
-		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_servidores", params, limit)
+		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_servidores", params, fetchLimit)
 		if err != nil {
 			lastErr = err
 			if p.Ano > 0 {
@@ -394,6 +446,10 @@ func QueryPortalTPDespesas(ctx context.Context, client *http.Client, m *Municipi
 	base := normalizePortalTPBase(p.BaseURL)
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	fetchLimit := limit
+	if filtro != "" && fetchLimit < 500 {
+		fetchLimit = 500
+	}
 
 	var lastErr error
 	var lastStatus int
@@ -407,7 +463,7 @@ func QueryPortalTPDespesas(ctx context.Context, client *http.Client, m *Municipi
 		params.Set("ano", strconv.Itoa(ano))
 		params.Set("mes", strconv.Itoa(mes))
 
-		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_empenhos", params, limit)
+		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_empenhos", params, fetchLimit)
 		if err != nil {
 			lastErr = err
 			if p.Ano > 0 {
@@ -497,6 +553,10 @@ func QueryPortalTPReceitas(ctx context.Context, client *http.Client, m *Municipi
 	base := normalizePortalTPBase(p.BaseURL)
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	fetchLimit := limit
+	if filtro != "" && fetchLimit < 500 {
+		fetchLimit = 500
+	}
 
 	var lastErr error
 	var lastStatus int
@@ -510,7 +570,7 @@ func QueryPortalTPReceitas(ctx context.Context, client *http.Client, m *Municipi
 		params.Set("ano", strconv.Itoa(ano))
 		params.Set("mes", strconv.Itoa(mes))
 
-		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_execucao_receitas", params, limit)
+		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_execucao_receitas", params, fetchLimit)
 		if err != nil {
 			lastErr = err
 			if p.Ano > 0 {
@@ -586,6 +646,10 @@ func QueryPortalTPLicitacoes(ctx context.Context, client *http.Client, m *Munici
 	base := normalizePortalTPBase(p.BaseURL)
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	fetchLimit := limit
+	if filtro != "" && fetchLimit < 500 {
+		fetchLimit = 500
+	}
 
 	var lastErr error
 	var lastStatus int
@@ -597,7 +661,7 @@ func QueryPortalTPLicitacoes(ctx context.Context, client *http.Client, m *Munici
 		params.Set("extra", "true")
 		params.Set("situacao", "")
 
-		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_licitacoes", params, limit)
+		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_licitacoes", params, fetchLimit)
 		if err != nil {
 			lastErr = err
 			if p.Ano > 0 {
@@ -684,6 +748,10 @@ func QueryPortalTPContratos(ctx context.Context, client *http.Client, m *Municip
 	base := normalizePortalTPBase(p.BaseURL)
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	fetchLimit := limit
+	if filtro != "" && fetchLimit < 500 {
+		fetchLimit = 500
+	}
 
 	var lastErr error
 	var lastStatus int
@@ -692,7 +760,7 @@ func QueryPortalTPContratos(ctx context.Context, client *http.Client, m *Municip
 		params := url.Values{}
 		params.Set("ano", strconv.Itoa(ano))
 
-		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_contratos", params, limit)
+		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_contratos", params, fetchLimit)
 		if err != nil {
 			lastErr = err
 			if p.Ano > 0 {
@@ -779,6 +847,10 @@ func QueryPortalTPDiarias(ctx context.Context, client *http.Client, m *Municipio
 	base := normalizePortalTPBase(p.BaseURL)
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	fetchLimit := limit
+	if filtro != "" && fetchLimit < 500 {
+		fetchLimit = 500
+	}
 
 	var lastErr error
 	var lastStatus int
@@ -792,7 +864,7 @@ func QueryPortalTPDiarias(ctx context.Context, client *http.Client, m *Municipio
 		params.Set("ano", strconv.Itoa(ano))
 		params.Set("mes", strconv.Itoa(mes))
 
-		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_diarias", params, limit)
+		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_diarias", params, fetchLimit)
 		if err != nil {
 			lastErr = err
 			if p.Ano > 0 {
@@ -878,6 +950,10 @@ func QueryPortalTPObras(ctx context.Context, client *http.Client, m *Municipio, 
 	base := normalizePortalTPBase(p.BaseURL)
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	fetchLimit := limit
+	if filtro != "" && fetchLimit < 500 {
+		fetchLimit = 500
+	}
 
 	var lastErr error
 	var lastStatus int
@@ -891,7 +967,7 @@ func QueryPortalTPObras(ctx context.Context, client *http.Client, m *Municipio, 
 		params.Set("ano", strconv.Itoa(ano))
 		params.Set("mes", strconv.Itoa(mes))
 
-		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_obras", params, limit)
+		rows, total, status, err := fetchPortalTPMethod(ctx, client, base, "json_obras", params, fetchLimit)
 		if err != nil {
 			lastErr = err
 			if p.Ano > 0 {

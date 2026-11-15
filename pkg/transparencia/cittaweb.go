@@ -174,6 +174,64 @@ func resolveCittaWebTarget(ctx context.Context, client *http.Client, p PortalQue
 	return apiBase, ugID, ano, nil
 }
 
+func fetchCittaWebPaginated(
+	ctx context.Context,
+	client *http.Client,
+	apiBase string,
+	errPrefix string,
+	scanLimit int,
+	buildEp func(page, size int) string,
+	keys ...string,
+) (rows []map[string]any, total int, usedBase string, err error) {
+	usedBase = apiBase
+	pageSize := normalizePageSize(scanLimit, 200)
+	prevBody := ""
+	hasTotal := false
+	for page := 0; page < 10; page++ {
+		ep := buildEp(page, pageSize)
+		body, status, candBase, reqErr := doCittaWebGet(ctx, client, usedBase, ep)
+		usedBase = candBase
+		if page == 0 {
+			if reqErr != nil {
+				return nil, 0, usedBase, reqErr
+			}
+			if status != http.StatusOK {
+				return nil, 0, usedBase, fmt.Errorf("%s retornou HTTP %d", errPrefix, status)
+			}
+		} else {
+			if reqErr != nil || status != http.StatusOK {
+				break
+			}
+		}
+
+		trimmedBody := strings.TrimSpace(string(body))
+		if page > 0 && trimmedBody == prevBody {
+			break
+		}
+		prevBody = trimmedBody
+
+		pageRows, pageTotal, pageHasTotal, decErr := decodeFlexiblePortalListMeta(body, keys...)
+		if decErr != nil {
+			if page == 0 {
+				return nil, 0, usedBase, fmt.Errorf("erro ao decodificar %s: %w", errPrefix, decErr)
+			}
+			break
+		}
+		if pageHasTotal && pageTotal > total {
+			total = pageTotal
+			hasTotal = true
+		}
+		if len(pageRows) == 0 {
+			break
+		}
+		rows = append(rows, pageRows...)
+		if len(rows) >= scanLimit || len(pageRows) < pageSize || (hasTotal && total > 0 && len(rows) >= total) {
+			break
+		}
+	}
+	return rows, total, usedBase, nil
+}
+
 // QueryCittaWebDespesas consulta despesas por elemento na API CittaWeb
 // (GET /public/despesas/elementos?exercicio=<ano>&unidadeGestora=<ug>&mesInicial=1&mesFim=12).
 func QueryCittaWebDespesas(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*DespesasResult, error) {
@@ -183,7 +241,11 @@ func QueryCittaWebDespesas(ctx context.Context, client *http.Client, m *Municipi
 	}
 
 	limit := normalizeLimit(p.Limit)
-	ep := fmt.Sprintf("/public/despesas/elementos?exercicio=%d&unidadeGestora=%d&mesInicial=1&mesFim=12", ano, ugID)
+	mesInicial, mesFim := 1, 12
+	if p.Mes >= 1 && p.Mes <= 12 {
+		mesInicial, mesFim = p.Mes, p.Mes
+	}
+	ep := fmt.Sprintf("/public/despesas/elementos?exercicio=%d&unidadeGestora=%d&mesInicial=%d&mesFim=%d", ano, ugID, mesInicial, mesFim)
 	body, status, usedBase, err := doCittaWebGet(ctx, client, apiBase, ep)
 	if err != nil {
 		return nil, err
@@ -199,10 +261,15 @@ func QueryCittaWebDespesas(ctx context.Context, client *http.Client, m *Municipi
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		codigo := mapGetStr(r, "codigo", "codigoFormatado")
 		desc := mapGetStr(r, "descricao", "nome", "elemento")
 		if filtro != "" && !strings.Contains(strings.ToLower(codigo+" "+desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		elemento := desc
@@ -222,13 +289,12 @@ func QueryCittaWebDespesas(ctx context.Context, client *http.Client, m *Municipi
 			ValorPago:      mapGetFloat(r, "pago", "valorPago"),
 			Fonte:          "Portal Municipal (CittaWeb)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 || filtro != "" {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -256,34 +322,40 @@ func QueryCittaWebReceitas(ctx context.Context, client *http.Client, m *Municipi
 	}
 
 	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 	mes := p.Mes
 	if mes <= 0 || mes > 12 {
 		mes = 12
 	}
 
-	ep := fmt.Sprintf(
-		"/public/receitas/balancete?page=0&size=%d&exercicio=%d&unidadeGestora=%d&mes=%d&nivel=1",
-		limit, ano, ugID, mes,
+	rows, total, usedBase, err := fetchCittaWebPaginated(
+		ctx, client, apiBase, "CittaWeb /public/receitas/balancete", scanLimit,
+		func(page, size int) string {
+			return fmt.Sprintf(
+				"/public/receitas/balancete?page=%d&size=%d&exercicio=%d&unidadeGestora=%d&mes=%d&nivel=1",
+				page, size, ano, ugID, mes,
+			)
+		},
+		"receitas",
 	)
-	body, status, usedBase, err := doCittaWebGet(ctx, client, apiBase, ep)
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("CittaWeb /public/receitas/balancete retornou HTTP %d", status)
-	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "receitas")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar CittaWeb /public/receitas/balancete: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		codigo := mapGetStr(r, "codigoFormatado", "codigo")
 		desc := mapGetStr(r, "descricao", "nome")
 		if filtro != "" && !strings.Contains(strings.ToLower(codigo+" "+desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		previsto := mapGetFloat(r, "orcado", "valorPrevisto")
@@ -299,13 +371,12 @@ func QueryCittaWebReceitas(ctx context.Context, client *http.Client, m *Municipi
 			ValorArrecadado: mapGetFloat(r, "arrecadado", "valorArrecadado"),
 			Fonte:           "Portal Municipal (CittaWeb)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 || filtro != "" {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -333,22 +404,25 @@ func QueryCittaWebLicitacoes(ctx context.Context, client *http.Client, m *Munici
 	}
 
 	limit := normalizeLimit(p.Limit)
-	ep := fmt.Sprintf("/public/licitacoes/lista?page=0&size=%d", limit)
-	body, status, usedBase, err := doCittaWebGet(ctx, client, apiBase, ep)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+
+	rows, total, usedBase, err := fetchCittaWebPaginated(
+		ctx, client, apiBase, "CittaWeb /public/licitacoes/lista", scanLimit,
+		func(page, size int) string {
+			return fmt.Sprintf("/public/licitacoes/lista?page=%d&size=%d", page, size)
+		},
+		"licitacoes",
+	)
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("CittaWeb /public/licitacoes/lista retornou HTTP %d", status)
-	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "licitacoes")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar CittaWeb /public/licitacoes/lista: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		numero := mapGetStr(r, "licNumero", "numero", "edital")
 		objeto := mapGetStr(r, "objeto", "descricao")
@@ -359,6 +433,10 @@ func QueryCittaWebLicitacoes(ctx context.Context, client *http.Client, m *Munici
 			modalidade = mapGetStr(r, "modalidade", "modNome", "modSigla")
 		}
 		if filtro != "" && !strings.Contains(strings.ToLower(numero+" "+objeto+" "+modalidade), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "licAno", "ano", "exercicio"))
@@ -376,13 +454,12 @@ func QueryCittaWebLicitacoes(ctx context.Context, client *http.Client, m *Munici
 			ValorEstimado: mapGetFloat(r, "valor", "valorEstimado"),
 			Fonte:         "Portal Municipal (CittaWeb)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 || filtro != "" {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -410,22 +487,25 @@ func QueryCittaWebContratos(ctx context.Context, client *http.Client, m *Municip
 	}
 
 	limit := normalizeLimit(p.Limit)
-	ep := fmt.Sprintf("/public/contratos/lista?unidadeGestora=%d&page=0&size=%d", ugID, limit)
-	body, status, usedBase, err := doCittaWebGet(ctx, client, apiBase, ep)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+
+	rows, total, usedBase, err := fetchCittaWebPaginated(
+		ctx, client, apiBase, "CittaWeb /public/contratos/lista", scanLimit,
+		func(page, size int) string {
+			return fmt.Sprintf("/public/contratos/lista?unidadeGestora=%d&page=%d&size=%d", ugID, page, size)
+		},
+		"contratos",
+	)
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("CittaWeb /public/contratos/lista retornou HTTP %d", status)
-	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "contratos")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar CittaWeb /public/contratos/lista: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "fornecedor", "contratado", "credor", "nomeFornecedor", "razaoSocial", "nome")
 		doc := mapGetStr(r, "cpfCnpj", "cnpjCpf", "documento", "cpf", "cnpj")
@@ -450,6 +530,10 @@ func QueryCittaWebContratos(ctx context.Context, client *http.Client, m *Municip
 		if filtro != "" && !strings.Contains(strings.ToLower(numero+" "+fornecedor+" "+objeto), filtro) {
 			continue
 		}
+		matchedTotal++
+		if len(items) >= limit {
+			continue
+		}
 		itemAno := int(mapGetFloat(r, "ano", "conAno", "exercicio"))
 		if itemAno == 0 {
 			itemAno = ano
@@ -468,13 +552,12 @@ func QueryCittaWebContratos(ctx context.Context, client *http.Client, m *Municip
 			Valor:               mapGetFloat(r, "valor", "valorContrato", "valorGlobal", "valorTotal", "valorAtualizado"),
 			Fonte:               "Portal Municipal (CittaWeb)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 || filtro != "" {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -557,10 +640,15 @@ func QueryCittaWebServidores(ctx context.Context, client *http.Client, m *Munici
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		nome := mapGetStr(r, "nome", "servidor", "nomeServidor", "funcionario", "descricao", "funcao", "cargo")
 		cargo := mapGetStr(r, "cargo", "nomeCargo", "descricaoCargo", "funcao", "descricao")
 		if filtro != "" && !strings.Contains(strings.ToLower(nome+" "+cargo), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		comp := mapGetStr(r, "competencia", "mesAno", "referencia")
@@ -586,13 +674,12 @@ func QueryCittaWebServidores(ctx context.Context, client *http.Client, m *Munici
 			Fonte:          "Portal Municipal (CittaWeb)",
 			PortalURL:      usedBase,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 || filtro != "" {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {

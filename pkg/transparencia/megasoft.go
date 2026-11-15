@@ -589,56 +589,87 @@ func QueryMegasoftServidorDetalhe(ctx context.Context, client *http.Client, m *M
 func QueryMegasoftDiarias(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*DiariasResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 	years := resolveYears(p.Ano)
 
 	for _, yr := range years {
-		q := url.Values{}
-		q.Set("pagina", "1")
-		q.Set("tamanhoDaPagina", strconv.Itoa(limit))
-		q.Set("ano", strconv.Itoa(yr))
-		if strings.TrimSpace(p.NomeFiltro) != "" {
-			q.Set("nomeDoFuncionario", strings.TrimSpace(p.NomeFiltro))
-		}
+		var items []DiariaItem
+		total := 0
+		prevBody := ""
+		for pagina := 1; pagina <= 10; pagina++ {
+			q := url.Values{}
+			q.Set("pagina", strconv.Itoa(pagina))
+			q.Set("tamanhoDaPagina", strconv.Itoa(pageSize))
+			q.Set("ano", strconv.Itoa(yr))
+			if strings.TrimSpace(p.NomeFiltro) != "" {
+				q.Set("nomeDoFuncionario", strings.TrimSpace(p.NomeFiltro))
+			}
 
-		body, status, err := doMegasoftRequest(ctx, client, base, http.MethodGet, "/api/orgaos-e-servidores/diaria/paginado?"+q.Encode(), nil)
-		if err != nil {
-			return nil, err
+			body, status, err := doMegasoftRequest(ctx, client, base, http.MethodGet, "/api/orgaos-e-servidores/diaria/paginado?"+q.Encode(), nil)
+			if err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
+			}
+			bodyStr := strings.TrimSpace(string(body))
+			if status != http.StatusOK || bodyStr == "" {
+				break
+			}
+			if pagina > 1 && bodyStr == prevBody {
+				break
+			}
+			prevBody = bodyStr
+
+			var page megaPage[megaDiariaRaw]
+			if err := json.Unmarshal(body, &page); err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
+			}
+			if pagina == 1 {
+				if len(page.Registros) == 0 && page.Total == 0 {
+					break
+				}
+				total = page.Total
+			}
+			if len(page.Registros) == 0 {
+				break
+			}
+			for _, r := range page.Registros {
+				items = append(items, DiariaItem{
+					Beneficiario:  strings.TrimSpace(r.Nome),
+					Matricula:     anyToString(r.Matricula),
+					Cargo:         strings.TrimSpace(r.Cargo),
+					Destino:       strings.TrimSpace(r.Destino),
+					Motivo:        strings.TrimSpace(r.MotivoDaViagem),
+					Data:          strings.TrimSpace(r.DataDaSaida),
+					DataSaida:     strings.TrimSpace(r.DataDaSaida),
+					DataChegada:   strings.TrimSpace(r.DataDaChegada),
+					NumeroDiarias: r.NumeroDeDiarias,
+					Valor:         r.ValorDaDiaria,
+					Fonte:         "Portal Municipal (Megasoft)",
+				})
+				if len(items) >= limit {
+					break
+				}
+			}
+			if len(items) >= limit || len(page.Registros) < pageSize || (total > 0 && len(items) >= total) {
+				break
+			}
 		}
-		if status != http.StatusOK {
-			continue
+		if len(items) > 0 || total > 0 {
+			return &DiariasResult{
+				Municipio:      m,
+				Fonte:          "Portal Municipal (Megasoft)",
+				Plataforma:     "megasoft",
+				PortalURL:      base,
+				TotalRegistros: total,
+				Diarias:        items,
+				Disponivel:     true,
+			}, nil
 		}
-		var page megaPage[megaDiariaRaw]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, err
-		}
-		if len(page.Registros) == 0 && page.Total == 0 {
-			continue
-		}
-		items := make([]DiariaItem, 0, len(page.Registros))
-		for _, r := range page.Registros {
-			items = append(items, DiariaItem{
-				Beneficiario:  strings.TrimSpace(r.Nome),
-				Matricula:     anyToString(r.Matricula),
-				Cargo:         strings.TrimSpace(r.Cargo),
-				Destino:       strings.TrimSpace(r.Destino),
-				Motivo:        strings.TrimSpace(r.MotivoDaViagem),
-				Data:          strings.TrimSpace(r.DataDaSaida),
-				DataSaida:     strings.TrimSpace(r.DataDaSaida),
-				DataChegada:   strings.TrimSpace(r.DataDaChegada),
-				NumeroDiarias: r.NumeroDeDiarias,
-				Valor:         r.ValorDaDiaria,
-				Fonte:         "Portal Municipal (Megasoft)",
-			})
-		}
-		return &DiariasResult{
-			Municipio:      m,
-			Fonte:          "Portal Municipal (Megasoft)",
-			Plataforma:     "megasoft",
-			PortalURL:      base,
-			TotalRegistros: page.Total,
-			Diarias:        items,
-			Disponivel:     true,
-		}, nil
 	}
 
 	return &DiariasResult{
@@ -656,75 +687,106 @@ func QueryMegasoftDiarias(ctx context.Context, client *http.Client, m *Municipio
 func QueryMegasoftDespesas(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*DespesasResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 
 	for _, win := range resolveDateWindows(p) {
-		q := url.Values{}
-		q.Set("pagina", "1")
-		q.Set("tamanhoDaPagina", strconv.Itoa(limit))
-		q.Set("dataInicial", toMegasoftDate(win[0]))
-		q.Set("dataFinal", toMegasoftDate(win[1]))
-		if strings.TrimSpace(p.NomeFiltro) != "" {
-			q.Set("nomeDoFornecedor", strings.TrimSpace(p.NomeFiltro))
-		}
+		var items []DespesaItem
+		total := 0
+		prevBody := ""
+		for pagina := 1; pagina <= 10; pagina++ {
+			q := url.Values{}
+			q.Set("pagina", strconv.Itoa(pagina))
+			q.Set("tamanhoDaPagina", strconv.Itoa(pageSize))
+			q.Set("dataInicial", toMegasoftDate(win[0]))
+			q.Set("dataFinal", toMegasoftDate(win[1]))
+			if strings.TrimSpace(p.NomeFiltro) != "" {
+				q.Set("nomeDoFornecedor", strings.TrimSpace(p.NomeFiltro))
+			}
 
-		body, status, err := doMegasoftRequest(ctx, client, base, http.MethodGet, "/api/receitas-e-despesas/empenho/paginado?"+q.Encode(), nil)
-		if err != nil {
-			return nil, err
-		}
-		if status != http.StatusOK {
-			continue
-		}
-		var page megaPage[megaEmpenhoRaw]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, err
-		}
-		if len(page.Registros) == 0 && page.Total == 0 {
-			continue
-		}
-		items := make([]DespesaItem, 0, len(page.Registros))
-		for _, r := range page.Registros {
-			vlrEmp := r.ValorTotalDoEmpenho
-			if vlrEmp == 0 {
-				vlrEmp = r.ValorDoEmpenho
+			body, status, err := doMegasoftRequest(ctx, client, base, http.MethodGet, "/api/receitas-e-despesas/empenho/paginado?"+q.Encode(), nil)
+			if err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
 			}
-			vlrLiq := r.ValorTotalDaLiquidacao
-			if vlrLiq == 0 {
-				vlrLiq = r.ValorDaLiquidacao
+			bodyStr := strings.TrimSpace(string(body))
+			if status != http.StatusOK || bodyStr == "" {
+				break
 			}
-			vlrPag := r.ValorTotalDoPagamento
-			if vlrPag == 0 {
-				vlrPag = r.ValorDoPagamento
+			if pagina > 1 && bodyStr == prevBody {
+				break
 			}
-			numEmp := anyToString(r.NumeroDoTcm)
-			if numEmp == "" {
-				numEmp = anyToString(r.Codigo)
+			prevBody = bodyStr
+
+			var page megaPage[megaEmpenhoRaw]
+			if err := json.Unmarshal(body, &page); err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
 			}
-			items = append(items, DespesaItem{
-				NumeroEmpenho:       numEmp,
-				Ano:                 extractYearFromBRDate(r.Data),
-				Data:                strings.TrimSpace(r.Data),
-				Fornecedor:          strings.TrimSpace(r.NomeDoFornecedor),
-				DocumentoFornecedor: extractCNPJPrefix(r.CNPJENome),
-				Orgao:               strings.TrimSpace(r.CodigoENomeDoOrgao),
-				Unidade:             strings.TrimSpace(r.CodigoENomeDaUnidade),
-				Funcao:              strings.TrimSpace(r.CodigoENomeDaFuncao),
-				Elemento:            strings.TrimSpace(r.CodigoENomeDaNatureza),
-				Historico:           strings.TrimSpace(r.Historico),
-				ValorEmpenhado:      vlrEmp,
-				ValorLiquidado:      vlrLiq,
-				ValorPago:           vlrPag,
-				Fonte:               "Portal Municipal (Megasoft)",
-			})
+			if pagina == 1 {
+				if len(page.Registros) == 0 && page.Total == 0 {
+					break
+				}
+				total = page.Total
+			}
+			if len(page.Registros) == 0 {
+				break
+			}
+			for _, r := range page.Registros {
+				vlrEmp := r.ValorTotalDoEmpenho
+				if vlrEmp == 0 {
+					vlrEmp = r.ValorDoEmpenho
+				}
+				vlrLiq := r.ValorTotalDaLiquidacao
+				if vlrLiq == 0 {
+					vlrLiq = r.ValorDaLiquidacao
+				}
+				vlrPag := r.ValorTotalDoPagamento
+				if vlrPag == 0 {
+					vlrPag = r.ValorDoPagamento
+				}
+				numEmp := anyToString(r.NumeroDoTcm)
+				if numEmp == "" {
+					numEmp = anyToString(r.Codigo)
+				}
+				items = append(items, DespesaItem{
+					NumeroEmpenho:       numEmp,
+					Ano:                 extractYearFromBRDate(r.Data),
+					Data:                strings.TrimSpace(r.Data),
+					Fornecedor:          strings.TrimSpace(r.NomeDoFornecedor),
+					DocumentoFornecedor: extractCNPJPrefix(r.CNPJENome),
+					Orgao:               strings.TrimSpace(r.CodigoENomeDoOrgao),
+					Unidade:             strings.TrimSpace(r.CodigoENomeDaUnidade),
+					Funcao:              strings.TrimSpace(r.CodigoENomeDaFuncao),
+					Elemento:            strings.TrimSpace(r.CodigoENomeDaNatureza),
+					Historico:           strings.TrimSpace(r.Historico),
+					ValorEmpenhado:      vlrEmp,
+					ValorLiquidado:      vlrLiq,
+					ValorPago:           vlrPag,
+					Fonte:               "Portal Municipal (Megasoft)",
+				})
+				if len(items) >= limit {
+					break
+				}
+			}
+			if len(items) >= limit || len(page.Registros) < pageSize || (total > 0 && len(items) >= total) {
+				break
+			}
 		}
-		return &DespesasResult{
-			Municipio:      m,
-			Fonte:          "Portal Municipal (Megasoft)",
-			Plataforma:     "megasoft",
-			PortalURL:      base,
-			TotalRegistros: page.Total,
-			Despesas:       items,
-			Disponivel:     true,
-		}, nil
+		if len(items) > 0 || total > 0 {
+			return &DespesasResult{
+				Municipio:      m,
+				Fonte:          "Portal Municipal (Megasoft)",
+				Plataforma:     "megasoft",
+				PortalURL:      base,
+				TotalRegistros: total,
+				Despesas:       items,
+				Disponivel:     true,
+			}, nil
+		}
 	}
 
 	return &DespesasResult{
@@ -742,64 +804,95 @@ func QueryMegasoftDespesas(ctx context.Context, client *http.Client, m *Municipi
 func QueryMegasoftReceitas(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*ReceitasResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 	years := resolveYears(p.Ano)
 
 	for _, yr := range years {
-		q := url.Values{}
-		q.Set("pagina", "1")
-		q.Set("tamanhoDaPagina", strconv.Itoa(limit))
-		q.Set("ano", strconv.Itoa(yr))
-		if p.Mes > 0 {
-			q.Set("mes", fmt.Sprintf("%02d", p.Mes))
-		}
-
-		body, status, err := doMegasoftRequest(ctx, client, base, http.MethodGet, "/api/receitas-e-despesas/receita/paginado?"+q.Encode(), nil)
-		if err != nil {
-			return nil, err
-		}
-		if status != http.StatusOK {
-			continue
-		}
-		var page megaPage[megaReceitaRaw]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, err
-		}
-		if len(page.Registros) == 0 && page.Total == 0 {
-			continue
-		}
-		items := make([]ReceitaItem, 0, len(page.Registros))
-		for _, r := range page.Registros {
-			arrec := r.ValorAcumulado
-			if arrec == 0 {
-				arrec = r.Arrecadacao
+		var items []ReceitaItem
+		total := 0
+		prevBody := ""
+		for pagina := 1; pagina <= 10; pagina++ {
+			q := url.Values{}
+			q.Set("pagina", strconv.Itoa(pagina))
+			q.Set("tamanhoDaPagina", strconv.Itoa(pageSize))
+			q.Set("ano", strconv.Itoa(yr))
+			if p.Mes > 0 {
+				q.Set("mes", fmt.Sprintf("%02d", p.Mes))
 			}
-			dataStr := ""
-			if r.Chave.Ano > 0 {
-				if r.Chave.Mes != "" {
-					dataStr = r.Chave.Mes + "/" + strconv.Itoa(r.Chave.Ano)
-				} else {
-					dataStr = strconv.Itoa(r.Chave.Ano)
+
+			body, status, err := doMegasoftRequest(ctx, client, base, http.MethodGet, "/api/receitas-e-despesas/receita/paginado?"+q.Encode(), nil)
+			if err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
+			}
+			bodyStr := strings.TrimSpace(string(body))
+			if status != http.StatusOK || bodyStr == "" {
+				break
+			}
+			if pagina > 1 && bodyStr == prevBody {
+				break
+			}
+			prevBody = bodyStr
+
+			var page megaPage[megaReceitaRaw]
+			if err := json.Unmarshal(body, &page); err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
+			}
+			if pagina == 1 {
+				if len(page.Registros) == 0 && page.Total == 0 {
+					break
+				}
+				total = page.Total
+			}
+			if len(page.Registros) == 0 {
+				break
+			}
+			for _, r := range page.Registros {
+				arrec := r.ValorAcumulado
+				if arrec == 0 {
+					arrec = r.Arrecadacao
+				}
+				dataStr := ""
+				if r.Chave.Ano > 0 {
+					if r.Chave.Mes != "" {
+						dataStr = r.Chave.Mes + "/" + strconv.Itoa(r.Chave.Ano)
+					} else {
+						dataStr = strconv.Itoa(r.Chave.Ano)
+					}
+				}
+				items = append(items, ReceitaItem{
+					Codigo:          strings.TrimSpace(r.Natureza),
+					Descricao:       strings.TrimSpace(r.Receita),
+					Categoria:       strings.TrimSpace(r.FonteDaReceita),
+					Data:            dataStr,
+					ValorPrevisto:   r.ValorOrcado,
+					ValorArrecadado: arrec,
+					Fonte:           "Portal Municipal (Megasoft)",
+				})
+				if len(items) >= limit {
+					break
 				}
 			}
-			items = append(items, ReceitaItem{
-				Codigo:          strings.TrimSpace(r.Natureza),
-				Descricao:       strings.TrimSpace(r.Receita),
-				Categoria:       strings.TrimSpace(r.FonteDaReceita),
-				Data:            dataStr,
-				ValorPrevisto:   r.ValorOrcado,
-				ValorArrecadado: arrec,
-				Fonte:           "Portal Municipal (Megasoft)",
-			})
+			if len(items) >= limit || len(page.Registros) < pageSize || (total > 0 && len(items) >= total) {
+				break
+			}
 		}
-		return &ReceitasResult{
-			Municipio:      m,
-			Fonte:          "Portal Municipal (Megasoft)",
-			Plataforma:     "megasoft",
-			PortalURL:      base,
-			TotalRegistros: page.Total,
-			Receitas:       items,
-			Disponivel:     true,
-		}, nil
+		if len(items) > 0 || total > 0 {
+			return &ReceitasResult{
+				Municipio:      m,
+				Fonte:          "Portal Municipal (Megasoft)",
+				Plataforma:     "megasoft",
+				PortalURL:      base,
+				TotalRegistros: total,
+				Receitas:       items,
+				Disponivel:     true,
+			}, nil
+		}
 	}
 
 	return &ReceitasResult{
@@ -817,59 +910,90 @@ func QueryMegasoftReceitas(ctx context.Context, client *http.Client, m *Municipi
 func QueryMegasoftLicitacoes(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*LicitacoesResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 
 	for _, tipoMod := range []int{1, 2} {
-		payload := map[string]any{
-			"pagina":                     1,
-			"tamanhoDaPagina":            limit,
-			"tipoDeConsultaDeModalidade": tipoMod,
-		}
-		if p.Ano > 0 {
-			payload["ano"] = p.Ano
-		}
-		if strings.TrimSpace(p.NomeFiltro) != "" {
-			payload["produto"] = strings.TrimSpace(p.NomeFiltro)
-		}
-
-		body, status, err := doMegasoftRequest(ctx, client, base, http.MethodPost, "/api/contratos-convenios-e-licitacoes/procedimento-licitatorio/paginado", payload)
-		if err != nil {
-			return nil, err
-		}
-		if status != http.StatusOK {
-			continue
-		}
-		var page megaPage[megaLicitacaoRaw]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, err
-		}
-		if len(page.Registros) == 0 && page.Total == 0 {
-			continue
-		}
-		items := make([]LicitacaoItem, 0, len(page.Registros))
-		for _, r := range page.Registros {
-			abertura := strings.TrimSpace(r.DataJulgamento)
-			if abertura == "" {
-				abertura = strings.TrimSpace(r.DataPublicacao)
+		var items []LicitacaoItem
+		total := 0
+		prevBody := ""
+		for pagina := 1; pagina <= 10; pagina++ {
+			payload := map[string]any{
+				"pagina":                     pagina,
+				"tamanhoDaPagina":            pageSize,
+				"tipoDeConsultaDeModalidade": tipoMod,
 			}
-			items = append(items, LicitacaoItem{
-				Numero:       strings.TrimSpace(r.NumeroAno),
-				Ano:          extractYearFromBRDate(abertura),
-				Modalidade:   strings.TrimSpace(r.Modalidade),
-				Situacao:     strings.TrimSpace(r.Situacao),
-				DataAbertura: abertura,
-				Objeto:       strings.TrimSpace(r.Historico),
-				Fonte:        "Portal Municipal (Megasoft)",
-			})
+			if p.Ano > 0 {
+				payload["ano"] = p.Ano
+			}
+			if strings.TrimSpace(p.NomeFiltro) != "" {
+				payload["produto"] = strings.TrimSpace(p.NomeFiltro)
+			}
+
+			body, status, err := doMegasoftRequest(ctx, client, base, http.MethodPost, "/api/contratos-convenios-e-licitacoes/procedimento-licitatorio/paginado", payload)
+			if err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
+			}
+			bodyStr := strings.TrimSpace(string(body))
+			if status != http.StatusOK || bodyStr == "" {
+				break
+			}
+			if pagina > 1 && bodyStr == prevBody {
+				break
+			}
+			prevBody = bodyStr
+
+			var page megaPage[megaLicitacaoRaw]
+			if err := json.Unmarshal(body, &page); err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
+			}
+			if pagina == 1 {
+				if len(page.Registros) == 0 && page.Total == 0 {
+					break
+				}
+				total = page.Total
+			}
+			if len(page.Registros) == 0 {
+				break
+			}
+			for _, r := range page.Registros {
+				abertura := strings.TrimSpace(r.DataJulgamento)
+				if abertura == "" {
+					abertura = strings.TrimSpace(r.DataPublicacao)
+				}
+				items = append(items, LicitacaoItem{
+					Numero:       strings.TrimSpace(r.NumeroAno),
+					Ano:          extractYearFromBRDate(abertura),
+					Modalidade:   strings.TrimSpace(r.Modalidade),
+					Situacao:     strings.TrimSpace(r.Situacao),
+					DataAbertura: abertura,
+					Objeto:       strings.TrimSpace(r.Historico),
+					Fonte:        "Portal Municipal (Megasoft)",
+				})
+				if len(items) >= limit {
+					break
+				}
+			}
+			if len(items) >= limit || len(page.Registros) < pageSize || (total > 0 && len(items) >= total) {
+				break
+			}
 		}
-		return &LicitacoesResult{
-			Municipio:      m,
-			Fonte:          "Portal Municipal (Megasoft)",
-			Plataforma:     "megasoft",
-			PortalURL:      base,
-			TotalRegistros: page.Total,
-			Licitacoes:     items,
-			Disponivel:     true,
-		}, nil
+		if len(items) > 0 || total > 0 {
+			return &LicitacoesResult{
+				Municipio:      m,
+				Fonte:          "Portal Municipal (Megasoft)",
+				Plataforma:     "megasoft",
+				PortalURL:      base,
+				TotalRegistros: total,
+				Licitacoes:     items,
+				Disponivel:     true,
+			}, nil
+		}
 	}
 
 	return &LicitacoesResult{
@@ -887,45 +1011,75 @@ func QueryMegasoftLicitacoes(ctx context.Context, client *http.Client, m *Munici
 func QueryMegasoftContratos(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*ContratosResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 
-	payload := map[string]any{
-		"pagina":          1,
-		"tamanhoDaPagina": limit,
-	}
-	if p.Ano > 0 {
-		payload["ano"] = p.Ano
-	}
-	if strings.TrimSpace(p.NomeFiltro) != "" {
-		payload["nomeDoFornecedor"] = strings.TrimSpace(p.NomeFiltro)
-	}
+	var items []ContratoItem
+	total := 0
+	prevBody := ""
+	for pagina := 1; pagina <= 10; pagina++ {
+		payload := map[string]any{
+			"pagina":          pagina,
+			"tamanhoDaPagina": pageSize,
+		}
+		if p.Ano > 0 {
+			payload["ano"] = p.Ano
+		}
+		if strings.TrimSpace(p.NomeFiltro) != "" {
+			payload["nomeDoFornecedor"] = strings.TrimSpace(p.NomeFiltro)
+		}
 
-	body, status, err := doMegasoftRequest(ctx, client, base, http.MethodPost, "/api/contratos-convenios-e-licitacoes/contrato/paginado", payload)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("megasoft /contrato/paginado HTTP %d", status)
-	}
+		body, status, err := doMegasoftRequest(ctx, client, base, http.MethodPost, "/api/contratos-convenios-e-licitacoes/contrato/paginado", payload)
+		if err != nil {
+			if pagina == 1 {
+				return nil, err
+			}
+			break
+		}
+		if status != http.StatusOK {
+			if pagina == 1 {
+				return nil, fmt.Errorf("megasoft /contrato/paginado HTTP %d", status)
+			}
+			break
+		}
+		bodyStr := strings.TrimSpace(string(body))
+		if bodyStr == "" || (pagina > 1 && bodyStr == prevBody) {
+			break
+		}
+		prevBody = bodyStr
 
-	var page megaPage[megaContratoRaw]
-	if err := json.Unmarshal(body, &page); err != nil {
-		return nil, err
-	}
-
-	items := make([]ContratoItem, 0, len(page.Registros))
-	for _, r := range page.Registros {
-		items = append(items, ContratoItem{
-			Numero:              strings.TrimSpace(r.Numero),
-			Ano:                 r.ExercicioAno,
-			Fornecedor:          strings.TrimSpace(r.Fornecedor),
-			DocumentoFornecedor: strings.TrimSpace(r.Documento),
-			Objeto:              strings.TrimSpace(r.Objeto),
-			Situacao:            strings.TrimSpace(r.Situacao),
-			DataAssinatura:      strings.TrimSpace(r.Data),
-			VigenciaFim:         strings.TrimSpace(r.Vigencia),
-			Valor:               r.Valor,
-			Fonte:               "Portal Municipal (Megasoft)",
-		})
+		var page megaPage[megaContratoRaw]
+		if err := json.Unmarshal(body, &page); err != nil {
+			if pagina == 1 {
+				return nil, err
+			}
+			break
+		}
+		if pagina == 1 {
+			total = page.Total
+		}
+		if len(page.Registros) == 0 {
+			break
+		}
+		for _, r := range page.Registros {
+			items = append(items, ContratoItem{
+				Numero:              strings.TrimSpace(r.Numero),
+				Ano:                 r.ExercicioAno,
+				Fornecedor:          strings.TrimSpace(r.Fornecedor),
+				DocumentoFornecedor: strings.TrimSpace(r.Documento),
+				Objeto:              strings.TrimSpace(r.Objeto),
+				Situacao:            strings.TrimSpace(r.Situacao),
+				DataAssinatura:      strings.TrimSpace(r.Data),
+				VigenciaFim:         strings.TrimSpace(r.Vigencia),
+				Valor:               r.Valor,
+				Fonte:               "Portal Municipal (Megasoft)",
+			})
+			if len(items) >= limit {
+				break
+			}
+		}
+		if len(items) >= limit || len(page.Registros) < pageSize || (total > 0 && len(items) >= total) {
+			break
+		}
 	}
 
 	return &ContratosResult{
@@ -933,7 +1087,7 @@ func QueryMegasoftContratos(ctx context.Context, client *http.Client, m *Municip
 		Fonte:          "Portal Municipal (Megasoft)",
 		Plataforma:     "megasoft",
 		PortalURL:      base,
-		TotalRegistros: page.Total,
+		TotalRegistros: total,
 		Contratos:      items,
 		Disponivel:     true,
 	}, nil

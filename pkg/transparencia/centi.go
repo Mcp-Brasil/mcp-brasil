@@ -207,6 +207,70 @@ func resolveCentiOrgao(p PortalQueryParams) int {
 	return 1
 }
 
+func centiFetchPagedRows(ctx context.Context, client *http.Client, target, endpointLabel string, basePayload map[string]any, limit, scanLimit int, keys ...string) ([]map[string]any, int, error) {
+	pageSize := normalizePageSize(limit, 200)
+	var allRows []map[string]any
+	total := 0
+	hasTotal := false
+	prevBody := ""
+
+	for pageNum := 1; pageNum <= 10; pageNum++ {
+		payload := make(map[string]any, len(basePayload)+1)
+		for k, v := range basePayload {
+			payload[k] = v
+		}
+		payload["page"] = map[string]any{
+			"size":   pageSize,
+			"number": pageNum,
+		}
+
+		body, status, err := doCentiPostWithRetry(ctx, client, target, payload)
+		if err != nil {
+			if pageNum == 1 {
+				return nil, 0, err
+			}
+			break
+		}
+		if status != http.StatusOK {
+			if pageNum == 1 {
+				return nil, 0, fmt.Errorf("Centi %s retornou HTTP %d", endpointLabel, status)
+			}
+			break
+		}
+		bodyStr := strings.TrimSpace(string(body))
+		if pageNum > 1 && (bodyStr == "" || bodyStr == prevBody) {
+			break
+		}
+		prevBody = bodyStr
+
+		rows, pageTotal, pageHasTotal, err := decodeFlexiblePortalListMeta(body, keys...)
+		if err != nil {
+			if pageNum == 1 {
+				return nil, 0, fmt.Errorf("erro ao decodificar Centi %s: %w", endpointLabel, err)
+			}
+			break
+		}
+		if pageHasTotal && pageTotal > total {
+			total = pageTotal
+			hasTotal = true
+		}
+		if len(rows) == 0 {
+			break
+		}
+		for _, r := range rows {
+			if rowTot := int(mapGetFloat(r, "TotalRegistros", "totalRegistros", "total")); rowTot > total {
+				total = rowTot
+				hasTotal = true
+			}
+		}
+		allRows = append(allRows, rows...)
+		if len(allRows) >= scanLimit || len(rows) < pageSize || (hasTotal && total > 0 && len(allRows) >= total) {
+			break
+		}
+	}
+	return allRows, total, nil
+}
+
 // QueryCentiServidores consulta servidores/funcionários na API Centi (POST /portal/getfuncionarios/{UF}/{Tenant}).
 func QueryCentiServidores(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*ServidoresResult, error) {
 	base, uf, tenant, err := resolveCentiTarget(m, p)
@@ -216,41 +280,35 @@ func QueryCentiServidores(ctx context.Context, client *http.Client, m *Municipio
 
 	ano, mes := resolveCentiYearAndMonth(p)
 	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 	orgaoID := resolveCentiOrgao(p)
 
 	payload := map[string]any{
 		"ano":     ano,
 		"mes":     mes,
 		"idOrgao": orgaoID,
-		"page": map[string]any{
-			"size":   limit,
-			"number": 1,
-		},
 	}
 
 	target := fmt.Sprintf("%s/portal/getfuncionarios/%s/%s", base, url.PathEscape(uf), url.PathEscape(tenant))
-	body, status, err := doCentiPostWithRetry(ctx, client, target, payload)
+	rows, total, err := centiFetchPagedRows(ctx, client, target, "/portal/getfuncionarios", payload, limit, scanLimit, "funcionarios", "Funcionarios", "lista")
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("Centi /portal/getfuncionarios retornou HTTP %d", status)
-	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "funcionarios", "Funcionarios", "lista")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Centi /portal/getfuncionarios: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		nome := mapGetStr(r, "Nome", "nome", "NomeServidor", "nomeServidor", "Funcionario")
 		if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
 			continue
 		}
-		if rowTot := int(mapGetFloat(r, "TotalRegistros", "totalRegistros", "total")); rowTot > total {
-			total = rowTot
+		matchedTotal++
+		if len(items) >= limit {
+			continue
 		}
 		comp := mapGetStr(r, "Competencia", "competencia", "MesAno", "mesAno")
 		if comp == "" {
@@ -278,12 +336,11 @@ func QueryCentiServidores(ctx context.Context, client *http.Client, m *Municipio
 			Fonte:          "Portal Municipal (Centi API)",
 			PortalURL:      base,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
 		total = len(items)
 	}
 	msg := ""
@@ -313,40 +370,34 @@ func QueryCentiDespesas(ctx context.Context, client *http.Client, m *Municipio, 
 	ano, _ := resolveCentiYearAndMonth(p)
 	inicio, fim := buildDDMMYYYYWindow(p, ano)
 	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 
 	payload := map[string]any{
 		"DataInicio": inicio,
 		"DataFim":    fim,
-		"page": map[string]any{
-			"size":   limit,
-			"number": 1,
-		},
 	}
 
 	target := fmt.Sprintf("%s/portal/getempenhos/%s/%s", base, url.PathEscape(uf), url.PathEscape(tenant))
-	body, status, err := doCentiPostWithRetry(ctx, client, target, payload)
+	rows, total, err := centiFetchPagedRows(ctx, client, target, "/portal/getempenhos", payload, limit, scanLimit, "empenhos", "Empenhos", "lista")
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("Centi /portal/getempenhos retornou HTTP %d", status)
-	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "empenhos", "Empenhos", "lista")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Centi /portal/getempenhos: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "Credor", "credor", "Fornecedor", "fornecedor", "NomeCredor", "RazaoSocial")
 		historico := mapGetStr(r, "Historico", "historico", "Descricao", "descricao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+historico), filtro) {
 			continue
 		}
-		if rowTot := int(mapGetFloat(r, "TotalRegistros", "totalRegistros", "total")); rowTot > total {
-			total = rowTot
+		matchedTotal++
+		if len(items) >= limit {
+			continue
 		}
 		itemAno := int(mapGetFloat(r, "Ano", "ano", "Exercicio", "exercicio"))
 		if itemAno == 0 {
@@ -369,12 +420,11 @@ func QueryCentiDespesas(ctx context.Context, client *http.Client, m *Municipio, 
 			ValorPago:           mapGetFloat(r, "ValorPago", "valorPago", "Pago", "pago"),
 			Fonte:               "Portal Municipal (Centi API)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
 		total = len(items)
 	}
 	msg := ""
@@ -403,41 +453,35 @@ func QueryCentiReceitas(ctx context.Context, client *http.Client, m *Municipio, 
 
 	ano, mes := resolveCentiYearAndMonth(p)
 	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 	orgaoID := resolveCentiOrgao(p)
 
 	payload := map[string]any{
 		"Ano":   ano,
 		"Mes":   mes,
 		"Orgao": orgaoID,
-		"page": map[string]any{
-			"size":   limit,
-			"number": 1,
-		},
 	}
 
 	target := fmt.Sprintf("%s/portal/GetReceita/%s/%s", base, url.PathEscape(uf), url.PathEscape(tenant))
-	body, status, err := doCentiPostWithRetry(ctx, client, target, payload)
+	rows, total, err := centiFetchPagedRows(ctx, client, target, "/portal/GetReceita", payload, limit, scanLimit, "receitas", "Receitas", "lista")
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("Centi /portal/GetReceita retornou HTTP %d", status)
-	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "receitas", "Receitas", "lista")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Centi /portal/GetReceita: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		desc := mapGetStr(r, "Descricao", "descricao", "Especificacao", "Receita", "Nome", "nome")
 		if filtro != "" && !strings.Contains(strings.ToLower(desc), filtro) {
 			continue
 		}
-		if rowTot := int(mapGetFloat(r, "TotalRegistros", "totalRegistros", "total")); rowTot > total {
-			total = rowTot
+		matchedTotal++
+		if len(items) >= limit {
+			continue
 		}
 		items = append(items, ReceitaItem{
 			Codigo:          mapGetStr(r, "Codigo", "codigo", "CodigoReceita", "Classificacao", "Conta", "Rubrica"),
@@ -448,12 +492,11 @@ func QueryCentiReceitas(ctx context.Context, client *http.Client, m *Municipio, 
 			ValorArrecadado: mapGetFloat(r, "ValorArrecadado", "valorArrecadado", "Arrecadado", "arrecadado", "Realizado", "ArrecadadoAteMes"),
 			Fonte:           "Portal Municipal (Centi API)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
 		total = len(items)
 	}
 	msg := ""
@@ -482,39 +525,33 @@ func QueryCentiContratos(ctx context.Context, client *http.Client, m *Municipio,
 
 	ano, _ := resolveCentiYearAndMonth(p)
 	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 
 	payload := map[string]any{
 		"ano": ano,
-		"page": map[string]any{
-			"size":   limit,
-			"number": 1,
-		},
 	}
 
 	target := fmt.Sprintf("%s/portal/GetContratoPortal/%s/%s", base, url.PathEscape(uf), url.PathEscape(tenant))
-	body, status, err := doCentiPostWithRetry(ctx, client, target, payload)
+	rows, total, err := centiFetchPagedRows(ctx, client, target, "/portal/GetContratoPortal", payload, limit, scanLimit, "contratos", "Contratos", "lista")
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("Centi /portal/GetContratoPortal retornou HTTP %d", status)
-	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "contratos", "Contratos", "lista")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Centi /portal/GetContratoPortal: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "Fornecedor", "fornecedor", "Contratado", "contratado", "RazaoSocial", "Credor")
 		objeto := mapGetStr(r, "Objeto", "objeto", "Descricao", "descricao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+objeto), filtro) {
 			continue
 		}
-		if rowTot := int(mapGetFloat(r, "TotalRegistros", "totalRegistros", "total")); rowTot > total {
-			total = rowTot
+		matchedTotal++
+		if len(items) >= limit {
+			continue
 		}
 		itemAno := int(mapGetFloat(r, "Ano", "ano", "Exercicio", "exercicio"))
 		if itemAno == 0 {
@@ -534,12 +571,11 @@ func QueryCentiContratos(ctx context.Context, client *http.Client, m *Municipio,
 			Valor:               mapGetFloat(r, "Valor", "valor", "ValorContrato", "ValorGlobal"),
 			Fonte:               "Portal Municipal (Centi API)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
 		total = len(items)
 	}
 	msg := ""
@@ -568,40 +604,34 @@ func QueryCentiLicitacoes(ctx context.Context, client *http.Client, m *Municipio
 
 	ano, _ := resolveCentiYearAndMonth(p)
 	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 
 	payload := map[string]any{
 		"Ano":                 ano,
 		"ModalidadeLicitacao": []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-		"page": map[string]any{
-			"size":   limit,
-			"number": 1,
-		},
 	}
 
 	target := fmt.Sprintf("%s/portal/ListaLicitacao/%s/%s", base, url.PathEscape(uf), url.PathEscape(tenant))
-	body, status, err := doCentiPostWithRetry(ctx, client, target, payload)
+	rows, total, err := centiFetchPagedRows(ctx, client, target, "/portal/ListaLicitacao", payload, limit, scanLimit, "licitacoes", "Licitacoes", "lista")
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("Centi /portal/ListaLicitacao retornou HTTP %d", status)
-	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "licitacoes", "Licitacoes", "lista")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Centi /portal/ListaLicitacao: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		objeto := mapGetStr(r, "Objeto", "objeto", "Descricao", "descricao")
 		modalidade := mapGetStr(r, "Modalidade", "modalidade", "DescricaoModalidade")
 		if filtro != "" && !strings.Contains(strings.ToLower(objeto+" "+modalidade), filtro) {
 			continue
 		}
-		if rowTot := int(mapGetFloat(r, "TotalRegistros", "totalRegistros", "total")); rowTot > total {
-			total = rowTot
+		matchedTotal++
+		if len(items) >= limit {
+			continue
 		}
 		itemAno := int(mapGetFloat(r, "Ano", "ano", "Exercicio", "exercicio"))
 		if itemAno == 0 {
@@ -620,12 +650,11 @@ func QueryCentiLicitacoes(ctx context.Context, client *http.Client, m *Municipio
 			Link:            mapGetStr(r, "Link", "link", "Url"),
 			Fonte:           "Portal Municipal (Centi API)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
 		total = len(items)
 	}
 	msg := ""

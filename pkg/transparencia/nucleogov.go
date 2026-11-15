@@ -82,7 +82,7 @@ func doNucleoGovPostForm(ctx context.Context, client *http.Client, targetURL str
 	return body, resp.StatusCode, nil
 }
 
-func decodeNucleoGovObjRecords(obj map[string]any, extraKeys ...string) ([]map[string]any, int) {
+func decodeNucleoGovObjRecordsMeta(obj map[string]any, extraKeys ...string) ([]map[string]any, int, bool) {
 	if rawR1, ok := obj["r1"]; ok && rawR1 != nil {
 		switch t := rawR1.(type) {
 		case []any:
@@ -92,9 +92,9 @@ func decodeNucleoGovObjRecords(obj map[string]any, extraKeys ...string) ([]map[s
 					rows = append(rows, m)
 				}
 			}
-			return rows, len(rows)
+			return rows, 0, false
 		case map[string]any:
-			return decodeNucleoGovObjRecords(t, extraKeys...)
+			return decodeNucleoGovObjRecordsMeta(t, extraKeys...)
 		}
 	}
 
@@ -119,30 +119,46 @@ func decodeNucleoGovObjRecords(obj map[string]any, extraKeys ...string) ([]map[s
 		}
 	}
 
-	total := int(mapGetFloat(obj, "total", "totalRegistros", "total_registros", "TotalRegistros", "totalElements", "recordsTotal", "count"))
-	if total == 0 {
+	total := int(mapGetFloat(obj, "total", "Total", "totalRegistros", "total_registros", "TotalRegistros", "totalElements", "TotalElements", "recordsTotal", "RecordsTotal", "count", "Count"))
+	return rows, total, total > 0
+}
+
+func decodeNucleoGovObjRecords(obj map[string]any, extraKeys ...string) ([]map[string]any, int) {
+	rows, total, hasTotal := decodeNucleoGovObjRecordsMeta(obj, extraKeys...)
+	if !hasTotal {
 		total = len(rows)
 	}
 	return rows, total
 }
 
-func decodeNucleoGovRecords(body []byte, extraKeys ...string) ([]map[string]any, int, error) {
+func decodeNucleoGovRecordsMeta(body []byte, extraKeys ...string) ([]map[string]any, int, bool, error) {
 	trimmed := strings.TrimSpace(string(body))
 	if trimmed == "" {
-		return nil, 0, nil
+		return nil, 0, false, nil
 	}
 	if strings.HasPrefix(trimmed, "[") {
 		var rows []map[string]any
 		if err := json.Unmarshal([]byte(trimmed), &rows); err != nil {
-			return nil, 0, err
+			return nil, 0, false, err
 		}
-		return rows, len(rows), nil
+		return rows, 0, false, nil
 	}
 	var obj map[string]any
 	if err := json.Unmarshal([]byte(trimmed), &obj); err != nil {
+		return nil, 0, false, err
+	}
+	rows, total, hasTotal := decodeNucleoGovObjRecordsMeta(obj, extraKeys...)
+	return rows, total, hasTotal, nil
+}
+
+func decodeNucleoGovRecords(body []byte, extraKeys ...string) ([]map[string]any, int, error) {
+	rows, total, hasTotal, err := decodeNucleoGovRecordsMeta(body, extraKeys...)
+	if err != nil {
 		return nil, 0, err
 	}
-	rows, total := decodeNucleoGovObjRecords(obj, extraKeys...)
+	if !hasTotal {
+		total = len(rows)
+	}
 	return rows, total, nil
 }
 
@@ -381,11 +397,21 @@ func resolveNucleoGovDateWindows(p PortalQueryParams) [][3]string {
 	years := resolveNucleoGovYears(p)
 	out := make([][3]string, 0, len(years))
 	for _, y := range years {
-		out = append(out, [3]string{
-			fmt.Sprintf("01/01/%04d", y),
-			fmt.Sprintf("31/12/%04d", y),
-			strconv.Itoa(y),
-		})
+		if p.Mes >= 1 && p.Mes <= 12 {
+			first := time.Date(y, time.Month(p.Mes), 1, 0, 0, 0, 0, time.UTC)
+			last := first.AddDate(0, 1, -1)
+			out = append(out, [3]string{
+				first.Format("02/01/2006"),
+				last.Format("02/01/2006"),
+				strconv.Itoa(y),
+			})
+		} else {
+			out = append(out, [3]string{
+				fmt.Sprintf("01/01/%04d", y),
+				fmt.Sprintf("31/12/%04d", y),
+				strconv.Itoa(y),
+			})
+		}
 	}
 	return out
 }
@@ -412,8 +438,61 @@ func fetchNucleoGovMultiRequest(ctx context.Context, client *http.Client, root, 
 	if status != http.StatusOK || len(strings.TrimSpace(string(body))) == 0 {
 		return nil, 0, status, nil
 	}
-	rows, total, err := decodeNucleoGovRecords(body)
+	rows, total, hasTotal, err := decodeNucleoGovRecordsMeta(body)
+	if !hasTotal {
+		total = 0
+	}
 	return rows, total, status, err
+}
+
+func nucleoGovRowsSignature(rows []map[string]any) string {
+	b, err := json.Marshal(rows)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
+func fetchNucleoGovPaginated(
+	scanLimit int,
+	fetchPage func(offset, pageSize int) (rows []map[string]any, total int, status int, err error),
+) (allRows []map[string]any, total int, lastStatus int, err error) {
+	pageSize := normalizePageSize(scanLimit, 200)
+	prevSig := ""
+	for page := 0; page < 10; page++ {
+		offset := page * pageSize
+		pageRows, pageTotal, status, pageErr := fetchPage(offset, pageSize)
+		if status > 0 {
+			lastStatus = status
+		}
+		if page == 0 {
+			if pageErr != nil {
+				return nil, 0, lastStatus, pageErr
+			}
+			if len(pageRows) == 0 {
+				return nil, 0, lastStatus, nil
+			}
+		} else {
+			if pageErr != nil || len(pageRows) == 0 {
+				break
+			}
+		}
+
+		sig := nucleoGovRowsSignature(pageRows)
+		if page > 0 && sig != "" && sig == prevSig {
+			break
+		}
+		prevSig = sig
+
+		if pageTotal > total {
+			total = pageTotal
+		}
+		allRows = append(allRows, pageRows...)
+		if len(allRows) >= scanLimit || len(pageRows) < pageSize || (total > 0 && len(allRows) >= total) {
+			break
+		}
+	}
+	return allRows, total, lastStatus, nil
 }
 
 // QueryNucleoGovServidores consulta servidores públicos no portal NúcleoGov (/api/servidores_cnt ou /api multi_request).
@@ -425,46 +504,57 @@ func QueryNucleoGovServidores(ctx context.Context, client *http.Client, m *Munic
 	hc := portalConnectorHTTPClient(client)
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 
 	var lastErr error
 	var lastStatus int
 
 	for _, comp := range resolveNucleoGovCompetencias(p) {
-		form := url.Values{}
-		form.Set("acao", "listar")
-		form.Set("limit", fmt.Sprintf("0,%d", limit))
-		if comp.ano > 0 {
-			form.Set("ano", strconv.Itoa(comp.ano))
-		}
-		if comp.mes > 0 {
-			form.Set("mes", strconv.Itoa(comp.mes))
-		}
-		if strings.TrimSpace(p.NomeFiltro) != "" {
-			form.Set("nome", strings.TrimSpace(p.NomeFiltro))
-		}
-
-		var rows []map[string]any
-		var total int
-
-		body, status, err := doNucleoGovPostForm(ctx, hc, root+"/api/servidores_cnt", form)
-		if err != nil {
-			lastErr = err
-		} else {
-			lastStatus = status
-			if status == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
-				parsed, tot, decErr := decodeNucleoGovRecords(body, "servidores")
-				if decErr == nil {
-					rows = parsed
-					total = tot
-				} else {
-					lastErr = fmt.Errorf("erro ao decodificar NúcleoGov /api/servidores_cnt: %w", decErr)
+		useMulti := false
+		rows, total, status, pageErr := fetchNucleoGovPaginated(scanLimit, func(offset, pageSize int) ([]map[string]any, int, int, error) {
+			limitParam := fmt.Sprintf("%d,%d", offset, pageSize)
+			if !useMulti {
+				form := url.Values{}
+				form.Set("acao", "listar")
+				form.Set("limit", limitParam)
+				if comp.ano > 0 {
+					form.Set("ano", strconv.Itoa(comp.ano))
 				}
-			}
-		}
+				if comp.mes > 0 {
+					form.Set("mes", strconv.Itoa(comp.mes))
+				}
+				if strings.TrimSpace(p.NomeFiltro) != "" {
+					form.Set("nome", strings.TrimSpace(p.NomeFiltro))
+				}
 
-		if len(rows) == 0 {
+				body, st, reqErr := doNucleoGovPostForm(ctx, hc, root+"/api/servidores_cnt", form)
+				if reqErr != nil {
+					if offset == 0 {
+						lastErr = reqErr
+					}
+				} else if st == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
+					parsed, tot, _, decErr := decodeNucleoGovRecordsMeta(body, "servidores")
+					if decErr == nil && len(parsed) > 0 {
+						return parsed, tot, st, nil
+					}
+					if decErr != nil && offset == 0 {
+						lastErr = fmt.Errorf("erro ao decodificar NúcleoGov /api/servidores_cnt: %w", decErr)
+					}
+				} else if offset == 0 {
+					lastStatus = st
+				}
+
+				if offset > 0 {
+					return nil, 0, st, nil
+				}
+				useMulti = true
+			}
+
 			extra := map[string]any{
-				"limit": fmt.Sprintf("0,%d", limit),
+				"limit": limitParam,
 			}
 			if comp.ano > 0 {
 				extra["ano"] = comp.ano
@@ -479,23 +569,27 @@ func QueryNucleoGovServidores(ctx context.Context, client *http.Client, m *Munic
 			if mErr != nil && lastErr == nil {
 				lastErr = mErr
 			}
-			if mStatus > 0 && lastStatus == 0 {
-				lastStatus = mStatus
-			}
-			if len(mRows) > 0 {
-				rows = mRows
-				total = mTotal
-			}
+			return mRows, mTotal, mStatus, mErr
+		})
+		if status > 0 {
+			lastStatus = status
 		}
-
+		if pageErr != nil && lastErr == nil {
+			lastErr = pageErr
+		}
 		if len(rows) == 0 {
 			continue
 		}
 
 		items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+		matchedTotal := 0
 		for _, r := range rows {
 			nome := mapGetStr(r, "Nome", "nome", "Servidor", "servidor", "Funcionario", "funcionario", "nom_servidor", "NomServidor")
 			if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
+				continue
+			}
+			matchedTotal++
+			if len(items) >= limit {
 				continue
 			}
 
@@ -534,16 +628,15 @@ func QueryNucleoGovServidores(ctx context.Context, client *http.Client, m *Munic
 				Fonte:          nucleoGovFonte,
 				PortalURL:      root,
 			})
-			if len(items) >= limit {
-				break
-			}
 		}
 
 		if len(items) == 0 && filtro != "" {
 			continue
 		}
-		if total == 0 {
-			total = len(items)
+		if filtro != "" {
+			total = matchedTotal
+		} else if total == 0 {
+			total = matchedTotal
 		}
 		return &ServidoresResult{
 			Municipio:      m,
@@ -583,74 +676,90 @@ func QueryNucleoGovDespesas(ctx context.Context, client *http.Client, m *Municip
 	hc := portalConnectorHTTPClient(client)
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 
 	var lastErr error
 	var lastStatus int
 
 	for _, win := range resolveNucleoGovDateWindows(p) {
 		anoInt, _ := strconv.Atoi(win[2])
-		var rows []map[string]any
-		var total int
+		useFallback := false
+		rows, total, status, pageErr := fetchNucleoGovPaginated(scanLimit, func(offset, pageSize int) ([]map[string]any, int, int, error) {
+			limitParam := fmt.Sprintf("%d,%d", offset, pageSize)
+			if !useFallback {
+				centiForm := url.Values{}
+				centiForm.Set("acao", "empenhos")
+				centiForm.Set("data_inicio", win[0])
+				centiForm.Set("data_fim", win[1])
+				centiForm.Set("limit", limitParam)
 
-		// 1. /api/centi (acao=empenhos)
-		centiForm := url.Values{}
-		centiForm.Set("acao", "empenhos")
-		centiForm.Set("data_inicio", win[0])
-		centiForm.Set("data_fim", win[1])
-		centiForm.Set("limit", fmt.Sprintf("0,%d", limit))
-
-		if body, status, err := doNucleoGovPostForm(ctx, hc, root+"/api/centi", centiForm); err != nil {
-			lastErr = err
-		} else {
-			lastStatus = status
-			if status == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
-				parsed, tot, decErr := decodeNucleoGovRecords(body, "empenhos", "despesas")
-				if decErr == nil {
-					rows = parsed
-					total = tot
-				} else {
-					lastErr = fmt.Errorf("erro ao decodificar NúcleoGov /api/centi empenhos: %w", decErr)
+				body, st, reqErr := doNucleoGovPostForm(ctx, hc, root+"/api/centi", centiForm)
+				if reqErr != nil {
+					if offset == 0 {
+						lastErr = reqErr
+					}
+				} else if st == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
+					parsed, tot, _, decErr := decodeNucleoGovRecordsMeta(body, "empenhos", "despesas")
+					if decErr == nil && len(parsed) > 0 {
+						return parsed, tot, st, nil
+					}
+					if decErr != nil && offset == 0 {
+						lastErr = fmt.Errorf("erro ao decodificar NúcleoGov /api/centi empenhos: %w", decErr)
+					}
+				} else if offset == 0 {
+					lastStatus = st
 				}
-			}
-		}
 
-		// 2. Fallback: /api/despesas (acao=listar)
-		if len(rows) == 0 {
+				if offset > 0 {
+					return nil, 0, st, nil
+				}
+				useFallback = true
+			}
+
 			despForm := url.Values{}
 			despForm.Set("acao", "listar")
 			despForm.Set("ano", win[2])
 			despForm.Set("data_inicio", win[0])
 			despForm.Set("data_fim", win[1])
-			despForm.Set("limit", fmt.Sprintf("0,%d", limit))
+			despForm.Set("limit", limitParam)
 
-			if body, status, err := doNucleoGovPostForm(ctx, hc, root+"/api/despesas", despForm); err != nil {
-				if lastErr == nil {
-					lastErr = err
-				}
-			} else {
-				lastStatus = status
-				if status == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
-					parsed, tot, decErr := decodeNucleoGovRecords(body, "despesas", "empenhos")
-					if decErr == nil {
-						rows = parsed
-						total = tot
-					} else if lastErr == nil {
-						lastErr = fmt.Errorf("erro ao decodificar NúcleoGov /api/despesas: %w", decErr)
-					}
-				}
+			body, st, reqErr := doNucleoGovPostForm(ctx, hc, root+"/api/despesas", despForm)
+			if reqErr != nil {
+				return nil, 0, st, reqErr
 			}
+			if st == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
+				parsed, tot, _, decErr := decodeNucleoGovRecordsMeta(body, "despesas", "empenhos")
+				if decErr != nil {
+					return nil, 0, st, fmt.Errorf("erro ao decodificar NúcleoGov /api/despesas: %w", decErr)
+				}
+				return parsed, tot, st, nil
+			}
+			return nil, 0, st, nil
+		})
+		if status > 0 {
+			lastStatus = status
 		}
-
+		if pageErr != nil && lastErr == nil {
+			lastErr = pageErr
+		}
 		if len(rows) == 0 {
 			continue
 		}
 
 		items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+		matchedTotal := 0
 		for _, r := range rows {
 			fornecedor := mapGetStr(r, "Fornecedor", "fornecedor", "Credor", "credor", "NomeFornecedor", "nome_fornecedor", "RazaoSocial", "razao_social", "Nome", "nome")
 			historico := mapGetStr(r, "Historico", "historico", "Descricao", "descricao", "Objeto", "objeto")
 			elemento := mapGetStr(r, "Elemento", "elemento", "ElementoDespesa", "elemento_despesa", "Natureza", "natureza")
 			if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+historico+" "+elemento), filtro) {
+				continue
+			}
+			matchedTotal++
+			if len(items) >= limit {
 				continue
 			}
 
@@ -676,16 +785,15 @@ func QueryNucleoGovDespesas(ctx context.Context, client *http.Client, m *Municip
 				ValorPago:           mapGetFloat(r, "ValorPago", "valor_pago", "Pago", "pago"),
 				Fonte:               nucleoGovFonte,
 			})
-			if len(items) >= limit {
-				break
-			}
 		}
 
 		if len(items) == 0 && filtro != "" {
 			continue
 		}
-		if total == 0 {
-			total = len(items)
+		if filtro != "" {
+			total = matchedTotal
+		} else if total == 0 {
+			total = matchedTotal
 		}
 		return &DespesasResult{
 			Municipio:      m,
@@ -722,6 +830,10 @@ func QueryNucleoGovReceitas(ctx context.Context, client *http.Client, m *Municip
 	hc := portalConnectorHTTPClient(client)
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 
 	orgaoID := ""
 	if p.CodAdministracao > 0 {
@@ -756,67 +868,80 @@ func QueryNucleoGovReceitas(ctx context.Context, client *http.Client, m *Municip
 	var lastStatus int
 
 	for _, comp := range comps {
-		var rows []map[string]any
-		var total int
+		useFallback := false
+		rows, total, status, pageErr := fetchNucleoGovPaginated(scanLimit, func(offset, pageSize int) ([]map[string]any, int, int, error) {
+			limitParam := fmt.Sprintf("%d,%d", offset, pageSize)
+			if !useFallback {
+				centiForm := url.Values{}
+				centiForm.Set("acao", "receitas")
+				centiForm.Set("ano", strconv.Itoa(comp.ano))
+				centiForm.Set("mes", strconv.Itoa(comp.mes))
+				centiForm.Set("orgao", orgaoID)
+				centiForm.Set("limit", limitParam)
 
-		centiForm := url.Values{}
-		centiForm.Set("acao", "receitas")
-		centiForm.Set("ano", strconv.Itoa(comp.ano))
-		centiForm.Set("mes", strconv.Itoa(comp.mes))
-		centiForm.Set("orgao", orgaoID)
-		centiForm.Set("limit", fmt.Sprintf("0,%d", limit))
-
-		if body, status, err := doNucleoGovPostForm(ctx, hc, root+"/api/centi", centiForm); err != nil {
-			lastErr = err
-		} else {
-			lastStatus = status
-			if status == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
-				parsed, tot, decErr := decodeNucleoGovRecords(body, "receitas")
-				if decErr == nil {
-					rows = parsed
-					total = tot
-				} else {
-					lastErr = fmt.Errorf("erro ao decodificar NúcleoGov /api/centi receitas: %w", decErr)
+				body, st, reqErr := doNucleoGovPostForm(ctx, hc, root+"/api/centi", centiForm)
+				if reqErr != nil {
+					if offset == 0 {
+						lastErr = reqErr
+					}
+				} else if st == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
+					parsed, tot, _, decErr := decodeNucleoGovRecordsMeta(body, "receitas")
+					if decErr == nil && len(parsed) > 0 {
+						return parsed, tot, st, nil
+					}
+					if decErr != nil && offset == 0 {
+						lastErr = fmt.Errorf("erro ao decodificar NúcleoGov /api/centi receitas: %w", decErr)
+					}
+				} else if offset == 0 {
+					lastStatus = st
 				}
-			}
-		}
 
-		// Fallback: /api/receitas
-		if len(rows) == 0 {
+				if offset > 0 {
+					return nil, 0, st, nil
+				}
+				useFallback = true
+			}
+
 			recForm := url.Values{}
 			recForm.Set("acao", "listar")
 			recForm.Set("ano", strconv.Itoa(comp.ano))
 			recForm.Set("mes", strconv.Itoa(comp.mes))
 			recForm.Set("orgao", orgaoID)
-			recForm.Set("limit", fmt.Sprintf("0,%d", limit))
+			recForm.Set("limit", limitParam)
 
-			if body, status, err := doNucleoGovPostForm(ctx, hc, root+"/api/receitas", recForm); err != nil {
-				if lastErr == nil {
-					lastErr = err
-				}
-			} else {
-				lastStatus = status
-				if status == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
-					parsed, tot, decErr := decodeNucleoGovRecords(body, "receitas")
-					if decErr == nil {
-						rows = parsed
-						total = tot
-					} else if lastErr == nil {
-						lastErr = fmt.Errorf("erro ao decodificar NúcleoGov /api/receitas: %w", decErr)
-					}
-				}
+			body, st, reqErr := doNucleoGovPostForm(ctx, hc, root+"/api/receitas", recForm)
+			if reqErr != nil {
+				return nil, 0, st, reqErr
 			}
+			if st == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
+				parsed, tot, _, decErr := decodeNucleoGovRecordsMeta(body, "receitas")
+				if decErr != nil {
+					return nil, 0, st, fmt.Errorf("erro ao decodificar NúcleoGov /api/receitas: %w", decErr)
+				}
+				return parsed, tot, st, nil
+			}
+			return nil, 0, st, nil
+		})
+		if status > 0 {
+			lastStatus = status
 		}
-
+		if pageErr != nil && lastErr == nil {
+			lastErr = pageErr
+		}
 		if len(rows) == 0 {
 			continue
 		}
 
 		items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+		matchedTotal := 0
 		for _, r := range rows {
 			desc := mapGetStr(r, "Descricao", "descricao", "Receita", "receita", "Especificacao", "especificacao", "Nome", "nome")
 			cod := mapGetStr(r, "Codigo", "codigo", "Conta", "conta", "Classificacao", "classificacao", "Natureza", "natureza")
 			if filtro != "" && !strings.Contains(strings.ToLower(desc+" "+cod), filtro) {
+				continue
+			}
+			matchedTotal++
+			if len(items) >= limit {
 				continue
 			}
 
@@ -829,16 +954,15 @@ func QueryNucleoGovReceitas(ctx context.Context, client *http.Client, m *Municip
 				ValorArrecadado: mapGetFloat(r, "ValorArrecadado", "valor_arrecadado", "Arrecadado", "arrecadado", "Realizado", "realizado", "ValorRealizado", "valor_realizado"),
 				Fonte:           nucleoGovFonte,
 			})
-			if len(items) >= limit {
-				break
-			}
 		}
 
 		if len(items) == 0 && filtro != "" {
 			continue
 		}
-		if total == 0 {
-			total = len(items)
+		if filtro != "" {
+			total = matchedTotal
+		} else if total == 0 {
+			total = matchedTotal
 		}
 		return &ReceitasResult{
 			Municipio:      m,
@@ -875,48 +999,75 @@ func QueryNucleoGovContratos(ctx context.Context, client *http.Client, m *Munici
 	hc := portalConnectorHTTPClient(client)
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
-
-	form := url.Values{}
-	form.Set("acao", "listar")
-	form.Set("limit", fmt.Sprintf("0,%d", limit))
-	if p.Ano > 0 {
-		form.Set("ano", strconv.Itoa(p.Ano))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
 	}
 
-	var rows []map[string]any
-	var total int
+	useMulti := false
+	rows, total, _, err := fetchNucleoGovPaginated(scanLimit, func(offset, pageSize int) ([]map[string]any, int, int, error) {
+		limitParam := fmt.Sprintf("%d,%d", offset, pageSize)
+		if !useMulti {
+			form := url.Values{}
+			form.Set("acao", "listar")
+			form.Set("limit", limitParam)
+			if p.Ano > 0 {
+				form.Set("ano", strconv.Itoa(p.Ano))
+			}
 
-	body, status, err := doNucleoGovPostForm(ctx, hc, root+"/api/contratos", form)
-	if err == nil && status == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
-		rows, total, err = decodeNucleoGovRecords(body, "contratos")
-		if err != nil {
-			return nil, fmt.Errorf("erro ao decodificar NúcleoGov /api/contratos: %w", err)
+			body, status, reqErr := doNucleoGovPostForm(ctx, hc, root+"/api/contratos", form)
+			if reqErr != nil {
+				return nil, 0, status, reqErr
+			}
+			if status == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
+				parsed, tot, _, decErr := decodeNucleoGovRecordsMeta(body, "contratos")
+				if decErr != nil {
+					return nil, 0, status, fmt.Errorf("erro ao decodificar NúcleoGov /api/contratos: %w", decErr)
+				}
+				if len(parsed) > 0 {
+					return parsed, tot, status, nil
+				}
+			}
+
+			if offset > 0 {
+				return nil, 0, status, nil
+			}
+			useMulti = true
+
+			extra := map[string]any{"limit": limitParam}
+			if p.Ano > 0 {
+				extra["ano"] = p.Ano
+			}
+			mRows, mTotal, mStatus, mErr := fetchNucleoGovMultiRequest(ctx, hc, root, "contratos/listar", extra)
+			if mErr == nil && len(mRows) > 0 {
+				return mRows, mTotal, mStatus, nil
+			}
+			if status != http.StatusOK && status != 0 && mStatus != http.StatusOK {
+				return nil, 0, status, fmt.Errorf("NúcleoGov /api/contratos retornou HTTP %d", status)
+			}
+			return mRows, mTotal, mStatus, mErr
 		}
-	}
 
-	if len(rows) == 0 && err == nil {
-		extra := map[string]any{"limit": fmt.Sprintf("0,%d", limit)}
+		extra := map[string]any{"limit": limitParam}
 		if p.Ano > 0 {
 			extra["ano"] = p.Ano
 		}
-		mRows, mTotal, mStatus, mErr := fetchNucleoGovMultiRequest(ctx, hc, root, "contratos/listar", extra)
-		if mErr == nil && len(mRows) > 0 {
-			rows = mRows
-			total = mTotal
-		} else if status != http.StatusOK && status != 0 {
-			if mStatus != http.StatusOK {
-				return nil, fmt.Errorf("NúcleoGov /api/contratos retornou HTTP %d", status)
-			}
-		}
-	} else if err != nil {
+		return fetchNucleoGovMultiRequest(ctx, hc, root, "contratos/listar", extra)
+	})
+	if err != nil {
 		return nil, err
 	}
 
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "Fornecedor", "fornecedor", "Contratado", "contratado", "RazaoSocial", "razao_social", "NomeFornecedor", "nome_fornecedor")
 		objeto := mapGetStr(r, "Objeto", "objeto", "Descricao", "descricao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+objeto), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -933,13 +1084,12 @@ func QueryNucleoGovContratos(ctx context.Context, client *http.Client, m *Munici
 			Valor:               mapGetFloat(r, "Valor", "valor", "ValorContrato", "valor_contrato", "ValorGlobal", "valor_global", "ValorTotal", "valor_total"),
 			Fonte:               nucleoGovFonte,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -967,48 +1117,75 @@ func QueryNucleoGovLicitacoes(ctx context.Context, client *http.Client, m *Munic
 	hc := portalConnectorHTTPClient(client)
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
-
-	form := url.Values{}
-	form.Set("acao", "listar")
-	form.Set("limit", fmt.Sprintf("0,%d", limit))
-	if p.Ano > 0 {
-		form.Set("ano", strconv.Itoa(p.Ano))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
 	}
 
-	var rows []map[string]any
-	var total int
+	useMulti := false
+	rows, total, _, err := fetchNucleoGovPaginated(scanLimit, func(offset, pageSize int) ([]map[string]any, int, int, error) {
+		limitParam := fmt.Sprintf("%d,%d", offset, pageSize)
+		if !useMulti {
+			form := url.Values{}
+			form.Set("acao", "listar")
+			form.Set("limit", limitParam)
+			if p.Ano > 0 {
+				form.Set("ano", strconv.Itoa(p.Ano))
+			}
 
-	body, status, err := doNucleoGovPostForm(ctx, hc, root+"/api/licitacoes", form)
-	if err == nil && status == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
-		rows, total, err = decodeNucleoGovRecords(body, "licitacoes")
-		if err != nil {
-			return nil, fmt.Errorf("erro ao decodificar NúcleoGov /api/licitacoes: %w", err)
+			body, status, reqErr := doNucleoGovPostForm(ctx, hc, root+"/api/licitacoes", form)
+			if reqErr != nil {
+				return nil, 0, status, reqErr
+			}
+			if status == http.StatusOK && len(strings.TrimSpace(string(body))) > 0 {
+				parsed, tot, _, decErr := decodeNucleoGovRecordsMeta(body, "licitacoes")
+				if decErr != nil {
+					return nil, 0, status, fmt.Errorf("erro ao decodificar NúcleoGov /api/licitacoes: %w", decErr)
+				}
+				if len(parsed) > 0 {
+					return parsed, tot, status, nil
+				}
+			}
+
+			if offset > 0 {
+				return nil, 0, status, nil
+			}
+			useMulti = true
+
+			extra := map[string]any{"limit": limitParam}
+			if p.Ano > 0 {
+				extra["ano"] = p.Ano
+			}
+			mRows, mTotal, mStatus, mErr := fetchNucleoGovMultiRequest(ctx, hc, root, "licitacoes/listar", extra)
+			if mErr == nil && len(mRows) > 0 {
+				return mRows, mTotal, mStatus, nil
+			}
+			if status != http.StatusOK && status != 0 && mStatus != http.StatusOK {
+				return nil, 0, status, fmt.Errorf("NúcleoGov /api/licitacoes retornou HTTP %d", status)
+			}
+			return mRows, mTotal, mStatus, mErr
 		}
-	}
 
-	if len(rows) == 0 && err == nil {
-		extra := map[string]any{"limit": fmt.Sprintf("0,%d", limit)}
+		extra := map[string]any{"limit": limitParam}
 		if p.Ano > 0 {
 			extra["ano"] = p.Ano
 		}
-		mRows, mTotal, mStatus, mErr := fetchNucleoGovMultiRequest(ctx, hc, root, "licitacoes/listar", extra)
-		if mErr == nil && len(mRows) > 0 {
-			rows = mRows
-			total = mTotal
-		} else if status != http.StatusOK && status != 0 {
-			if mStatus != http.StatusOK {
-				return nil, fmt.Errorf("NúcleoGov /api/licitacoes retornou HTTP %d", status)
-			}
-		}
-	} else if err != nil {
+		return fetchNucleoGovMultiRequest(ctx, hc, root, "licitacoes/listar", extra)
+	})
+	if err != nil {
 		return nil, err
 	}
 
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		objeto := mapGetStr(r, "Objeto", "objeto", "Descricao", "descricao")
 		modalidade := mapGetStr(r, "Modalidade", "modalidade", "Tipo", "tipo")
 		if filtro != "" && !strings.Contains(strings.ToLower(objeto+" "+modalidade), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -1029,13 +1206,12 @@ func QueryNucleoGovLicitacoes(ctx context.Context, client *http.Client, m *Munic
 			Link:            link,
 			Fonte:           nucleoGovFonte,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {

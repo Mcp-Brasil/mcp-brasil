@@ -257,10 +257,15 @@ func QueryFatorDespesas(ctx context.Context, client *http.Client, m *Municipio, 
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "fornecedor", "Fornecedor", "credor", "Credor", "nome_fornecedor", "razao_social")
 		historico := mapGetStr(r, "historico", "Historico", "descricao", "Descricao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+historico), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "ano", "Ano", "exercicio", "Exercicio"))
@@ -284,13 +289,10 @@ func QueryFatorDespesas(ctx context.Context, client *http.Client, m *Municipio, 
 			ValorPago:           mapGetFloat(r, "valor_pago", "valorPago", "pago", "Pago"),
 			Fonte:               "Portal Municipal (Fator Sistemas)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -338,9 +340,14 @@ func QueryFatorReceitas(ctx context.Context, client *http.Client, m *Municipio, 
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		desc := mapGetStr(r, "descricao", "Descricao", "especificacao", "receita", "Receita", "nome")
 		if filtro != "" && !strings.Contains(strings.ToLower(desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		items = append(items, ReceitaItem{
@@ -352,13 +359,10 @@ func QueryFatorReceitas(ctx context.Context, client *http.Client, m *Municipio, 
 			ValorArrecadado: mapGetFloat(r, "valor_arrecadado", "valorArrecadado", "arrecadado", "Arrecadado", "realizado", "Realizado"),
 			Fonte:           "Portal Municipal (Fator Sistemas)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -404,10 +408,15 @@ func QueryFatorContratos(ctx context.Context, client *http.Client, m *Municipio,
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "fornecedor", "Fornecedor", "contratado", "Contratado", "razao_social", "credor")
 		objeto := mapGetStr(r, "objeto", "Objeto", "descricao", "Descricao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+objeto), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "ano", "Ano", "exercicio", "Exercicio"))
@@ -428,13 +437,10 @@ func QueryFatorContratos(ctx context.Context, client *http.Client, m *Municipio,
 			Valor:               mapGetFloat(r, "valor", "Valor", "valor_contrato", "valorContrato", "valor_global"),
 			Fonte:               "Portal Municipal (Fator Sistemas)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -480,10 +486,15 @@ func QueryFatorLicitacoes(ctx context.Context, client *http.Client, m *Municipio
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		objeto := mapGetStr(r, "objeto", "Objeto", "descricao", "Descricao")
 		modalidade := mapGetStr(r, "modalidade", "Modalidade")
 		if filtro != "" && !strings.Contains(strings.ToLower(objeto+" "+modalidade), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "ano", "Ano", "exercicio", "Exercicio"))
@@ -503,13 +514,10 @@ func QueryFatorLicitacoes(ctx context.Context, client *http.Client, m *Municipio
 			Link:            mapGetStr(r, "link", "url", "Link"),
 			Fonte:           "Portal Municipal (Fator Sistemas)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -556,9 +564,14 @@ func QueryFatorServidores(ctx context.Context, client *http.Client, m *Municipio
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		nome := mapGetStr(r, "nome", "Nome", "servidor", "Servidor", "funcionario", "Funcionario")
 		if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		comp := mapGetStr(r, "competencia", "Competencia", "mes_ano", "mesAno", "referencia")
@@ -587,13 +600,10 @@ func QueryFatorServidores(ctx context.Context, client *http.Client, m *Municipio
 			Fonte:          "Portal Municipal (Fator Sistemas)",
 			PortalURL:      rootURL,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {

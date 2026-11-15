@@ -24,21 +24,46 @@ type PortalQueryParams struct {
 	Ano              int
 	Mes              int
 	Limit            int
+	OrdemSalarioDesc bool
+	OrdemValorDesc   bool
 }
 
 func normalizeLimit(limit int) int {
 	if limit <= 0 {
 		return 25
 	}
-	if limit > 200 {
-		return 200
+	if limit > 1000 {
+		return 1000
 	}
 	return limit
+}
+
+func normalizePageSize(limit, maxPageSize int) int {
+	l := normalizeLimit(limit)
+	if maxPageSize > 0 && l > maxPageSize {
+		return maxPageSize
+	}
+	return l
 }
 
 func resolveDateWindows(p PortalQueryParams) [][2]string {
 	if p.Inicio != "" && p.Fim != "" {
 		return [][2]string{{p.Inicio, p.Fim}}
+	}
+	if p.Mes >= 1 && p.Mes <= 12 {
+		monthRange := func(year, month int) [2]string {
+			first := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+			last := first.AddDate(0, 1, -1)
+			return [2]string{first.Format("2006-01-02"), last.Format("2006-01-02")}
+		}
+		if p.Ano > 0 {
+			return [][2]string{monthRange(p.Ano, p.Mes)}
+		}
+		nowY := time.Now().Year()
+		return [][2]string{
+			monthRange(nowY, p.Mes),
+			monthRange(nowY-1, p.Mes),
+		}
 	}
 	if p.Ano > 0 {
 		return [][2]string{{fmt.Sprintf("%04d-01-01", p.Ano), fmt.Sprintf("%04d-12-31", p.Ano)}}
@@ -215,65 +240,96 @@ func resolveQuasarCodAdmin(ctx context.Context, client *http.Client, baseURL str
 func QueryQuasarServidores(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*ServidoresResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 	codAdmin := resolveQuasarCodAdmin(ctx, client, base, p.CodAdministracao)
 	termoB64 := encodeTermoBase64(p.NomeFiltro)
 
 	for _, win := range resolveDateWindows(p) {
-		u := fmt.Sprintf(
-			"%s/publico/servidor?pagina=1&elementosPorPagina=%d&codCargo=0&indSituacao=null&datAberturaInicio=%s&datAberturaFim=%s&codAdministracao=%d&termoBase64=%s",
-			base, limit, url.QueryEscape(win[0]), url.QueryEscape(win[1]), codAdmin, url.QueryEscape(termoB64),
-		)
-		body, status, err := doJSONGet(ctx, client, u)
-		if err != nil {
-			return nil, err
-		}
-		if status != http.StatusOK || len(strings.TrimSpace(string(body))) == 0 {
-			continue
-		}
-		var page quasarPage[quasarServidorRaw]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, fmt.Errorf("erro ao decodificar /publico/servidor: %w", err)
-		}
-		if len(page.Content) == 0 && page.TotalElements == 0 {
-			continue
-		}
-		items := make([]ServidorItem, 0, len(page.Content))
-		for _, r := range page.Content {
-			comp := strings.TrimSpace(r.MesReferenciaFmt)
-			if comp == "" {
-				comp = anyToString(r.MesReferencia)
+		var items []ServidorItem
+		totalElements := 0
+		prevBody := ""
+		for pagina := 1; pagina <= 10; pagina++ {
+			u := fmt.Sprintf(
+				"%s/publico/servidor?pagina=%d&elementosPorPagina=%d&codCargo=0&indSituacao=null&datAberturaInicio=%s&datAberturaFim=%s&codAdministracao=%d&termoBase64=%s",
+				base, pagina, pageSize, url.QueryEscape(win[0]), url.QueryEscape(win[1]), codAdmin, url.QueryEscape(termoB64),
+			)
+			body, status, err := doJSONGet(ctx, client, u)
+			if err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
 			}
-			items = append(items, ServidorItem{
-				Nome:           strings.TrimSpace(r.NomServidor),
-				Matricula:      anyToString(r.NumMatricula),
-				CPFParcial:     maskCPF(r.CPFFormatado, r.NumCPF),
-				Cargo:          strings.TrimSpace(r.NomCargo),
-				Funcao:         strings.TrimSpace(r.NomFuncaoExercida),
-				Lotacao:        strings.TrimSpace(r.NomLotacao),
-				LocalTrabalho:  strings.TrimSpace(r.NomLocalTrabalho),
-				Vinculo:        strings.TrimSpace(r.DesTipoClassificacao),
-				Situacao:       strings.TrimSpace(r.DesSituacao),
-				SalarioBase:    r.VlrSalarioBase,
-				SalarioBruto:   r.VlrSalarioBruto,
-				Descontos:      r.VlrDesconto,
-				SalarioLiquido: r.VlrSalarioLiquido,
-				Competencia:    comp,
-				CargaHoraria:   strings.TrimSpace(r.DesCargaHoraria),
-				DataAdmissao:   strings.TrimSpace(r.DatAdmissao),
-				Orgao:          strings.TrimSpace(r.NomAdministracao),
-				Fonte:          "Portal Municipal (Quasar /publico/servidor)",
-				PortalURL:      base,
-			})
+			bodyStr := strings.TrimSpace(string(body))
+			if status != http.StatusOK || bodyStr == "" {
+				break
+			}
+			if pagina > 1 && bodyStr == prevBody {
+				break
+			}
+			prevBody = bodyStr
+
+			var page quasarPage[quasarServidorRaw]
+			if err := json.Unmarshal(body, &page); err != nil {
+				if pagina == 1 {
+					return nil, fmt.Errorf("erro ao decodificar /publico/servidor: %w", err)
+				}
+				break
+			}
+			if pagina == 1 {
+				if len(page.Content) == 0 && page.TotalElements == 0 {
+					break
+				}
+				totalElements = page.TotalElements
+			}
+			if len(page.Content) == 0 {
+				break
+			}
+			for _, r := range page.Content {
+				comp := strings.TrimSpace(r.MesReferenciaFmt)
+				if comp == "" {
+					comp = anyToString(r.MesReferencia)
+				}
+				items = append(items, ServidorItem{
+					Nome:           strings.TrimSpace(r.NomServidor),
+					Matricula:      anyToString(r.NumMatricula),
+					CPFParcial:     maskCPF(r.CPFFormatado, r.NumCPF),
+					Cargo:          strings.TrimSpace(r.NomCargo),
+					Funcao:         strings.TrimSpace(r.NomFuncaoExercida),
+					Lotacao:        strings.TrimSpace(r.NomLotacao),
+					LocalTrabalho:  strings.TrimSpace(r.NomLocalTrabalho),
+					Vinculo:        strings.TrimSpace(r.DesTipoClassificacao),
+					Situacao:       strings.TrimSpace(r.DesSituacao),
+					SalarioBase:    r.VlrSalarioBase,
+					SalarioBruto:   r.VlrSalarioBruto,
+					Descontos:      r.VlrDesconto,
+					SalarioLiquido: r.VlrSalarioLiquido,
+					Competencia:    comp,
+					CargaHoraria:   strings.TrimSpace(r.DesCargaHoraria),
+					DataAdmissao:   strings.TrimSpace(r.DatAdmissao),
+					Orgao:          strings.TrimSpace(r.NomAdministracao),
+					Fonte:          "Portal Municipal (Quasar /publico/servidor)",
+					PortalURL:      base,
+				})
+				if len(items) >= limit {
+					break
+				}
+			}
+			if len(items) >= limit || len(page.Content) < pageSize || (page.TotalPages > 0 && pagina >= page.TotalPages) || (totalElements > 0 && len(items) >= totalElements) {
+				break
+			}
 		}
-		return &ServidoresResult{
-			Municipio:      m,
-			Fonte:          "Portal Municipal (Quasar)",
-			Plataforma:     "quasar_publico",
-			PortalURL:      base,
-			TotalRegistros: page.TotalElements,
-			Servidores:     items,
-			Disponivel:     true,
-		}, nil
+		if len(items) > 0 || totalElements > 0 {
+			return &ServidoresResult{
+				Municipio:      m,
+				Fonte:          "Portal Municipal (Quasar)",
+				Plataforma:     "quasar_publico",
+				PortalURL:      base,
+				TotalRegistros: totalElements,
+				Servidores:     items,
+				Disponivel:     true,
+			}, nil
+		}
 	}
 
 	return &ServidoresResult{
@@ -291,64 +347,95 @@ func QueryQuasarServidores(ctx context.Context, client *http.Client, m *Municipi
 func QueryQuasarDespesas(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*DespesasResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 	codAdmin := resolveQuasarCodAdmin(ctx, client, base, p.CodAdministracao)
 	termoB64 := encodeTermoBase64(p.NomeFiltro)
 
 	for _, win := range resolveDateWindows(p) {
-		u := fmt.Sprintf(
-			"%s/publico/despesaDetalhada?pagina=1&elementosPorPagina=%d&indAgrupamento=FOR&datInicio=%s&datFim=%s&desNatureza=&codAdministracao=%d&filtrarApenasCovid=false&numEmpenho=&termoBase64=%s",
-			base, limit, url.QueryEscape(win[0]), url.QueryEscape(win[1]), codAdmin, url.QueryEscape(termoB64),
-		)
-		body, status, err := doJSONGet(ctx, client, u)
-		if err != nil {
-			return nil, err
-		}
-		if status != http.StatusOK || len(strings.TrimSpace(string(body))) == 0 {
-			continue
-		}
-		var page quasarPage[quasarDespesaRaw]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, fmt.Errorf("erro ao decodificar /publico/despesaDetalhada: %w", err)
-		}
-		if len(page.Content) == 0 && page.TotalElements == 0 {
-			continue
-		}
-		items := make([]DespesaItem, 0, len(page.Content))
-		for _, r := range page.Content {
-			fornecedor := strings.TrimSpace(r.NomFornecedor)
-			if fornecedor == "" {
-				fornecedor = strings.TrimSpace(r.DesAgrupamento)
+		var items []DespesaItem
+		totalElements := 0
+		prevBody := ""
+		for pagina := 1; pagina <= 10; pagina++ {
+			u := fmt.Sprintf(
+				"%s/publico/despesaDetalhada?pagina=%d&elementosPorPagina=%d&indAgrupamento=FOR&datInicio=%s&datFim=%s&desNatureza=&codAdministracao=%d&filtrarApenasCovid=false&numEmpenho=&termoBase64=%s",
+				base, pagina, pageSize, url.QueryEscape(win[0]), url.QueryEscape(win[1]), codAdmin, url.QueryEscape(termoB64),
+			)
+			body, status, err := doJSONGet(ctx, client, u)
+			if err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
 			}
-			dataStr := strings.TrimSpace(r.DatMovimento)
-			if dataStr == "" {
-				dataStr = strings.TrimSpace(r.DatUltimoMov)
+			bodyStr := strings.TrimSpace(string(body))
+			if status != http.StatusOK || bodyStr == "" {
+				break
 			}
-			items = append(items, DespesaItem{
-				NumeroEmpenho:       strings.TrimSpace(r.NumEmpenho),
-				Ano:                 r.NumAnoEmpenho,
-				Data:                dataStr,
-				Fornecedor:          fornecedor,
-				DocumentoFornecedor: strings.TrimSpace(r.DesDocFornecedor),
-				Orgao:               strings.TrimSpace(r.DesOrgao),
-				Unidade:             strings.TrimSpace(r.DesUnidade),
-				Funcao:              strings.TrimSpace(r.DesFuncao),
-				Elemento:            strings.TrimSpace(r.DesDespesaOrc),
-				Historico:           strings.TrimSpace(r.DesEmpenhoHist),
-				ValorEmpenhado:      r.VlrEmpenhado,
-				ValorLiquidado:      r.VlrLiquidado,
-				ValorPago:           r.VlrPago,
-				Fonte:               "Portal Municipal (Quasar)",
-			})
+			if pagina > 1 && bodyStr == prevBody {
+				break
+			}
+			prevBody = bodyStr
+
+			var page quasarPage[quasarDespesaRaw]
+			if err := json.Unmarshal(body, &page); err != nil {
+				if pagina == 1 {
+					return nil, fmt.Errorf("erro ao decodificar /publico/despesaDetalhada: %w", err)
+				}
+				break
+			}
+			if pagina == 1 {
+				if len(page.Content) == 0 && page.TotalElements == 0 {
+					break
+				}
+				totalElements = page.TotalElements
+			}
+			if len(page.Content) == 0 {
+				break
+			}
+			for _, r := range page.Content {
+				fornecedor := strings.TrimSpace(r.NomFornecedor)
+				if fornecedor == "" {
+					fornecedor = strings.TrimSpace(r.DesAgrupamento)
+				}
+				dataStr := strings.TrimSpace(r.DatMovimento)
+				if dataStr == "" {
+					dataStr = strings.TrimSpace(r.DatUltimoMov)
+				}
+				items = append(items, DespesaItem{
+					NumeroEmpenho:       strings.TrimSpace(r.NumEmpenho),
+					Ano:                 r.NumAnoEmpenho,
+					Data:                dataStr,
+					Fornecedor:          fornecedor,
+					DocumentoFornecedor: strings.TrimSpace(r.DesDocFornecedor),
+					Orgao:               strings.TrimSpace(r.DesOrgao),
+					Unidade:             strings.TrimSpace(r.DesUnidade),
+					Funcao:              strings.TrimSpace(r.DesFuncao),
+					Elemento:            strings.TrimSpace(r.DesDespesaOrc),
+					Historico:           strings.TrimSpace(r.DesEmpenhoHist),
+					ValorEmpenhado:      r.VlrEmpenhado,
+					ValorLiquidado:      r.VlrLiquidado,
+					ValorPago:           r.VlrPago,
+					Fonte:               "Portal Municipal (Quasar)",
+				})
+				if len(items) >= limit {
+					break
+				}
+			}
+			if len(items) >= limit || len(page.Content) < pageSize || (page.TotalPages > 0 && pagina >= page.TotalPages) || (totalElements > 0 && len(items) >= totalElements) {
+				break
+			}
 		}
-		return &DespesasResult{
-			Municipio:      m,
-			Fonte:          "Portal Municipal (Quasar)",
-			Plataforma:     "quasar_publico",
-			PortalURL:      base,
-			TotalRegistros: page.TotalElements,
-			Despesas:       items,
-			Disponivel:     true,
-		}, nil
+		if len(items) > 0 || totalElements > 0 {
+			return &DespesasResult{
+				Municipio:      m,
+				Fonte:          "Portal Municipal (Quasar)",
+				Plataforma:     "quasar_publico",
+				PortalURL:      base,
+				TotalRegistros: totalElements,
+				Despesas:       items,
+				Disponivel:     true,
+			}, nil
+		}
 	}
 
 	return &DespesasResult{
@@ -432,56 +519,87 @@ func QueryQuasarReceitas(ctx context.Context, client *http.Client, m *Municipio,
 func QueryQuasarLicitacoes(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*LicitacoesResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 	codAdmin := resolveQuasarCodAdmin(ctx, client, base, p.CodAdministracao)
 	termoB64 := encodeTermoBase64(p.NomeFiltro)
 
 	for _, win := range resolveDateWindows(p) {
-		u := fmt.Sprintf(
-			"%s/publico/licitacao?pagina=1&elementosPorPagina=%d&datAberturaInicio=%s&datAberturaFim=%s&codAdministracao=%d&desModalidade=&filtrarApenasCovid=false&termoBase64=%s",
-			base, limit, url.QueryEscape(win[0]), url.QueryEscape(win[1]), codAdmin, url.QueryEscape(termoB64),
-		)
-		body, status, err := doJSONGet(ctx, client, u)
-		if err != nil {
-			return nil, err
-		}
-		if status != http.StatusOK || len(strings.TrimSpace(string(body))) == 0 {
-			continue
-		}
-		var page quasarPage[quasarLicitacaoRaw]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, fmt.Errorf("erro ao decodificar /publico/licitacao: %w", err)
-		}
-		if len(page.Content) == 0 && page.TotalElements == 0 {
-			continue
-		}
-		items := make([]LicitacaoItem, 0, len(page.Content))
-		for _, r := range page.Content {
-			num := strings.TrimSpace(r.NumeroLicitacaoEAno)
-			if num == "" {
-				num = strings.TrimSpace(r.NumeroProcessoEAno)
+		var items []LicitacaoItem
+		totalElements := 0
+		prevBody := ""
+		for pagina := 1; pagina <= 10; pagina++ {
+			u := fmt.Sprintf(
+				"%s/publico/licitacao?pagina=%d&elementosPorPagina=%d&datAberturaInicio=%s&datAberturaFim=%s&codAdministracao=%d&desModalidade=&filtrarApenasCovid=false&termoBase64=%s",
+				base, pagina, pageSize, url.QueryEscape(win[0]), url.QueryEscape(win[1]), codAdmin, url.QueryEscape(termoB64),
+			)
+			body, status, err := doJSONGet(ctx, client, u)
+			if err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
 			}
-			items = append(items, LicitacaoItem{
-				Numero:          num,
-				Ano:             r.AnoProcesso,
-				Modalidade:      strings.TrimSpace(r.DesModalidade),
-				Situacao:        strings.TrimSpace(r.IndSituacaoFmt),
-				DataAbertura:    strings.TrimSpace(r.DatAbertura),
-				Objeto:          strings.TrimSpace(r.TxtObjeto),
-				ValorEstimado:   r.VlrEstimado,
-				ValorHomologado: r.VlrHomologado,
-				Link:            base,
-				Fonte:           "Portal Municipal (Quasar)",
-			})
+			bodyStr := strings.TrimSpace(string(body))
+			if status != http.StatusOK || bodyStr == "" {
+				break
+			}
+			if pagina > 1 && bodyStr == prevBody {
+				break
+			}
+			prevBody = bodyStr
+
+			var page quasarPage[quasarLicitacaoRaw]
+			if err := json.Unmarshal(body, &page); err != nil {
+				if pagina == 1 {
+					return nil, fmt.Errorf("erro ao decodificar /publico/licitacao: %w", err)
+				}
+				break
+			}
+			if pagina == 1 {
+				if len(page.Content) == 0 && page.TotalElements == 0 {
+					break
+				}
+				totalElements = page.TotalElements
+			}
+			if len(page.Content) == 0 {
+				break
+			}
+			for _, r := range page.Content {
+				num := strings.TrimSpace(r.NumeroLicitacaoEAno)
+				if num == "" {
+					num = strings.TrimSpace(r.NumeroProcessoEAno)
+				}
+				items = append(items, LicitacaoItem{
+					Numero:          num,
+					Ano:             r.AnoProcesso,
+					Modalidade:      strings.TrimSpace(r.DesModalidade),
+					Situacao:        strings.TrimSpace(r.IndSituacaoFmt),
+					DataAbertura:    strings.TrimSpace(r.DatAbertura),
+					Objeto:          strings.TrimSpace(r.TxtObjeto),
+					ValorEstimado:   r.VlrEstimado,
+					ValorHomologado: r.VlrHomologado,
+					Link:            base,
+					Fonte:           "Portal Municipal (Quasar)",
+				})
+				if len(items) >= limit {
+					break
+				}
+			}
+			if len(items) >= limit || len(page.Content) < pageSize || (page.TotalPages > 0 && pagina >= page.TotalPages) || (totalElements > 0 && len(items) >= totalElements) {
+				break
+			}
 		}
-		return &LicitacoesResult{
-			Municipio:      m,
-			Fonte:          "Portal Municipal (Quasar)",
-			Plataforma:     "quasar_publico",
-			PortalURL:      base,
-			TotalRegistros: page.TotalElements,
-			Licitacoes:     items,
-			Disponivel:     true,
-		}, nil
+		if len(items) > 0 || totalElements > 0 {
+			return &LicitacoesResult{
+				Municipio:      m,
+				Fonte:          "Portal Municipal (Quasar)",
+				Plataforma:     "quasar_publico",
+				PortalURL:      base,
+				TotalRegistros: totalElements,
+				Licitacoes:     items,
+				Disponivel:     true,
+			}, nil
+		}
 	}
 
 	return &LicitacoesResult{
@@ -499,52 +617,83 @@ func QueryQuasarLicitacoes(ctx context.Context, client *http.Client, m *Municipi
 func QueryQuasarContratos(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*ContratosResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 	codAdmin := resolveQuasarCodAdmin(ctx, client, base, p.CodAdministracao)
 	termoB64 := encodeTermoBase64(p.NomeFiltro)
 
 	for _, win := range resolveDateWindows(p) {
-		u := fmt.Sprintf(
-			"%s/publico/contrato?pagina=1&elementosPorPagina=%d&datAssinaturaInicio=%s&datAssinaturaFim=%s&codAdministracao=%d&filtrarApenasCovid=false&filtrarApenasPublicidade=false&termoBase64=%s",
-			base, limit, url.QueryEscape(win[0]), url.QueryEscape(win[1]), codAdmin, url.QueryEscape(termoB64),
-		)
-		body, status, err := doJSONGet(ctx, client, u)
-		if err != nil {
-			return nil, err
+		var items []ContratoItem
+		totalElements := 0
+		prevBody := ""
+		for pagina := 1; pagina <= 10; pagina++ {
+			u := fmt.Sprintf(
+				"%s/publico/contrato?pagina=%d&elementosPorPagina=%d&datAssinaturaInicio=%s&datAssinaturaFim=%s&codAdministracao=%d&filtrarApenasCovid=false&filtrarApenasPublicidade=false&termoBase64=%s",
+				base, pagina, pageSize, url.QueryEscape(win[0]), url.QueryEscape(win[1]), codAdmin, url.QueryEscape(termoB64),
+			)
+			body, status, err := doJSONGet(ctx, client, u)
+			if err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
+			}
+			bodyStr := strings.TrimSpace(string(body))
+			if status != http.StatusOK || bodyStr == "" {
+				break
+			}
+			if pagina > 1 && bodyStr == prevBody {
+				break
+			}
+			prevBody = bodyStr
+
+			var page quasarPage[quasarContratoRaw]
+			if err := json.Unmarshal(body, &page); err != nil {
+				if pagina == 1 {
+					return nil, fmt.Errorf("erro ao decodificar /publico/contrato: %w", err)
+				}
+				break
+			}
+			if pagina == 1 {
+				if len(page.Content) == 0 && page.TotalElements == 0 {
+					break
+				}
+				totalElements = page.TotalElements
+			}
+			if len(page.Content) == 0 {
+				break
+			}
+			for _, r := range page.Content {
+				items = append(items, ContratoItem{
+					Numero:              strings.TrimSpace(r.NumeroContratoEAno),
+					Ano:                 r.NumAnoContrato,
+					Fornecedor:          strings.TrimSpace(r.NomFornecedor),
+					DocumentoFornecedor: strings.TrimSpace(r.DesDocFornecedor),
+					Objeto:              strings.TrimSpace(r.DesObjeto),
+					Situacao:            strings.TrimSpace(r.IndSituacao),
+					DataAssinatura:      strings.TrimSpace(r.DatAssinatura),
+					VigenciaFim:         strings.TrimSpace(r.DatVencimento),
+					Valor:               r.VlrContratado,
+					Fonte:               "Portal Municipal (Quasar)",
+				})
+				if len(items) >= limit {
+					break
+				}
+			}
+			if len(items) >= limit || len(page.Content) < pageSize || (page.TotalPages > 0 && pagina >= page.TotalPages) || (totalElements > 0 && len(items) >= totalElements) {
+				break
+			}
 		}
-		if status != http.StatusOK || len(strings.TrimSpace(string(body))) == 0 {
-			continue
+		if len(items) > 0 || totalElements > 0 {
+			return &ContratosResult{
+				Municipio:      m,
+				Fonte:          "Portal Municipal (Quasar)",
+				Plataforma:     "quasar_publico",
+				PortalURL:      base,
+				TotalRegistros: totalElements,
+				Contratos:      items,
+				Disponivel:     true,
+			}, nil
 		}
-		var page quasarPage[quasarContratoRaw]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, fmt.Errorf("erro ao decodificar /publico/contrato: %w", err)
-		}
-		if len(page.Content) == 0 && page.TotalElements == 0 {
-			continue
-		}
-		items := make([]ContratoItem, 0, len(page.Content))
-		for _, r := range page.Content {
-			items = append(items, ContratoItem{
-				Numero:              strings.TrimSpace(r.NumeroContratoEAno),
-				Ano:                 r.NumAnoContrato,
-				Fornecedor:          strings.TrimSpace(r.NomFornecedor),
-				DocumentoFornecedor: strings.TrimSpace(r.DesDocFornecedor),
-				Objeto:              strings.TrimSpace(r.DesObjeto),
-				Situacao:            strings.TrimSpace(r.IndSituacao),
-				DataAssinatura:      strings.TrimSpace(r.DatAssinatura),
-				VigenciaFim:         strings.TrimSpace(r.DatVencimento),
-				Valor:               r.VlrContratado,
-				Fonte:               "Portal Municipal (Quasar)",
-			})
-		}
-		return &ContratosResult{
-			Municipio:      m,
-			Fonte:          "Portal Municipal (Quasar)",
-			Plataforma:     "quasar_publico",
-			PortalURL:      base,
-			TotalRegistros: page.TotalElements,
-			Contratos:      items,
-			Disponivel:     true,
-		}, nil
 	}
 
 	return &ContratosResult{
@@ -657,29 +806,30 @@ func QueryFiorilliServidores(ctx context.Context, client *http.Client, m *Munici
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+	totalMatched := 0
 	for _, r := range rows {
 		nome := mapGetStr(r, "Nome", "NOME", "Servidor", "nomServidor")
 		if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
 			continue
 		}
-		items = append(items, ServidorItem{
-			Nome:           nome,
-			Matricula:      mapGetStr(r, "Matricula", "MATRICULA", "Registro"),
-			CPFParcial:     maskCPF("", mapGetStr(r, "CPF", "Cpf")),
-			Cargo:          mapGetStr(r, "Cargo", "CARGO", "DescricaoCargo"),
-			Lotacao:        mapGetStr(r, "Lotacao", "LOTACAO", "Departamento", "Orgao"),
-			Vinculo:        mapGetStr(r, "Vinculo", "Regime", "TipoVinculo"),
-			Situacao:       mapGetStr(r, "Situacao", "SITUACAO"),
-			SalarioBase:    mapGetFloat(r, "SalarioBase", "VencimentoBase", "Base"),
-			SalarioBruto:   mapGetFloat(r, "SalarioBruto", "Bruto", "TotalProventos", "Proventos"),
-			Descontos:      mapGetFloat(r, "Descontos", "TotalDescontos"),
-			SalarioLiquido: mapGetFloat(r, "SalarioLiquido", "Liquido"),
-			Competencia:    fmt.Sprintf("%02d/%04d", mes, ano),
-			Fonte:          "Portal Municipal (Fiorilli SCPI)",
-			PortalURL:      base,
-		})
-		if len(items) >= limit {
-			break
+		totalMatched++
+		if len(items) < limit {
+			items = append(items, ServidorItem{
+				Nome:           nome,
+				Matricula:      mapGetStr(r, "Matricula", "MATRICULA", "Registro"),
+				CPFParcial:     maskCPF("", mapGetStr(r, "CPF", "Cpf")),
+				Cargo:          mapGetStr(r, "Cargo", "CARGO", "DescricaoCargo"),
+				Lotacao:        mapGetStr(r, "Lotacao", "LOTACAO", "Departamento", "Orgao"),
+				Vinculo:        mapGetStr(r, "Vinculo", "Regime", "TipoVinculo"),
+				Situacao:       mapGetStr(r, "Situacao", "SITUACAO"),
+				SalarioBase:    mapGetFloat(r, "SalarioBase", "VencimentoBase", "Base"),
+				SalarioBruto:   mapGetFloat(r, "SalarioBruto", "Bruto", "TotalProventos", "Proventos"),
+				Descontos:      mapGetFloat(r, "Descontos", "TotalDescontos"),
+				SalarioLiquido: mapGetFloat(r, "SalarioLiquido", "Liquido"),
+				Competencia:    fmt.Sprintf("%02d/%04d", mes, ano),
+				Fonte:          "Portal Municipal (Fiorilli SCPI)",
+				PortalURL:      base,
+			})
 		}
 	}
 
@@ -688,7 +838,7 @@ func QueryFiorilliServidores(ctx context.Context, client *http.Client, m *Munici
 		Fonte:          "Portal Municipal (Fiorilli SCPI)",
 		Plataforma:     "fiorilli_scpi",
 		PortalURL:      base,
-		TotalRegistros: len(items),
+		TotalRegistros: totalMatched,
 		Servidores:     items,
 		Disponivel:     true,
 	}, nil

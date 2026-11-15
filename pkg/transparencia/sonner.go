@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -115,6 +116,7 @@ type sonnerSession struct {
 	root      string
 	client    *http.Client
 	tenantID  string
+	mu        sync.Mutex
 	cookies   map[string]*http.Cookie
 	xsrfToken string
 	funcKeys  map[string]string
@@ -141,6 +143,8 @@ func newSonnerSession(ctx context.Context, client *http.Client, baseURL, tenantI
 }
 
 func (s *sonnerSession) captureResponseCookies(resp *http.Response) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	for _, c := range resp.Cookies() {
 		if c == nil || c.Name == "" {
 			continue
@@ -157,6 +161,7 @@ func (s *sonnerSession) captureResponseCookies(resp *http.Response) {
 func (s *sonnerSession) attachRequestHeaders(req *http.Request, targetRoute string, isPost bool) {
 	req.Header.Set("User-Agent", sonnerUserAgent)
 	req.Header.Set("Accept", "application/json")
+	s.mu.Lock()
 	for _, c := range s.cookies {
 		req.AddCookie(c)
 	}
@@ -168,6 +173,7 @@ func (s *sonnerSession) attachRequestHeaders(req *http.Request, targetRoute stri
 			req.Header.Set("X-Portal-Funcionalidade", key)
 		}
 	}
+	s.mu.Unlock()
 	if s.tenantID != "" {
 		req.Header.Set("X-Tenant-Id", s.tenantID)
 	}
@@ -225,11 +231,20 @@ func (s *sonnerSession) fetchCSRF(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if status == http.StatusOK && s.xsrfToken == "" && len(bytes.TrimSpace(body)) > 0 {
-		var obj map[string]any
-		if json.Unmarshal(body, &obj) == nil {
-			if tok := mapGetStr(obj, "token", "csrfToken", "xsrfToken"); tok != "" {
-				s.xsrfToken = tok
+	if status == http.StatusOK && len(bytes.TrimSpace(body)) > 0 {
+		s.mu.Lock()
+		hasTok := s.xsrfToken != ""
+		s.mu.Unlock()
+		if !hasTok {
+			var obj map[string]any
+			if json.Unmarshal(body, &obj) == nil {
+				if tok := mapGetStr(obj, "token", "csrfToken", "xsrfToken"); tok != "" {
+					s.mu.Lock()
+					if s.xsrfToken == "" {
+						s.xsrfToken = tok
+					}
+					s.mu.Unlock()
+				}
 			}
 		}
 	}
@@ -241,6 +256,12 @@ type funcQueueItem struct {
 	depth  int
 }
 
+func (s *sonnerSession) funcKeysCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.funcKeys)
+}
+
 func (s *sonnerSession) resolveFuncionalidades(ctx context.Context) error {
 	const (
 		maxDepth = 4
@@ -250,7 +271,7 @@ func (s *sonnerSession) resolveFuncionalidades(ctx context.Context) error {
 	queue := []funcQueueItem{{nodeID: "", depth: 0}}
 	calls := 0
 
-	for len(queue) > 0 && calls < maxCalls && len(s.funcKeys) < len(sonnerTargetRoutes) {
+	for len(queue) > 0 && calls < maxCalls && s.funcKeysCount() < len(sonnerTargetRoutes) {
 		cur := queue[0]
 		queue = queue[1:]
 
@@ -350,6 +371,7 @@ func (s *sonnerSession) walkFuncionalidadeNodes(nodes []map[string]any, depth, m
 
 		funcKey := extractSonnerFuncKey(node)
 		if funcKey != "" && routeVal != "" {
+			s.mu.Lock()
 			for _, target := range sonnerTargetRoutes {
 				if strings.Contains(routeVal, target) {
 					if _, exists := s.funcKeys[target]; !exists {
@@ -357,6 +379,7 @@ func (s *sonnerSession) walkFuncionalidadeNodes(nodes []map[string]any, depth, m
 					}
 				}
 			}
+			s.mu.Unlock()
 		}
 
 		// Verifica filhos inline
@@ -453,7 +476,7 @@ func stripSonnerSensitiveFields(m map[string]any) {
 }
 
 // QuerySonnerServidores consulta servidores no endpoint Sonner /GRP/pic/api/visualiza-salario/funcionario,
-// enriquecendo os primeiros N<=10 registros com /anos-folha e /matriculafolhas e removendo/mascarando dados sensíveis (LGPD).
+// enriquecendo registros sem remuneração com /anos-folha e /matriculafolhas (até 10 sequencialmente ou 100 em pool quando OrdemSalarioDesc=true) e removendo/mascarando dados sensíveis (LGPD).
 func QuerySonnerServidores(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*ServidoresResult, error) {
 	sess, err := newSonnerSession(ctx, client, p.BaseURL, p.TenantID)
 	if err != nil {
@@ -464,12 +487,17 @@ func QuerySonnerServidores(ctx context.Context, client *http.Client, m *Municipi
 
 	tokens := []string{filtro}
 	if filtro == "" {
-		tokens = []string{"A", " "}
+		if p.OrdemSalarioDesc {
+			tokens = []string{" ", "A", "E", "I", "O", "U"}
+		} else {
+			tokens = []string{"A", " "}
+		}
 	}
 
 	var rows []map[string]any
 	var total int
 	var lastStatus int
+	seenRows := make(map[string]struct{})
 
 	for _, tok := range tokens {
 		path := "/GRP/pic/api/visualiza-salario/funcionario?token=" + url.QueryEscape(tok)
@@ -485,9 +513,34 @@ func QuerySonnerServidores(ctx context.Context, client *http.Client, m *Municipi
 		if decErr != nil {
 			return nil, fmt.Errorf("erro ao decodificar Sonner /visualiza-salario/funcionario: %w", decErr)
 		}
-		if len(parsed) > 0 {
+		if len(parsed) == 0 {
+			continue
+		}
+		if !p.OrdemSalarioDesc {
 			rows = parsed
 			total = tot
+			break
+		}
+		if tot > total {
+			total = tot
+		}
+		for _, r := range parsed {
+			funcID := mapGetStr(r, "id", "funcionarioId", "idFuncionario")
+			mat := mapGetStr(r, "matricula", "numMatricula", "codigo", "registro")
+			nome := strings.ToUpper(strings.TrimSpace(mapGetStr(r, "nome", "nomeFuncionario", "servidor", "funcionario")))
+			key := funcID + "|" + mat + "|" + nome
+			if key != "||" {
+				if _, dup := seenRows[key]; dup {
+					continue
+				}
+				seenRows[key] = struct{}{}
+			}
+			rows = append(rows, r)
+			if len(rows) >= limit {
+				break
+			}
+		}
+		if len(rows) >= limit {
 			break
 		}
 	}
@@ -540,29 +593,68 @@ func QuerySonnerServidores(ctx context.Context, client *http.Client, m *Municipi
 		rawIDs = append(rawIDs, funcID)
 	}
 
-	// Enriquecimento opcional para os primeiros N <= 10 registros sem remuneração
-	enrichLimit := minInt(10, len(items))
-	defaultAno := p.Ano
-	for i := 0; i < enrichLimit; i++ {
-		if items[i].SalarioBruto > 0 {
-			continue
-		}
-		if ctx.Err() != nil {
-			break
-		}
-		ano := defaultAno
-		if ano <= 0 {
-			ano = fetchSonnerAnoFolha(ctx, sess, rawIDs[i], items[i].Matricula)
+	if !p.OrdemSalarioDesc {
+		// Enriquecimento opcional para os primeiros N <= 10 registros sem remuneração
+		enrichLimit := minInt(10, len(items))
+		defaultAno := p.Ano
+		for i := 0; i < enrichLimit; i++ {
+			if items[i].SalarioBruto > 0 {
+				continue
+			}
+			if ctx.Err() != nil {
+				break
+			}
+			ano := defaultAno
 			if ano <= 0 {
-				ano = time.Now().Year()
-			} else {
-				defaultAno = ano
+				ano = fetchSonnerAnoFolha(ctx, sess, rawIDs[i], items[i].Matricula)
+				if ano <= 0 {
+					ano = time.Now().Year()
+				} else {
+					defaultAno = ano
+				}
+			}
+			enrichSonnerFolha(ctx, sess, &items[i], rawIDs[i], ano, p.Mes)
+		}
+	} else {
+		enrichLimit := minInt(100, len(items))
+		var idxs []int
+		for i := 0; i < enrichLimit; i++ {
+			if items[i].SalarioBruto <= 0 {
+				idxs = append(idxs, i)
 			}
 		}
-		enrichSonnerFolha(ctx, sess, &items[i], rawIDs[i], ano, p.Mes)
+		if len(idxs) > 0 && ctx.Err() == nil {
+			defaultAno := p.Ano
+			if defaultAno <= 0 {
+				defaultAno = fetchSonnerAnoFolha(ctx, sess, rawIDs[idxs[0]], items[idxs[0]].Matricula)
+				if defaultAno <= 0 {
+					defaultAno = time.Now().Year()
+				}
+			}
+			workers := minInt(5, len(idxs))
+			ch := make(chan int, len(idxs))
+			for _, idx := range idxs {
+				ch <- idx
+			}
+			close(ch)
+			var wg sync.WaitGroup
+			for w := 0; w < workers; w++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					for idx := range ch {
+						if ctx.Err() != nil {
+							return
+						}
+						enrichSonnerFolha(ctx, sess, &items[idx], rawIDs[idx], defaultAno, p.Mes)
+					}
+				}()
+			}
+			wg.Wait()
+		}
 	}
 
-	if total == 0 {
+	if total == 0 || (p.OrdemSalarioDesc && len(rows) > total) {
 		total = len(rows)
 	}
 

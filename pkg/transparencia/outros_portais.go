@@ -67,21 +67,21 @@ func doPortalJSONPost(ctx context.Context, client *http.Client, targetURL string
 	return body, resp.StatusCode, nil
 }
 
-func decodeFlexiblePortalList(body []byte, extraKeys ...string) ([]map[string]any, int, error) {
+func decodeFlexiblePortalListMeta(body []byte, extraKeys ...string) ([]map[string]any, int, bool, error) {
 	trimmed := strings.TrimSpace(string(body))
 	if trimmed == "" {
-		return nil, 0, nil
+		return nil, 0, false, nil
 	}
 	if strings.HasPrefix(trimmed, "[") {
 		var rows []map[string]any
 		if err := json.Unmarshal([]byte(trimmed), &rows); err != nil {
-			return nil, 0, err
+			return nil, 0, false, err
 		}
-		return rows, len(rows), nil
+		return rows, 0, false, nil
 	}
 	var obj map[string]any
 	if err := json.Unmarshal([]byte(trimmed), &obj); err != nil {
-		return nil, 0, err
+		return nil, 0, false, err
 	}
 
 	keys := append([]string{}, extraKeys...)
@@ -104,8 +104,25 @@ func decodeFlexiblePortalList(body []byte, extraKeys ...string) ([]map[string]an
 		}
 	}
 
-	total := int(mapGetFloat(obj, "totalElements", "total", "totalRegistros", "TotalRegistros", "recordsTotal", "count"))
-	if total == 0 {
+	total := int(mapGetFloat(obj,
+		"totalElements", "TotalElements",
+		"total", "Total",
+		"totalRegistros", "TotalRegistros",
+		"totalItems", "TotalItems",
+		"recordsTotal", "RecordsTotal",
+		"recordsFiltered", "RecordsFiltered",
+		"count", "Count",
+	))
+	hasExplicitTotal := total > 0
+	return rows, total, hasExplicitTotal, nil
+}
+
+func decodeFlexiblePortalList(body []byte, extraKeys ...string) ([]map[string]any, int, error) {
+	rows, total, hasTotal, err := decodeFlexiblePortalListMeta(body, extraKeys...)
+	if err != nil {
+		return nil, 0, err
+	}
+	if !hasTotal {
 		total = len(rows)
 	}
 	return rows, total, nil
@@ -250,20 +267,25 @@ func QueryGovBRServidores(ctx context.Context, client *http.Client, m *Municipio
 	if ano <= 0 {
 		ano = time.Now().Year()
 	}
+	mes := 1
+	if p.Mes >= 1 && p.Mes <= 12 {
+		mes = p.Mes
+	}
 	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 	hc := portalConnectorHTTPClient(client)
 
-	dataInicial := fmt.Sprintf("01/01/%04d", ano)
-	dataFinal := fmt.Sprintf("31/01/%04d", ano)
+	dataInicial := fmt.Sprintf("01/%02d/%04d", mes, ano)
+	lastDay := time.Date(ano, time.Month(mes)+1, 0, 0, 0, 0, 0, time.UTC)
+	dataFinal := lastDay.Format("02/01/2006")
 	if p.Inicio != "" && p.Fim != "" {
 		dataInicial = p.Inicio
 		dataFinal = p.Fim
 	}
-
-	queryTail := fmt.Sprintf(
-		"dataInicial=%s&dataFinal=%s&numeroPagina=1&nomeBase=%s",
-		url.QueryEscape(dataInicial), url.QueryEscape(dataFinal), url.QueryEscape(entidade),
-	)
 
 	var rows []map[string]any
 	var total int
@@ -272,24 +294,55 @@ func QueryGovBRServidores(ctx context.Context, client *http.Client, m *Municipio
 	usedEndpoint := "/FolhaPagamento"
 
 	for _, ep := range []string{"/FolhaPagamento", "/Servidor"} {
-		target := fmt.Sprintf("%s%s?%s", base, ep, queryTail)
-		body, status, err := doJSONGet(ctx, hc, target)
-		if err != nil {
-			lastErr = err
-			continue
+		var epRows []map[string]any
+		epTotal := 0
+		epHasTotal := false
+		prevBody := ""
+		for page := 1; page <= 10; page++ {
+			queryTail := fmt.Sprintf(
+				"dataInicial=%s&dataFinal=%s&numeroPagina=%d&nomeBase=%s",
+				url.QueryEscape(dataInicial), url.QueryEscape(dataFinal), page, url.QueryEscape(entidade),
+			)
+			target := fmt.Sprintf("%s%s?%s", base, ep, queryTail)
+			body, status, err := doJSONGet(ctx, hc, target)
+			if err != nil {
+				if page == 1 {
+					lastErr = err
+				}
+				break
+			}
+			lastStatus = status
+			if status != http.StatusOK {
+				break
+			}
+			bodyStr := strings.TrimSpace(string(body))
+			if page > 1 && (bodyStr == "" || bodyStr == prevBody) {
+				break
+			}
+			prevBody = bodyStr
+
+			parsed, tot, totHas, err := decodeFlexiblePortalListMeta(body, "folhaPagamento", "servidores")
+			if err != nil {
+				if page == 1 {
+					lastErr = fmt.Errorf("erro ao decodificar GovBR %s: %w", ep, err)
+				}
+				break
+			}
+			if totHas && tot > epTotal {
+				epTotal = tot
+				epHasTotal = true
+			}
+			if len(parsed) == 0 {
+				break
+			}
+			epRows = append(epRows, parsed...)
+			if len(epRows) >= scanLimit || (epHasTotal && epTotal > 0 && len(epRows) >= epTotal) || (page == 1 && len(parsed) < 10) {
+				break
+			}
 		}
-		lastStatus = status
-		if status != http.StatusOK {
-			continue
-		}
-		parsed, tot, err := decodeFlexiblePortalList(body, "folhaPagamento", "servidores")
-		if err != nil {
-			lastErr = fmt.Errorf("erro ao decodificar GovBR %s: %w", ep, err)
-			continue
-		}
-		if len(parsed) > 0 {
-			rows = parsed
-			total = tot
+		if len(epRows) > 0 {
+			rows = epRows
+			total = epTotal
 			usedEndpoint = ep
 			lastErr = nil
 			break
@@ -305,16 +358,20 @@ func QueryGovBRServidores(ctx context.Context, client *http.Client, m *Municipio
 		}
 	}
 
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		nome := mapGetStr(r, "nome", "Nome", "nomeServidor", "NomeServidor", "servidor", "Servidor", "funcionario")
 		if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
 			continue
 		}
+		matchedTotal++
+		if len(items) >= limit {
+			continue
+		}
 		comp := mapGetStr(r, "competencia", "Competencia", "mesAno", "referencia")
 		if comp == "" {
-			comp = fmt.Sprintf("01/%04d", ano)
+			comp = fmt.Sprintf("%02d/%04d", mes, ano)
 		}
 
 		items = append(items, ServidorItem{
@@ -338,13 +395,10 @@ func QueryGovBRServidores(ctx context.Context, client *http.Client, m *Municipio
 			Fonte:          fmt.Sprintf("Portal Municipal (GovBR / Cidade360 %s)", usedEndpoint),
 			PortalURL:      base,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -376,12 +430,16 @@ func QueryGovBRReceitas(ctx context.Context, client *http.Client, m *Municipio, 
 	if ano <= 0 {
 		ano = time.Now().Year()
 	}
+	mes := 1
+	if p.Mes >= 1 && p.Mes <= 12 {
+		mes = p.Mes
+	}
 	limit := normalizeLimit(p.Limit)
 	hc := portalConnectorHTTPClient(client)
 
 	target := fmt.Sprintf(
-		"%s/Receitas/buscarDadosReceitas/%d/1/%s?unidadeGestora=CONSOLIDADO",
-		base, ano, url.PathEscape(entidade),
+		"%s/Receitas/buscarDadosReceitas/%d/%d/%s?unidadeGestora=CONSOLIDADO",
+		base, ano, mes, url.PathEscape(entidade),
 	)
 	body, status, err := doJSONGet(ctx, hc, target)
 	if err != nil {
@@ -398,9 +456,14 @@ func QueryGovBRReceitas(ctx context.Context, client *http.Client, m *Municipio, 
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		desc := mapGetStr(r, "descricao", "Descricao", "especificacao", "Especificacao", "nome", "receita", "Receita")
 		if filtro != "" && !strings.Contains(strings.ToLower(desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		items = append(items, ReceitaItem{
@@ -412,13 +475,10 @@ func QueryGovBRReceitas(ctx context.Context, client *http.Client, m *Municipio, 
 			ValorArrecadado: mapGetFloat(r, "valorArrecadado", "ValorArrecadado", "arrecadado", "Arrecadado", "realizado", "Realizado", "arrecadadoAteMes"),
 			Fonte:           "Portal Municipal (GovBR / Cidade360)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -518,39 +578,85 @@ func QueryCoplanDespesas(ctx context.Context, client *http.Client, m *Municipio,
 		ano = time.Now().Year()
 	}
 	mes := p.Mes
-	if mes <= 0 {
-		mes = 12
+	if mes <= 0 || mes > 12 {
+		if ano == time.Now().Year() {
+			mes = int(time.Now().Month())
+		} else {
+			mes = 12
+		}
 	}
 	limit := normalizeLimit(p.Limit)
-
-	payload := map[string]any{
-		"unidade_gestora_id": ugID,
-		"exercicio":          ano,
-		"mes":                mes,
-		"pagina":             1,
-		"limite":             limit,
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
 	}
+	pageSize := normalizePageSize(scanLimit, 200)
 
 	target := base + "/servlet/api_consulta?despesas_v1"
-	body, status, err := doPortalJSONPost(ctx, hc, target, payload)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("Coplan /servlet/api_consulta?despesas_v1 retornou HTTP %d", status)
+	var rows []map[string]any
+	total := 0
+	hasTotal := false
+	prevBody := ""
+
+	for pagina := 1; pagina <= 10; pagina++ {
+		payload := map[string]any{
+			"unidade_gestora_id": ugID,
+			"exercicio":          ano,
+			"mes":                mes,
+			"pagina":             pagina,
+			"limite":             pageSize,
+		}
+
+		body, status, err := doPortalJSONPost(ctx, hc, target, payload)
+		if err != nil {
+			if pagina == 1 {
+				return nil, err
+			}
+			break
+		}
+		if status != http.StatusOK {
+			if pagina == 1 {
+				return nil, fmt.Errorf("Coplan /servlet/api_consulta?despesas_v1 retornou HTTP %d", status)
+			}
+			break
+		}
+		bodyStr := strings.TrimSpace(string(body))
+		if pagina > 1 && (bodyStr == "" || bodyStr == prevBody) {
+			break
+		}
+		prevBody = bodyStr
+
+		pageRows, pageTotal, pageHasTotal, err := decodeFlexiblePortalListMeta(body, "despesas")
+		if err != nil {
+			if pagina == 1 {
+				return nil, fmt.Errorf("erro ao decodificar Coplan despesas_v1: %w", err)
+			}
+			break
+		}
+		if pageHasTotal && pageTotal > total {
+			total = pageTotal
+			hasTotal = true
+		}
+		if len(pageRows) == 0 {
+			break
+		}
+		rows = append(rows, pageRows...)
+		if len(rows) >= scanLimit || len(pageRows) < pageSize || (hasTotal && total > 0 && len(rows) >= total) {
+			break
+		}
 	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "despesas")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Coplan despesas_v1: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "fornecedor", "credor", "nome_fornecedor", "nome_credor", "razao_social")
 		historico := mapGetStr(r, "historico", "descricao", "historico_empenho")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+historico), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "exercicio", "ano", "ano_empenho"))
@@ -574,13 +680,10 @@ func QueryCoplanDespesas(ctx context.Context, client *http.Client, m *Municipio,
 			ValorPago:           mapGetFloat(r, "valor_pago", "pago", "vl_pago"),
 			Fonte:               "Portal Municipal (Coplan)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -712,11 +815,16 @@ func QueryThemaDespesas(ctx context.Context, client *http.Client, m *Municipio, 
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "fornecedor", "credor", "nomeFornecedor", "razaoSocial")
 		historico := mapGetStr(r, "historico", "descricao", "especificacao")
 		elemento := mapGetStr(r, "elemento", "elementoDespesa", "descricaoElemento", "dotacao", "despesa")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+historico+" "+elemento), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "exercicio", "ano"))
@@ -740,13 +848,10 @@ func QueryThemaDespesas(ctx context.Context, client *http.Client, m *Municipio, 
 			ValorPago:           mapGetFloat(r, "valorPago", "pago", "vlrPago"),
 			Fonte:               "Portal Municipal (Thema API Gateway)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if total == 0 || filtro != "" {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {

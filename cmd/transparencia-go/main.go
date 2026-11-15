@@ -614,15 +614,20 @@ func cmdServe(engine *transparencia.Engine, args []string) {
 		ano, _ := strconv.Atoi(r.URL.Query().Get("ano"))
 		mes, _ := strconv.Atoi(r.URL.Query().Get("mes"))
 		lim, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+		parseBool := func(v string) bool {
+			return strings.EqualFold(v, "true") || v == "1"
+		}
 		return q, transparencia.QueryOptions{
-			UF:          r.URL.Query().Get("uf"),
-			OverrideURL: r.URL.Query().Get("url"),
-			NomeFiltro:  r.URL.Query().Get("nome"),
-			Inicio:      r.URL.Query().Get("inicio"),
-			Fim:         r.URL.Query().Get("fim"),
-			Ano:         ano,
-			Mes:         mes,
-			Limit:       lim,
+			UF:               r.URL.Query().Get("uf"),
+			OverrideURL:      r.URL.Query().Get("url"),
+			NomeFiltro:       r.URL.Query().Get("nome"),
+			Inicio:           r.URL.Query().Get("inicio"),
+			Fim:              r.URL.Query().Get("fim"),
+			Ano:              ano,
+			Mes:              mes,
+			Limit:            lim,
+			OrdemSalarioDesc: parseBool(r.URL.Query().Get("ordem_salario_desc")),
+			OrdemValorDesc:   parseBool(r.URL.Query().Get("ordem_valor_desc")),
 		}
 	}
 

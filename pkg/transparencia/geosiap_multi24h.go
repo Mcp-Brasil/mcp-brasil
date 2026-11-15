@@ -300,10 +300,15 @@ func QueryGeoSiapReceitas(ctx context.Context, client *http.Client, m *Municipio
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		codigo := mapGetStr(r, "cd_plano_conta_rel", "cd_plano_conta", "codigo")
 		desc := mapGetStr(r, "ds_plano_conta", "descricao", "nome")
 		if filtro != "" && !strings.Contains(strings.ToLower(codigo+" "+desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		previsto := mapGetFloat(r, "vl_previsto", "previsto")
@@ -319,13 +324,10 @@ func QueryGeoSiapReceitas(ctx context.Context, client *http.Client, m *Municipio
 			ValorArrecadado: mapGetFloat(r, "vl_total", "vl_arrecadado", "arrecadado"),
 			Fonte:           "Portal Municipal (GeoSiap)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	if total == 0 || filtro != "" {
-		total = len(items)
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -369,10 +371,15 @@ func QueryGeoSiapDespesas(ctx context.Context, client *http.Client, m *Municipio
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		chave := mapGetStr(r, "chave", "codigo")
 		desc := mapGetStr(r, "descricao", "nome")
 		if filtro != "" && !strings.Contains(strings.ToLower(chave+" "+desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -387,13 +394,10 @@ func QueryGeoSiapDespesas(ctx context.Context, client *http.Client, m *Municipio
 			ValorPago:      mapGetFloat(r, "vl_pago", "pago"),
 			Fonte:          "Portal Municipal (GeoSiap)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	if total == 0 || filtro != "" {
-		total = len(items)
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -437,11 +441,16 @@ func QueryGeoSiapContratos(ctx context.Context, client *http.Client, m *Municipi
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		numero := mapGetStr(r, "contrato", "numero", "numero_contrato")
 		fornecedor := mapGetStr(r, "nome_razao", "fornecedor", "razao_social", "nome")
 		objeto := mapGetStr(r, "objeto", "descricao")
 		if filtro != "" && !strings.Contains(strings.ToLower(numero+" "+fornecedor+" "+objeto), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "ano", "exercicio"))
@@ -463,13 +472,10 @@ func QueryGeoSiapContratos(ctx context.Context, client *http.Client, m *Municipi
 			Valor:               mapGetFloat(r, "vl_total_f", "vl_inicial_f", "vl_total", "vl_inicial", "valor"),
 			Fonte:               "Portal Municipal (GeoSiap)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	if total == 0 || filtro != "" {
-		total = len(items)
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {

@@ -164,6 +164,59 @@ func TestCLIDiscoverAndServidoresMock(t *testing.T) {
 	}
 }
 
+func TestCLIOrdemSalarioAndValorDescMock(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/publico/versao":
+			_, _ = w.Write([]byte(`"v26.10.30"`))
+		case "/publico/buscarEntidades":
+			_, _ = w.Write([]byte(`[{"codAdministracao":2,"desAdministracao":"PREFEITURA"}]`))
+		case "/publico/servidor":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"totalElements": 3,
+				"content": []map[string]any{
+					{"nomServidor": "MENOR CLI", "numMatricula": "1", "nomCargo": "AUX", "vlrSalarioBruto": 2000.0, "vlrSalarioLiquido": 1700.0},
+					{"nomServidor": "MAIOR CLI", "numMatricula": "2", "nomCargo": "PREFEITO", "vlrSalarioBruto": 30000.0, "vlrSalarioLiquido": 22000.0},
+					{"nomServidor": "MEDIO CLI", "numMatricula": "3", "nomCargo": "MEDICO", "vlrSalarioBruto": 15000.0, "vlrSalarioLiquido": 11000.0},
+				},
+			})
+		case "/publico/despesaDetalhada":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"totalElements": 3,
+				"content": []map[string]any{
+					{"numEmpenho": "10", "nomFornecedor": "BARATO", "vlrEmpenhado": 500.0, "vlrPago": 500.0},
+					{"numEmpenho": "20", "nomFornecedor": "CARO", "vlrEmpenhado": 90000.0, "vlrPago": 90000.0},
+					{"numEmpenho": "30", "nomFornecedor": "MEDIO", "vlrEmpenhado": 12000.0, "vlrPago": 12000.0},
+				},
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	servOut := runCLI(t, "servidores", "Serra da Saudade", "--uf", "MG", "--url", srv.URL, "--limit", "2", "--ordem-salario-desc", "--json")
+	var serv map[string]any
+	if err := json.Unmarshal(servOut, &serv); err != nil {
+		t.Fatalf("JSON inválido em servidores --ordem-salario-desc: %v", err)
+	}
+	lista := serv["servidores"].([]any)
+	if len(lista) != 2 || lista[0].(map[string]any)["nome"] != "MAIOR CLI" || lista[1].(map[string]any)["nome"] != "MEDIO CLI" {
+		t.Fatalf("ranking CLI --ordem-salario-desc inesperado: %v", lista)
+	}
+
+	despOut := runCLI(t, "despesas", "Serra da Saudade", "--uf", "MG", "--url", srv.URL, "--limit", "2", "--ordem-valor-desc", "--json")
+	var desp map[string]any
+	if err := json.Unmarshal(despOut, &desp); err != nil {
+		t.Fatalf("JSON inválido em despesas --ordem-valor-desc: %v", err)
+	}
+	dLista := desp["despesas"].([]any)
+	if len(dLista) != 2 || dLista[0].(map[string]any)["fornecedor"] != "CARO" || dLista[1].(map[string]any)["fornecedor"] != "MEDIO" {
+		t.Fatalf("ranking CLI --ordem-valor-desc inesperado: %v", dLista)
+	}
+}
+
 func TestCLIMegasoftList(t *testing.T) {
 	out := runCLI(t, "megasoft-list", "--uf", "MS", "--json")
 	var munis []map[string]any

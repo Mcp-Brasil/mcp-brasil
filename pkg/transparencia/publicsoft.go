@@ -151,22 +151,22 @@ func doPublicsoftGet(ctx context.Context, client *http.Client, targetURL, hashID
 	return body, resp.StatusCode, nil
 }
 
-func decodePublicsoftPaginatedList(body []byte, extraKeys ...string) ([]map[string]any, int, error) {
+func decodePublicsoftPaginatedListMeta(body []byte, extraKeys ...string) ([]map[string]any, int, bool, error) {
 	trimmed := strings.TrimSpace(string(body))
 	if trimmed == "" {
-		return nil, 0, nil
+		return nil, 0, false, nil
 	}
 	if strings.HasPrefix(trimmed, "[") {
 		var rows []map[string]any
 		if err := json.Unmarshal([]byte(trimmed), &rows); err != nil {
-			return nil, 0, err
+			return nil, 0, false, err
 		}
-		return rows, len(rows), nil
+		return rows, 0, false, nil
 	}
 
 	var obj map[string]any
 	if err := json.Unmarshal([]byte(trimmed), &obj); err != nil {
-		return nil, 0, err
+		return nil, 0, false, err
 	}
 
 	if dataObj, ok := obj["data"].(map[string]any); ok && dataObj != nil {
@@ -185,18 +185,26 @@ func decodePublicsoftPaginatedList(body []byte, extraKeys ...string) ([]map[stri
 				}
 			}
 		}
-		total := int(mapGetFloat(dataObj, "total", "totalElements", "recordsTotal", "count"))
+		total := int(mapGetFloat(dataObj, "total", "Total", "totalElements", "TotalElements", "recordsTotal", "RecordsTotal", "count", "Count"))
 		if total == 0 {
-			total = int(mapGetFloat(obj, "total", "totalElements", "recordsTotal", "count"))
+			total = int(mapGetFloat(obj, "total", "Total", "totalElements", "TotalElements", "recordsTotal", "RecordsTotal", "count", "Count"))
 		}
-		if total == 0 {
-			total = len(rows)
-		}
-		return rows, total, nil
+		return rows, total, total > 0, nil
 	}
 
 	keys := append([]string{"data"}, extraKeys...)
-	return decodeFlexiblePortalList(body, keys...)
+	return decodeFlexiblePortalListMeta(body, keys...)
+}
+
+func decodePublicsoftPaginatedList(body []byte, extraKeys ...string) ([]map[string]any, int, error) {
+	rows, total, hasTotal, err := decodePublicsoftPaginatedListMeta(body, extraKeys...)
+	if err != nil {
+		return nil, 0, err
+	}
+	if !hasTotal {
+		total = len(rows)
+	}
+	return rows, total, nil
 }
 
 func extractPublicsoftNestedStr(m map[string]any, nestedKey string, keys ...string) string {
@@ -604,6 +612,63 @@ func resolvePublicsoftTarget(ctx context.Context, client *http.Client, m *Munici
 	return "", "", fmt.Errorf("Publicsoft: hash_id (X-Hash-Id) não informado")
 }
 
+func fetchPublicsoftPaginatedList(
+	ctx context.Context,
+	client *http.Client,
+	firstPageURL string,
+	hashID string,
+	pageSize int,
+	scanLimit int,
+	extraKeys ...string,
+) (rows []map[string]any, total int, firstStatus int, err error) {
+	prevBody := ""
+	for page := 1; page <= 10; page++ {
+		target := firstPageURL
+		if page > 1 {
+			target = fmt.Sprintf("%s&page=%d", firstPageURL, page)
+		}
+		body, status, reqErr := doPublicsoftGet(ctx, client, target, hashID)
+		if page == 1 {
+			firstStatus = status
+			if reqErr != nil {
+				return nil, 0, status, reqErr
+			}
+			if status != http.StatusOK {
+				return nil, 0, status, nil
+			}
+		} else {
+			if reqErr != nil || status != http.StatusOK {
+				break
+			}
+		}
+
+		trimmedBody := strings.TrimSpace(string(body))
+		if page > 1 && trimmedBody == prevBody {
+			break
+		}
+		prevBody = trimmedBody
+
+		pageRows, pageTotal, pageHasTotal, decErr := decodePublicsoftPaginatedListMeta(body, extraKeys...)
+		if decErr != nil {
+			if page == 1 {
+				return nil, 0, status, decErr
+			}
+			break
+		}
+		if pageHasTotal && pageTotal > total {
+			total = pageTotal
+		}
+		if len(pageRows) == 0 {
+			break
+		}
+		rows = append(rows, pageRows...)
+		if len(rows) >= scanLimit || len(pageRows) < pageSize || (total > 0 && len(rows) >= total) {
+			break
+		}
+	}
+	return rows, total, firstStatus, nil
+}
+
 // QueryPublicsoftDespesas consulta despesas detalhadas na API Publicsoft (/api/v1/despesas/detalhe).
 func QueryPublicsoftDespesas(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*DespesasResult, error) {
 	base, hashID, err := resolvePublicsoftTarget(ctx, client, m, p)
@@ -613,23 +678,27 @@ func QueryPublicsoftDespesas(ctx context.Context, client *http.Client, m *Munici
 
 	ano := resolvePublicsoftYear(p)
 	limit := normalizeLimit(p.Limit)
-	target := fmt.Sprintf("%s/api/v1/despesas/detalhe?exercicio=%d&per_page=%d", base, ano, limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+	pageSize := normalizePageSize(scanLimit, 200)
+	target := fmt.Sprintf("%s/api/v1/despesas/detalhe?exercicio=%d&per_page=%d", base, ano, pageSize)
 
-	body, status, err := doPublicsoftGet(ctx, client, target, hashID)
+	rows, total, status, err := fetchPublicsoftPaginatedList(ctx, client, target, hashID, pageSize, scanLimit, "despesas")
 	if err != nil {
+		if status == http.StatusOK {
+			return nil, fmt.Errorf("erro ao decodificar Publicsoft despesas: %w", err)
+		}
 		return nil, err
 	}
 	if status != http.StatusOK {
 		return nil, fmt.Errorf("Publicsoft /api/v1/despesas/detalhe retornou HTTP %d", status)
 	}
 
-	rows, total, err := decodePublicsoftPaginatedList(body, "despesas")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Publicsoft despesas: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "credor", "fornecedor", "nome_credor", "nome_fornecedor", "razao_social")
 		descricao := mapGetStr(r, "descricao", "especificacao")
@@ -638,6 +707,10 @@ func QueryPublicsoftDespesas(ctx context.Context, client *http.Client, m *Munici
 			historico = descricao
 		}
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+historico+" "+descricao), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -662,13 +735,12 @@ func QueryPublicsoftDespesas(ctx context.Context, client *http.Client, m *Munici
 			ValorPago:           mapGetFloat(r, "valorPago", "valor_pago", "pago", "vl_pago"),
 			Fonte:               "Portal Municipal (Publicsoft)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -696,26 +768,34 @@ func QueryPublicsoftReceitas(ctx context.Context, client *http.Client, m *Munici
 
 	ano := resolvePublicsoftYear(p)
 	limit := normalizeLimit(p.Limit)
-	target := fmt.Sprintf("%s/api/v1/receitas/detalhe?exercicio=%d&per_page=%d", base, ano, limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+	pageSize := normalizePageSize(scanLimit, 200)
+	target := fmt.Sprintf("%s/api/v1/receitas/detalhe?exercicio=%d&per_page=%d", base, ano, pageSize)
 
-	body, status, err := doPublicsoftGet(ctx, client, target, hashID)
+	rows, total, status, err := fetchPublicsoftPaginatedList(ctx, client, target, hashID, pageSize, scanLimit, "receitas")
 	if err != nil {
+		if status == http.StatusOK {
+			return nil, fmt.Errorf("erro ao decodificar Publicsoft receitas: %w", err)
+		}
 		return nil, err
 	}
 	if status != http.StatusOK {
 		return nil, fmt.Errorf("Publicsoft /api/v1/receitas/detalhe retornou HTTP %d", status)
 	}
 
-	rows, total, err := decodePublicsoftPaginatedList(body, "receitas")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Publicsoft receitas: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		desc := mapGetStr(r, "descricao", "especificacao", "nome", "receita")
 		if filtro != "" && !strings.Contains(strings.ToLower(desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -728,13 +808,12 @@ func QueryPublicsoftReceitas(ctx context.Context, client *http.Client, m *Munici
 			ValorArrecadado: mapGetFloat(r, "arrecadado", "valor_arrecadado", "valorArrecadado", "realizado"),
 			Fonte:           "Portal Municipal (Publicsoft)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -762,27 +841,35 @@ func QueryPublicsoftContratos(ctx context.Context, client *http.Client, m *Munic
 
 	ano := resolvePublicsoftYear(p)
 	limit := normalizeLimit(p.Limit)
-	target := fmt.Sprintf("%s/api/v1/contratos?exercicio=%d&per_page=%d", base, ano, limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+	pageSize := normalizePageSize(scanLimit, 200)
+	target := fmt.Sprintf("%s/api/v1/contratos?exercicio=%d&per_page=%d", base, ano, pageSize)
 
-	body, status, err := doPublicsoftGet(ctx, client, target, hashID)
+	rows, total, status, err := fetchPublicsoftPaginatedList(ctx, client, target, hashID, pageSize, scanLimit, "contratos")
 	if err != nil {
+		if status == http.StatusOK {
+			return nil, fmt.Errorf("erro ao decodificar Publicsoft contratos: %w", err)
+		}
 		return nil, err
 	}
 	if status != http.StatusOK {
 		return nil, fmt.Errorf("Publicsoft /api/v1/contratos retornou HTTP %d", status)
 	}
 
-	rows, total, err := decodePublicsoftPaginatedList(body, "contratos")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Publicsoft contratos: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "fornecedor", "contratado", "credor", "razao_social", "nome_fornecedor")
 		objeto := mapGetStr(r, "objetivo", "objeto", "descricao", "desc_objeto")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+objeto), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -804,13 +891,12 @@ func QueryPublicsoftContratos(ctx context.Context, client *http.Client, m *Munic
 			Valor:               mapGetFloat(r, "valor", "valor_contrato", "valorContrato", "valor_global"),
 			Fonte:               "Portal Municipal (Publicsoft)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -838,27 +924,35 @@ func QueryPublicsoftLicitacoes(ctx context.Context, client *http.Client, m *Muni
 
 	ano := resolvePublicsoftYear(p)
 	limit := normalizeLimit(p.Limit)
-	target := fmt.Sprintf("%s/api/v1/licitacoes?exercicio=%d&per_page=%d", base, ano, limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+	pageSize := normalizePageSize(scanLimit, 200)
+	target := fmt.Sprintf("%s/api/v1/licitacoes?exercicio=%d&per_page=%d", base, ano, pageSize)
 
-	body, status, err := doPublicsoftGet(ctx, client, target, hashID)
+	rows, total, status, err := fetchPublicsoftPaginatedList(ctx, client, target, hashID, pageSize, scanLimit, "licitacoes")
 	if err != nil {
+		if status == http.StatusOK {
+			return nil, fmt.Errorf("erro ao decodificar Publicsoft licitacoes: %w", err)
+		}
 		return nil, err
 	}
 	if status != http.StatusOK {
 		return nil, fmt.Errorf("Publicsoft /api/v1/licitacoes retornou HTTP %d", status)
 	}
 
-	rows, total, err := decodePublicsoftPaginatedList(body, "licitacoes")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Publicsoft licitacoes: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		objeto := mapGetStr(r, "descObjeto", "desc_objeto", "objeto", "descricao", "objetivo")
 		modalidade := mapGetStr(r, "modalidade", "descricao_modalidade", "tipo")
 		if filtro != "" && !strings.Contains(strings.ToLower(objeto+" "+modalidade), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -879,13 +973,12 @@ func QueryPublicsoftLicitacoes(ctx context.Context, client *http.Client, m *Muni
 			Link:            mapGetStr(r, "link", "url", "anexo"),
 			Fonte:           "Portal Municipal (Publicsoft)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -954,13 +1047,22 @@ func QueryPublicsoftServidores(ctx context.Context, client *http.Client, m *Muni
 
 	ano := resolvePublicsoftYear(p)
 	limit := normalizeLimit(p.Limit)
-	target := fmt.Sprintf("%s/api/v1/servidores?exercicio=%d&per_page=%d", base, ano, limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+	pageSize := normalizePageSize(scanLimit, 200)
+	target := fmt.Sprintf("%s/api/v1/servidores?exercicio=%d&per_page=%d", base, ano, pageSize)
 	if p.Mes > 0 && p.Mes <= 12 {
 		target += fmt.Sprintf("&mes=%d", p.Mes)
 	}
 
-	body, status, err := doPublicsoftGet(ctx, client, target, hashID)
+	rows, total, status, err := fetchPublicsoftPaginatedList(ctx, client, target, hashID, pageSize, scanLimit, "servidores")
 	if err != nil {
+		if status == http.StatusOK {
+			return nil, fmt.Errorf("erro ao decodificar Publicsoft servidores: %w", err)
+		}
 		return nil, err
 	}
 	if status == http.StatusNotFound || status == http.StatusNotImplemented || status == http.StatusForbidden {
@@ -978,16 +1080,15 @@ func QueryPublicsoftServidores(ctx context.Context, client *http.Client, m *Muni
 		return nil, fmt.Errorf("Publicsoft /api/v1/servidores retornou HTTP %d", status)
 	}
 
-	rows, total, err := decodePublicsoftPaginatedList(body, "servidores")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Publicsoft servidores: %w", err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		nome := mapGetStr(r, "nome", "servidor", "nome_servidor", "funcionario")
 		if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		comp := mapGetStr(r, "competencia", "mes_ano", "referencia")
@@ -1022,13 +1123,12 @@ func QueryPublicsoftServidores(ctx context.Context, client *http.Client, m *Muni
 			Fonte:          "Portal Municipal (Publicsoft)",
 			PortalURL:      base,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {

@@ -277,6 +277,72 @@ func resolveAspecExerAndWindow(ctx context.Context, client *http.Client, apiRoot
 	return exerID, ano, inicio, fim, true, nil
 }
 
+func fetchAspecPaginated(
+	ctx context.Context,
+	client *http.Client,
+	apiRoot string,
+	code string,
+	endpoint string,
+	baseParams url.Values,
+	scanLimit int,
+	listKeys ...string,
+) (rows []map[string]any, total int, err error) {
+	pageSize := normalizePageSize(scanLimit, 200)
+	hasTotal := false
+	prevBody := ""
+	for page := 1; page <= 10; page++ {
+		q := url.Values{}
+		for k, vals := range baseParams {
+			for _, v := range vals {
+				q.Add(k, v)
+			}
+		}
+		q.Set("page", strconv.Itoa(page))
+		q.Set("pagesize", strconv.Itoa(pageSize))
+
+		target := fmt.Sprintf("%s/transparencia/api/v1/json/%s/%s?%s", apiRoot, endpoint, url.PathEscape(code), q.Encode())
+		body, status, reqErr := doJSONGet(ctx, client, target)
+		if page == 1 {
+			if reqErr != nil {
+				return nil, 0, reqErr
+			}
+			if status != http.StatusOK {
+				return nil, 0, fmt.Errorf("Aspec /%s/%s retornou HTTP %d", endpoint, code, status)
+			}
+		} else {
+			if reqErr != nil || status != http.StatusOK {
+				break
+			}
+		}
+
+		trimmedBody := strings.TrimSpace(string(body))
+		if page > 1 && trimmedBody == prevBody {
+			break
+		}
+		prevBody = trimmedBody
+
+		pageRows, pageTotal, pageHasTotal, decErr := decodeFlexiblePortalListMeta(body, listKeys...)
+		if decErr != nil {
+			if page == 1 {
+				return nil, 0, fmt.Errorf("erro ao decodificar Aspec /%s/%s: %w", endpoint, code, decErr)
+			}
+			break
+		}
+		if pageHasTotal && pageTotal > total {
+			total = pageTotal
+			hasTotal = true
+		}
+		if len(pageRows) == 0 {
+			break
+		}
+		rows = append(rows, pageRows...)
+		if len(rows) >= scanLimit || len(pageRows) < pageSize || (hasTotal && total > 0 && len(rows) >= total) {
+			break
+		}
+	}
+	return rows, total, nil
+}
+
 // QueryAspecDespesas consulta empenhos/despesas na API Aspec Governo Transparente.
 func QueryAspecDespesas(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*DespesasResult, error) {
 	apiRoot, code := resolveAspecRootAndCode(p.BaseURL, p.TenantID)
@@ -306,33 +372,31 @@ func QueryAspecDespesas(ctx context.Context, client *http.Client, m *Municipio, 
 	}
 
 	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 	q := url.Values{}
-	q.Set("page", "1")
-	q.Set("pagesize", strconv.Itoa(limit))
 	q.Set("exer", exerID)
 	q.Set("inicio", inicio)
 	q.Set("fim", fim)
 
-	target := fmt.Sprintf("%s/transparencia/api/v1/json/empenhos/%s?%s", apiRoot, url.PathEscape(code), q.Encode())
-	body, status, err := doJSONGet(ctx, hc, target)
+	rows, total, err := fetchAspecPaginated(ctx, hc, apiRoot, code, "empenhos", q, scanLimit, "empenhos", "Empenhos")
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("Aspec /empenhos/%s retornou HTTP %d", code, status)
-	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "empenhos", "Empenhos")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Aspec /empenhos/%s: %w", code, err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "credor", "fornecedor", "nomeCredor", "nomeFornecedor", "razaoSocial", "Credor", "Fornecedor")
 		historico := mapGetStr(r, "historico", "descricao", "Historico", "Descricao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+historico), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "exercicio", "ano", "Exercicio", "Ano"))
@@ -356,13 +420,12 @@ func QueryAspecDespesas(ctx context.Context, client *http.Client, m *Municipio, 
 			ValorPago:           mapGetFloat(r, "valorPago", "pago", "vlPago", "ValorPago"),
 			Fonte:               "Portal Municipal (Aspec Governo Transparente)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -410,32 +473,30 @@ func QueryAspecReceitas(ctx context.Context, client *http.Client, m *Municipio, 
 	}
 
 	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 	q := url.Values{}
-	q.Set("page", "1")
-	q.Set("pagesize", strconv.Itoa(limit))
 	q.Set("exer", exerID)
 	q.Set("inicio", inicio)
 	q.Set("fim", fim)
 
-	target := fmt.Sprintf("%s/transparencia/api/v1/json/receitasorc/%s?%s", apiRoot, url.PathEscape(code), q.Encode())
-	body, status, err := doJSONGet(ctx, hc, target)
+	rows, total, err := fetchAspecPaginated(ctx, hc, apiRoot, code, "receitasorc", q, scanLimit, "receitas", "Receitas")
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("Aspec /receitasorc/%s retornou HTTP %d", code, status)
-	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "receitas", "Receitas")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Aspec /receitasorc/%s: %w", code, err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		desc := mapGetStr(r, "descricao", "nome", "especificacao", "receita", "Descricao", "Nome")
 		if filtro != "" && !strings.Contains(strings.ToLower(desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		items = append(items, ReceitaItem{
@@ -447,13 +508,12 @@ func QueryAspecReceitas(ctx context.Context, client *http.Client, m *Municipio, 
 			ValorArrecadado: mapGetFloat(r, "valorArrecadado", "arrecadado", "realizado", "vlArrecadado", "ValorArrecadado", "Arrecadado"),
 			Fonte:           "Portal Municipal (Aspec Governo Transparente)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -501,33 +561,31 @@ func QueryAspecContratos(ctx context.Context, client *http.Client, m *Municipio,
 	}
 
 	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 	q := url.Values{}
-	q.Set("page", "1")
-	q.Set("pagesize", strconv.Itoa(limit))
 	q.Set("exer", exerID)
 	q.Set("inicio", inicio)
 	q.Set("fim", fim)
 
-	target := fmt.Sprintf("%s/transparencia/api/v1/json/contratos/%s?%s", apiRoot, url.PathEscape(code), q.Encode())
-	body, status, err := doJSONGet(ctx, hc, target)
+	rows, total, err := fetchAspecPaginated(ctx, hc, apiRoot, code, "contratos", q, scanLimit, "contratos", "Contratos")
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("Aspec /contratos/%s retornou HTTP %d", code, status)
-	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "contratos", "Contratos")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Aspec /contratos/%s: %w", code, err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "fornecedor", "contratado", "nomeContratado", "credor", "razaoSocial", "Fornecedor", "Contratado")
 		objeto := mapGetStr(r, "objeto", "descricao", "Objeto", "Descricao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+objeto), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "ano", "exercicio", "Ano", "Exercicio"))
@@ -548,13 +606,12 @@ func QueryAspecContratos(ctx context.Context, client *http.Client, m *Municipio,
 			Valor:               mapGetFloat(r, "valor", "valorContrato", "valorGlobal", "valorInicial", "Valor"),
 			Fonte:               "Portal Municipal (Aspec Governo Transparente)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -592,35 +649,33 @@ func QueryAspecLicitacoes(ctx context.Context, client *http.Client, m *Municipio
 	}
 	inicio, fim := buildDDMMYYYYWindow(p, ano)
 	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
 	hc := portalConnectorHTTPClient(client)
 	portalURL := fmt.Sprintf("%s/%s", apiRoot, code)
 
 	q := url.Values{}
-	q.Set("page", "1")
-	q.Set("pagesize", strconv.Itoa(limit))
 	q.Set("inicio", inicio)
 	q.Set("fim", fim)
 
-	target := fmt.Sprintf("%s/transparencia/api/v1/json/licitacoes/%s?%s", apiRoot, url.PathEscape(code), q.Encode())
-	body, status, err := doJSONGet(ctx, hc, target)
+	rows, total, err := fetchAspecPaginated(ctx, hc, apiRoot, code, "licitacoes", q, scanLimit, "licitacoes", "Licitacoes")
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("Aspec /licitacoes/%s retornou HTTP %d", code, status)
-	}
 
-	rows, total, err := decodeFlexiblePortalList(body, "licitacoes", "Licitacoes")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar Aspec /licitacoes/%s: %w", code, err)
-	}
-
-	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		objeto := mapGetStr(r, "objeto", "descricao", "Objeto", "Descricao")
 		modalidade := mapGetStr(r, "modalidade", "descricaoModalidade", "Modalidade")
 		if filtro != "" && !strings.Contains(strings.ToLower(objeto+" "+modalidade), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "ano", "exercicio", "Ano", "Exercicio"))
@@ -640,13 +695,12 @@ func QueryAspecLicitacoes(ctx context.Context, client *http.Client, m *Municipio
 			Link:            mapGetStr(r, "link", "url", "Link"),
 			Fonte:           "Portal Municipal (Aspec Governo Transparente)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -793,9 +847,14 @@ func QueryAssesiServidores(ctx context.Context, client *http.Client, m *Municipi
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		nome := mapGetStr(r, "nome", "Nome", "servidor", "Servidor", "funcionario", "Funcionario", "nome_servidor")
 		if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		comp := mapGetStr(r, "competencia", "Competencia", "mes_ano", "mesAno", "referencia")
@@ -828,13 +887,12 @@ func QueryAssesiServidores(ctx context.Context, client *http.Client, m *Municipi
 			Fonte:          "Portal Municipal (Assesi)",
 			PortalURL:      base,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -863,10 +921,15 @@ func QueryAssesiDespesas(ctx context.Context, client *http.Client, m *Municipio,
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "fornecedor", "Fornecedor", "credor", "Credor", "nome_credor", "razao_social")
 		historico := mapGetStr(r, "historico", "Historico", "descricao", "Descricao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+historico), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "ano", "Ano", "exercicio", "Exercicio"))
@@ -890,13 +953,12 @@ func QueryAssesiDespesas(ctx context.Context, client *http.Client, m *Municipio,
 			ValorPago:           mapGetFloat(r, "valor_pago", "valorPago", "pago", "Pago"),
 			Fonte:               "Portal Municipal (Assesi)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -925,9 +987,14 @@ func QueryAssesiReceitas(ctx context.Context, client *http.Client, m *Municipio,
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		desc := mapGetStr(r, "descricao", "Descricao", "especificacao", "receita", "Receita", "nome")
 		if filtro != "" && !strings.Contains(strings.ToLower(desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		items = append(items, ReceitaItem{
@@ -939,13 +1006,12 @@ func QueryAssesiReceitas(ctx context.Context, client *http.Client, m *Municipio,
 			ValorArrecadado: mapGetFloat(r, "valor_arrecadado", "valorArrecadado", "arrecadado", "Arrecadado", "realizado", "Realizado"),
 			Fonte:           "Portal Municipal (Assesi)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -974,10 +1040,15 @@ func QueryAssesiContratos(ctx context.Context, client *http.Client, m *Municipio
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "fornecedor", "Fornecedor", "contratado", "Contratado", "razao_social", "credor")
 		objeto := mapGetStr(r, "objeto", "Objeto", "descricao", "Descricao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+objeto), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "ano", "Ano", "exercicio", "Exercicio"))
@@ -998,13 +1069,12 @@ func QueryAssesiContratos(ctx context.Context, client *http.Client, m *Municipio
 			Valor:               mapGetFloat(r, "valor", "Valor", "valor_contrato", "valorContrato", "valor_global"),
 			Fonte:               "Portal Municipal (Assesi)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -1033,10 +1103,15 @@ func QueryAssesiLicitacoes(ctx context.Context, client *http.Client, m *Municipi
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		objeto := mapGetStr(r, "objeto", "Objeto", "descricao", "Descricao")
 		modalidade := mapGetStr(r, "modalidade", "Modalidade")
 		if filtro != "" && !strings.Contains(strings.ToLower(objeto+" "+modalidade), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "ano", "Ano", "exercicio", "Exercicio"))
@@ -1056,13 +1131,12 @@ func QueryAssesiLicitacoes(ctx context.Context, client *http.Client, m *Municipi
 			Link:            mapGetStr(r, "link", "url", "Link"),
 			Fonte:           "Portal Municipal (Assesi)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {

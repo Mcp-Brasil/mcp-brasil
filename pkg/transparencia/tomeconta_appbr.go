@@ -350,10 +350,15 @@ func QueryTomeContaDespesas(ctx context.Context, client *http.Client, m *Municip
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "FORNECEDOR", "fornecedor", "CREDOR", "credor", "NOME_FORNECEDOR")
 		historico := mapGetStr(r, "HISTORICO", "historico", "DESCRICAO", "descricao", "OBJETO")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+historico), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -378,13 +383,10 @@ func QueryTomeContaDespesas(ctx context.Context, client *http.Client, m *Municip
 			ValorPago:           mapGetFloat(r, "VALORPAGO", "VALOR_PAGO", "valorPago", "valor_pago", "PAGO"),
 			Fonte:               "Portal Municipal (TomeConta)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if total == 0 || filtro != "" {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -419,9 +421,14 @@ func QueryTomeContaReceitas(ctx context.Context, client *http.Client, m *Municip
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		desc := mapGetStr(r, "DESCRICAO", "descricao", "RECEITA", "receita", "ESPECIFICACAO", "NOME", "TITULO")
 		if filtro != "" && !strings.Contains(strings.ToLower(desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -434,13 +441,10 @@ func QueryTomeContaReceitas(ctx context.Context, client *http.Client, m *Municip
 			ValorArrecadado: mapGetFloat(r, "VALOR_ARRECADADO", "VALORARRECADADO", "ARRECADADO", "arrecadado", "REALIZADO", "VALOR_REALIZADO", "VALOR"),
 			Fonte:           "Portal Municipal (TomeConta)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if total == 0 || filtro != "" {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -475,11 +479,16 @@ func QueryTomeContaLicitacoes(ctx context.Context, client *http.Client, m *Munic
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		titulo := mapGetStr(r, "TITULO", "titulo")
 		objeto := mapGetStr(r, "DESCRICAO", "descricao", "OBJETO", "objeto", "TITULO", "titulo")
 		modalidade := mapGetStr(r, "MODALIDADE", "modalidade", "TIPO")
 		if filtro != "" && !strings.Contains(strings.ToLower(objeto+" "+modalidade+" "+titulo), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -500,13 +509,10 @@ func QueryTomeContaLicitacoes(ctx context.Context, client *http.Client, m *Munic
 			Link:            mapGetStr(r, "ANEXO", "anexo", "LINK", "link", "URL", "url"),
 			Fonte:           "Portal Municipal (TomeConta)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if total == 0 || filtro != "" {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -541,10 +547,15 @@ func QueryTomeContaContratos(ctx context.Context, client *http.Client, m *Munici
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "FORNECEDOR", "fornecedor", "CONTRATADO", "RAZAO_SOCIAL")
 		objeto := mapGetStr(r, "DESCRICAO", "descricao", "OBJETO", "objeto")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+objeto), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -566,13 +577,10 @@ func QueryTomeContaContratos(ctx context.Context, client *http.Client, m *Munici
 			Valor:               mapGetFloat(r, "VALOR_CONTRATO", "valor_contrato", "VALOR", "valor"),
 			Fonte:               "Portal Municipal (TomeConta)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if total == 0 || filtro != "" {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {

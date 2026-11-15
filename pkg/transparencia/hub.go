@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -96,7 +97,13 @@ func (h *Hub) QueryServidores(ctx context.Context, query string, opts QueryOptio
 	return h.queryServidoresWithDiscovery(ctx, m, disc, opts)
 }
 
+const rankingFetchLimit = 1000
+
 func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, disc *PortalDiscoveryResult, opts QueryOptions) (*ServidoresResult, error) {
+	fetchLimit := opts.Limit
+	if opts.OrdemSalarioDesc && fetchLimit < rankingFetchLimit {
+		fetchLimit = rankingFetchLimit
+	}
 	p := PortalQueryParams{
 		BaseURL:          disc.URLResolvida,
 		CodAdministracao: disc.CodAdministracao,
@@ -106,7 +113,9 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 		Fim:              opts.Fim,
 		Ano:              opts.Ano,
 		Mes:              opts.Mes,
-		Limit:            opts.Limit,
+		Limit:            fetchLimit,
+		OrdemSalarioDesc: opts.OrdemSalarioDesc,
+		OrdemValorDesc:   opts.OrdemValorDesc,
 	}
 
 	// 1. Conector direto do portal municipal
@@ -256,12 +265,12 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 	// 2. Fallback / Rota estadual centralizada nos TCEs com API aberta (PI e CE)
 	switch m.UF {
 	case "PI":
-		if res, err := h.TCE.FetchTCEPIServidores(ctx, m, opts.Ano, opts.NomeFiltro, opts.Limit); err == nil {
+		if res, err := h.TCE.FetchTCEPIServidores(ctx, m, opts.Ano, opts.NomeFiltro, fetchLimit); err == nil {
 			h.applyServidoresPostProcess(res, opts)
 			return res, nil
 		}
 	case "CE":
-		if res, err := h.TCE.FetchTCECEServidores(ctx, m, opts.Ano, opts.Mes, opts.NomeFiltro, opts.Limit); err == nil {
+		if res, err := h.TCE.FetchTCECEServidores(ctx, m, opts.Ano, opts.Mes, opts.NomeFiltro, fetchLimit); err == nil {
 			h.applyServidoresPostProcess(res, opts)
 			return res, nil
 		}
@@ -308,6 +317,10 @@ func (h *Hub) QueryDespesas(ctx context.Context, query string, opts QueryOptions
 }
 
 func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc *PortalDiscoveryResult, opts QueryOptions) (*DespesasResult, error) {
+	fetchLimit := opts.Limit
+	if opts.OrdemValorDesc && fetchLimit < rankingFetchLimit {
+		fetchLimit = rankingFetchLimit
+	}
 	p := PortalQueryParams{
 		BaseURL:          disc.URLResolvida,
 		CodAdministracao: disc.CodAdministracao,
@@ -317,138 +330,140 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 		Fim:              opts.Fim,
 		Ano:              opts.Ano,
 		Mes:              opts.Mes,
-		Limit:            opts.Limit,
+		Limit:            fetchLimit,
+		OrdemSalarioDesc: opts.OrdemSalarioDesc,
+		OrdemValorDesc:   opts.OrdemValorDesc,
 	}
 
 	if disc.URLResolvida != "" {
 		switch disc.Plataforma {
 		case "megasoft":
-			if res, err := QueryMegasoftDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryMegasoftDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "quasar_publico":
-			if res, err := QueryQuasarDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryQuasarDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "fiorilli_scpi":
-			if res, err := QueryFiorilliDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryFiorilliDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "elotech_oxy":
-			if res, err := QueryElotechDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryElotechDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "betha_cloud":
-			if res, err := QueryBethaDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryBethaDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "agili_blue":
-			if res, err := QueryAgiliDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryAgiliDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "ipm_atende":
-			if res, err := QueryIPMDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryIPMDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "equiplano_cloud":
-			if res, err := QueryEquiplanoDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryEquiplanoDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "el_portaltp":
-			if res, err := QueryPortalTPDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryPortalTPDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "sonner_grp":
-			if res, err := QuerySonnerDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QuerySonnerDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "epublica_portal":
-			if res, err := QueryEPublicaDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryEPublicaDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "coplan_gp":
-			if res, err := QueryCoplanDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryCoplanDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "thema_apigw":
-			if res, err := QueryThemaDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryThemaDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "nucleogov":
-			if res, err := QueryNucleoGovDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryNucleoGovDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "aspec_gt":
-			if res, err := QueryAspecDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryAspecDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "assesi_portal":
-			if res, err := QueryAssesiDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryAssesiDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "centi_api":
-			if res, err := QueryCentiDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryCentiDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "fator_sistemas":
-			if res, err := QueryFatorDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryFatorDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "smarapd_pai":
-			if res, err := QuerySmarapdDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QuerySmarapdDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "memory_openknowledge":
-			if res, err := QueryMemoryDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryMemoryDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "facil_transparencia":
-			if res, err := QueryFacilDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryFacilDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "publicsoft_api":
-			if res, err := QueryPublicsoftDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryPublicsoftDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "tomeconta_appbr":
-			if res, err := QueryTomeContaDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryTomeContaDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "cittaweb_api":
-			if res, err := QueryCittaWebDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryCittaWebDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "geosiap_api":
-			if res, err := QueryGeoSiapDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryGeoSiapDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
 		case "topsolutions_rn":
-			if res, err := QueryTopSolutionsDespesas(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryTopSolutionsDespesas(ctx, h.HTTPClient, m, p); err == nil && res != nil {
 				h.applyDespesasPostProcess(res, opts)
 				return res, nil
 			}
@@ -464,32 +479,32 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 
 	switch m.UF {
 	case "SP":
-		if res, err := h.TCE.FetchTCESPDespesas(ctx, m, opts.Ano, opts.Mes, opts.Limit); err == nil {
+		if res, err := h.TCE.FetchTCESPDespesas(ctx, m, opts.Ano, opts.Mes, fetchLimit); err == nil {
 			h.applyDespesasPostProcess(res, opts)
 			return res, nil
 		}
 	case "PI":
-		if res, err := h.TCE.FetchTCEPIDespesas(ctx, m, opts.Ano, opts.Limit); err == nil {
+		if res, err := h.TCE.FetchTCEPIDespesas(ctx, m, opts.Ano, fetchLimit); err == nil {
 			h.applyDespesasPostProcess(res, opts)
 			return res, nil
 		}
 	case "PE":
-		if res, err := h.TCE.FetchTCEPEDespesas(ctx, m, opts.Ano, opts.Mes, opts.Limit); err == nil {
+		if res, err := h.TCE.FetchTCEPEDespesas(ctx, m, opts.Ano, opts.Mes, fetchLimit); err == nil {
 			h.applyDespesasPostProcess(res, opts)
 			return res, nil
 		}
 	case "RN":
-		if res, err := h.TCE.FetchTCERNDespesas(ctx, m, opts.Ano, 0, opts.Limit); err == nil {
+		if res, err := h.TCE.FetchTCERNDespesas(ctx, m, opts.Ano, 0, fetchLimit); err == nil {
 			h.applyDespesasPostProcess(res, opts)
 			return res, nil
 		}
 	case "RS":
-		if res, err := h.TCE.FetchTCERSDespesas(ctx, m, opts.Ano, opts.Limit); err == nil {
+		if res, err := h.TCE.FetchTCERSDespesas(ctx, m, opts.Ano, fetchLimit); err == nil {
 			h.applyDespesasPostProcess(res, opts)
 			return res, nil
 		}
 	case "PR":
-		if res, err := h.TCE.FetchTCEPRDespesas(ctx, m, opts.Ano, 0, opts.Limit); err == nil {
+		if res, err := h.TCE.FetchTCEPRDespesas(ctx, m, opts.Ano, 0, fetchLimit); err == nil {
 			h.applyDespesasPostProcess(res, opts)
 			return res, nil
 		}
@@ -506,33 +521,85 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 	}, nil
 }
 
+func servidorRankingKey(s ServidorItem) string {
+	norm := func(v string) string {
+		return strings.ToUpper(strings.Join(strings.Fields(strings.TrimSpace(v)), " "))
+	}
+	nome := norm(s.Nome)
+	if nome == "" {
+		return ""
+	}
+	return nome + "|" + norm(s.Matricula) + "|" + norm(s.Cargo)
+}
+
 func (h *Hub) applyServidoresPostProcess(res *ServidoresResult, opts QueryOptions) {
-	if res == nil || len(res.Servidores) <= 1 {
+	if res == nil || len(res.Servidores) == 0 {
 		return
 	}
 	if opts.OrdemSalarioDesc {
 		sort.SliceStable(res.Servidores, func(i, j int) bool {
-			return res.Servidores[i].SalarioBruto > res.Servidores[j].SalarioBruto
+			if res.Servidores[i].SalarioBruto != res.Servidores[j].SalarioBruto {
+				return res.Servidores[i].SalarioBruto > res.Servidores[j].SalarioBruto
+			}
+			if res.Servidores[i].SalarioLiquido != res.Servidores[j].SalarioLiquido {
+				return res.Servidores[i].SalarioLiquido > res.Servidores[j].SalarioLiquido
+			}
+			return res.Servidores[i].Competencia > res.Servidores[j].Competencia
 		})
+		if opts.Mes == 0 && opts.Inicio == "" && opts.Fim == "" {
+			deduped := make([]ServidorItem, 0, len(res.Servidores))
+			seen := make(map[string]struct{}, len(res.Servidores))
+			for _, s := range res.Servidores {
+				key := servidorRankingKey(s)
+				if key != "" {
+					if _, ok := seen[key]; ok {
+						continue
+					}
+					seen[key] = struct{}{}
+				}
+				deduped = append(deduped, s)
+			}
+			res.Servidores = deduped
+		}
+	}
+	targetLimit := opts.Limit
+	if targetLimit <= 0 && opts.OrdemSalarioDesc {
+		targetLimit = normalizeLimit(0)
+	}
+	if targetLimit > 0 && len(res.Servidores) > targetLimit {
+		res.Servidores = res.Servidores[:targetLimit]
 	}
 }
 
 func (h *Hub) applyDespesasPostProcess(res *DespesasResult, opts QueryOptions) {
-	if res == nil || len(res.Despesas) <= 1 {
+	if res == nil || len(res.Despesas) == 0 {
 		return
 	}
 	if opts.OrdemValorDesc {
+		despesaValor := func(d DespesaItem) float64 {
+			if d.ValorPago != 0 {
+				return d.ValorPago
+			}
+			if d.ValorLiquidado != 0 {
+				return d.ValorLiquidado
+			}
+			return d.ValorEmpenhado
+		}
 		sort.SliceStable(res.Despesas, func(i, j int) bool {
-			vi := res.Despesas[i].ValorPago
-			if vi == 0 {
-				vi = res.Despesas[i].ValorEmpenhado
+			vi := despesaValor(res.Despesas[i])
+			vj := despesaValor(res.Despesas[j])
+			if vi != vj {
+				return vi > vj
 			}
-			vj := res.Despesas[j].ValorPago
-			if vj == 0 {
-				vj = res.Despesas[j].ValorEmpenhado
-			}
-			return vi > vj
+			return res.Despesas[i].ValorEmpenhado > res.Despesas[j].ValorEmpenhado
 		})
+	}
+	targetLimit := opts.Limit
+	if targetLimit <= 0 && opts.OrdemValorDesc {
+		targetLimit = normalizeLimit(0)
+	}
+	if targetLimit > 0 && len(res.Despesas) > targetLimit {
+		res.Despesas = res.Despesas[:targetLimit]
 	}
 }
 

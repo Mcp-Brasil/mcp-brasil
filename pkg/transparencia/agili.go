@@ -363,6 +363,7 @@ func decodeAgiliRows(body []byte) ([]map[string]any, int, error) {
 
 func executeAgiliGridQuery(ctx context.Context, client *http.Client, apiBase, shortname, dtoModel, fallbackURLStore string, p PortalQueryParams) ([]map[string]any, int, error) {
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 	meta := fetchAgiliFiltroMeta(ctx, client, apiBase, shortname, dtoModel)
 
 	urlStore := strings.TrimSpace(meta.URLStore)
@@ -382,16 +383,52 @@ func executeAgiliGridQuery(ctx context.Context, client *http.Client, apiBase, sh
 		payload["filtro"] = filtro
 	}
 
-	targetURL := fmt.Sprintf("%s%s/?model=%s&page=0&size=%d&withCount=true", apiBase, urlStore, url.QueryEscape(dtoModel), limit)
-	body, status, err := doAgiliRequest(ctx, client, http.MethodPost, targetURL, shortname, payload)
-	if err != nil {
-		return nil, 0, err
-	}
-	if status != http.StatusOK {
-		return nil, 0, fmt.Errorf("Ágili %s retornou HTTP %d", urlStore, status)
-	}
+	var allRows []map[string]any
+	total := 0
+	prevBody := ""
+	for pageIdx := 0; pageIdx < 10; pageIdx++ {
+		targetURL := fmt.Sprintf("%s%s/?model=%s&page=%d&size=%d&withCount=true", apiBase, urlStore, url.QueryEscape(dtoModel), pageIdx, pageSize)
+		body, status, err := doAgiliRequest(ctx, client, http.MethodPost, targetURL, shortname, payload)
+		if err != nil {
+			if pageIdx == 0 {
+				return nil, 0, err
+			}
+			break
+		}
+		if status != http.StatusOK {
+			if pageIdx == 0 {
+				return nil, 0, fmt.Errorf("Ágili %s retornou HTTP %d", urlStore, status)
+			}
+			break
+		}
+		bodyStr := strings.TrimSpace(string(body))
+		if pageIdx > 0 && bodyStr == prevBody {
+			break
+		}
+		prevBody = bodyStr
 
-	return decodeAgiliRows(body)
+		rows, pageTotal, err := decodeAgiliRows(body)
+		if err != nil {
+			if pageIdx == 0 {
+				return nil, 0, err
+			}
+			break
+		}
+		if pageIdx == 0 {
+			total = pageTotal
+		}
+		if len(rows) == 0 {
+			break
+		}
+		allRows = append(allRows, rows...)
+		if len(allRows) >= limit || len(rows) < pageSize || (total > 0 && len(allRows) >= total) {
+			break
+		}
+	}
+	if len(allRows) > limit {
+		allRows = allRows[:limit]
+	}
+	return allRows, total, nil
 }
 
 func agiliGetStr(row map[string]any, keys ...string) string {

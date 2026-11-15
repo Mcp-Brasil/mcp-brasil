@@ -200,119 +200,152 @@ func ProbeElotech(ctx context.Context, client *http.Client, baseURL string) bool
 func QueryElotechServidores(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*ServidoresResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 	entidade := resolveElotechEntidade(p)
 
 	for _, ano := range resolveElotechYears(p) {
-		q := url.Values{}
-		q.Set("page", "0")
-		q.Set("size", strconv.Itoa(limit))
-		q.Set("entidade", strconv.Itoa(entidade))
-		q.Set("exercicio", strconv.Itoa(ano))
-		q.Set("anoCompetencia", strconv.Itoa(ano))
-		if p.Mes > 0 {
-			q.Set("mesCompetencia", strconv.Itoa(p.Mes))
-		}
-		if strings.TrimSpace(p.NomeFiltro) != "" {
-			q.Set("nomeServidor", strings.TrimSpace(p.NomeFiltro))
-		}
+		var items []ServidorItem
+		totalElements := 0
+		prevBody := ""
 
 		headers := map[string]string{
 			"entidade":  strconv.Itoa(entidade),
 			"exercicio": strconv.Itoa(ano),
 		}
-		u := fmt.Sprintf("%s/api/servidores?%s", base, q.Encode())
-		body, status, err := doElotechGet(ctx, client, u, headers)
-		if err != nil {
-			return nil, err
-		}
-		if status != http.StatusOK || len(strings.TrimSpace(string(body))) == 0 {
-			continue
-		}
 
-		var page elotechPage[elotechServidorDTO]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, fmt.Errorf("erro ao decodificar Elotech /api/servidores: %w", err)
-		}
-		if len(page.Content) == 0 && page.TotalElements == 0 {
-			continue
-		}
-
-		items := make([]ServidorItem, 0, len(page.Content))
-		for _, r := range page.Content {
-			cargo := strings.TrimSpace(r.DescricaoCargo)
-			if cargo == "" && r.Cargo > 0 {
-				cargo = strconv.FormatInt(r.Cargo, 10)
-			}
-			lotacao := strings.TrimSpace(r.DescricaoLotacao)
-			if lotacao == "" {
-				lotacao = strings.TrimSpace(r.CodigoLotacao)
-			}
-			vinculo := strings.TrimSpace(r.Vinculo)
-			if vinculo == "" {
-				vinculo = strings.TrimSpace(r.DescricaoNatureza)
-			}
-			cargaHoraria := ""
-			if r.HorasSemanais > 0 {
-				cargaHoraria = strconv.FormatFloat(r.HorasSemanais, 'f', -1, 64) + "h"
-			}
-
-			salBase := r.SalarioBase
-			salBruto := r.Remuneracao
-			var descontos, salLiquido float64
-			comp := strconv.Itoa(ano)
+		for pageIdx := 0; pageIdx < 10; pageIdx++ {
+			q := url.Values{}
+			q.Set("page", strconv.Itoa(pageIdx))
+			q.Set("size", strconv.Itoa(pageSize))
+			q.Set("entidade", strconv.Itoa(entidade))
+			q.Set("exercicio", strconv.Itoa(ano))
+			q.Set("anoCompetencia", strconv.Itoa(ano))
 			if p.Mes > 0 {
-				comp = fmt.Sprintf("%02d/%04d", p.Mes, ano)
+				q.Set("mesCompetencia", strconv.Itoa(p.Mes))
+			}
+			if strings.TrimSpace(p.NomeFiltro) != "" {
+				q.Set("nomeServidor", strings.TrimSpace(p.NomeFiltro))
 			}
 
-			if len(r.DadosFinanceiros) > 0 {
-				df := r.DadosFinanceiros[len(r.DadosFinanceiros)-1]
-				if df.SalarioBase > 0 {
-					salBase = df.SalarioBase
+			u := fmt.Sprintf("%s/api/servidores?%s", base, q.Encode())
+			body, status, err := doElotechGet(ctx, client, u, headers)
+			if err != nil {
+				if pageIdx == 0 {
+					return nil, err
 				}
-				if df.Vencimentos > 0 {
-					salBruto = df.Vencimentos
+				break
+			}
+			bodyStr := strings.TrimSpace(string(body))
+			if status != http.StatusOK || bodyStr == "" {
+				break
+			}
+			if pageIdx > 0 && bodyStr == prevBody {
+				break
+			}
+			prevBody = bodyStr
+
+			var page elotechPage[elotechServidorDTO]
+			if err := json.Unmarshal(body, &page); err != nil {
+				if pageIdx == 0 {
+					return nil, fmt.Errorf("erro ao decodificar Elotech /api/servidores: %w", err)
 				}
-				if df.Descontos > 0 {
-					descontos = df.Descontos
+				break
+			}
+			if pageIdx == 0 {
+				if len(page.Content) == 0 && page.TotalElements == 0 {
+					break
 				}
-				if salBruto > 0 {
-					salLiquido = salBruto - descontos
+				totalElements = page.TotalElements
+			}
+			if len(page.Content) == 0 {
+				break
+			}
+
+			for _, r := range page.Content {
+				cargo := strings.TrimSpace(r.DescricaoCargo)
+				if cargo == "" && r.Cargo > 0 {
+					cargo = strconv.FormatInt(r.Cargo, 10)
 				}
-				if df.MesCompetencia > 0 && df.AnoCompetencia > 0 {
-					comp = fmt.Sprintf("%02d/%04d", df.MesCompetencia, df.AnoCompetencia)
+				lotacao := strings.TrimSpace(r.DescricaoLotacao)
+				if lotacao == "" {
+					lotacao = strings.TrimSpace(r.CodigoLotacao)
+				}
+				vinculo := strings.TrimSpace(r.Vinculo)
+				if vinculo == "" {
+					vinculo = strings.TrimSpace(r.DescricaoNatureza)
+				}
+				cargaHoraria := ""
+				if r.HorasSemanais > 0 {
+					cargaHoraria = strconv.FormatFloat(r.HorasSemanais, 'f', -1, 64) + "h"
+				}
+
+				salBase := r.SalarioBase
+				salBruto := r.Remuneracao
+				var descontos, salLiquido float64
+				comp := strconv.Itoa(ano)
+				if p.Mes > 0 {
+					comp = fmt.Sprintf("%02d/%04d", p.Mes, ano)
+				}
+
+				if len(r.DadosFinanceiros) > 0 {
+					df := r.DadosFinanceiros[len(r.DadosFinanceiros)-1]
+					if df.SalarioBase > 0 {
+						salBase = df.SalarioBase
+					}
+					if df.Vencimentos > 0 {
+						salBruto = df.Vencimentos
+					}
+					if df.Descontos > 0 {
+						descontos = df.Descontos
+					}
+					if salBruto > 0 {
+						salLiquido = salBruto - descontos
+					}
+					if df.MesCompetencia > 0 && df.AnoCompetencia > 0 {
+						comp = fmt.Sprintf("%02d/%04d", df.MesCompetencia, df.AnoCompetencia)
+					}
+				}
+
+				items = append(items, ServidorItem{
+					Nome:           strings.TrimSpace(r.Nome),
+					Matricula:      strconv.FormatInt(r.Matricula, 10),
+					CPFParcial:     maskCPF(r.CPFFormatado, r.CPF),
+					Cargo:          cargo,
+					Lotacao:        lotacao,
+					LocalTrabalho:  strings.TrimSpace(r.LocalTrabalho),
+					Vinculo:        vinculo,
+					Situacao:       strings.TrimSpace(r.Situacao),
+					SalarioBase:    salBase,
+					SalarioBruto:   salBruto,
+					Descontos:      descontos,
+					SalarioLiquido: salLiquido,
+					Competencia:    comp,
+					CargaHoraria:   cargaHoraria,
+					DataAdmissao:   strings.TrimSpace(r.DataAdmissao),
+					Fonte:          "Portal Municipal (Elotech /api/servidores)",
+					PortalURL:      base,
+				})
+				if len(items) >= limit {
+					break
 				}
 			}
 
-			items = append(items, ServidorItem{
-				Nome:           strings.TrimSpace(r.Nome),
-				Matricula:      strconv.FormatInt(r.Matricula, 10),
-				CPFParcial:     maskCPF(r.CPFFormatado, r.CPF),
-				Cargo:          cargo,
-				Lotacao:        lotacao,
-				LocalTrabalho:  strings.TrimSpace(r.LocalTrabalho),
-				Vinculo:        vinculo,
-				Situacao:       strings.TrimSpace(r.Situacao),
-				SalarioBase:    salBase,
-				SalarioBruto:   salBruto,
-				Descontos:      descontos,
-				SalarioLiquido: salLiquido,
-				Competencia:    comp,
-				CargaHoraria:   cargaHoraria,
-				DataAdmissao:   strings.TrimSpace(r.DataAdmissao),
-				Fonte:          "Portal Municipal (Elotech /api/servidores)",
-				PortalURL:      base,
-			})
+			if len(items) >= limit || len(page.Content) < pageSize || (page.TotalPages > 0 && pageIdx+1 >= page.TotalPages) || (totalElements > 0 && len(items) >= totalElements) {
+				break
+			}
 		}
 
-		return &ServidoresResult{
-			Municipio:      m,
-			Fonte:          "Portal Municipal (Elotech)",
-			Plataforma:     "elotech",
-			PortalURL:      base,
-			TotalRegistros: page.TotalElements,
-			Servidores:     items,
-			Disponivel:     true,
-		}, nil
+		if len(items) > 0 || totalElements > 0 {
+			return &ServidoresResult{
+				Municipio:      m,
+				Fonte:          "Portal Municipal (Elotech)",
+				Plataforma:     "elotech",
+				PortalURL:      base,
+				TotalRegistros: totalElements,
+				Servidores:     items,
+				Disponivel:     true,
+			}, nil
+		}
 	}
 
 	return &ServidoresResult{
@@ -330,95 +363,135 @@ func QueryElotechServidores(ctx context.Context, client *http.Client, m *Municip
 func QueryElotechDespesas(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*DespesasResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 	entidade := resolveElotechEntidade(p)
 
 	for _, ano := range resolveElotechYears(p) {
-		rsql := fmt.Sprintf("id.exercicio=='%d' and id.entidade=='%d'", ano, entidade)
-		if p.Inicio != "" {
-			rsql += fmt.Sprintf(" and data>='%s'", p.Inicio)
+		inicio := p.Inicio
+		fim := p.Fim
+		if p.Mes >= 1 && p.Mes <= 12 && inicio == "" && fim == "" {
+			first := time.Date(ano, time.Month(p.Mes), 1, 0, 0, 0, 0, time.UTC)
+			inicio = first.Format("2006-01-02")
+			fim = first.AddDate(0, 1, -1).Format("2006-01-02")
 		}
-		if p.Fim != "" {
-			rsql += fmt.Sprintf(" and data<='%s'", p.Fim)
+
+		rsql := fmt.Sprintf("id.exercicio=='%d' and id.entidade=='%d'", ano, entidade)
+		if inicio != "" {
+			rsql += fmt.Sprintf(" and data>='%s'", inicio)
+		}
+		if fim != "" {
+			rsql += fmt.Sprintf(" and data<='%s'", fim)
 		}
 		if filtro := strings.TrimSpace(p.NomeFiltro); filtro != "" {
 			safe := strings.ReplaceAll(filtro, "'", "")
 			rsql += fmt.Sprintf(" and fornecedor=='*%s*'", safe)
 		}
 
-		q := url.Values{}
-		q.Set("page", "0")
-		q.Set("size", strconv.Itoa(limit))
-		q.Set("entidade", strconv.Itoa(entidade))
-		q.Set("exercicio", strconv.Itoa(ano))
-		q.Set("search", rsql)
-		if p.Inicio != "" {
-			q.Set("dataInicial", p.Inicio)
-		}
-		if p.Fim != "" {
-			q.Set("dataFinal", p.Fim)
-		}
+		var items []DespesaItem
+		totalElements := 0
+		prevBody := ""
 
-		u := fmt.Sprintf("%s/empenhos/lista?%s", base, q.Encode())
-		body, status, err := doElotechGet(ctx, client, u, nil)
-		if err != nil {
-			return nil, err
-		}
-		if status != http.StatusOK || len(strings.TrimSpace(string(body))) == 0 {
-			continue
-		}
-
-		var page elotechPage[elotechEmpenhoDTO]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, fmt.Errorf("erro ao decodificar Elotech /empenhos/lista: %w", err)
-		}
-		if len(page.Content) == 0 && page.TotalElements == 0 {
-			continue
-		}
-
-		items := make([]DespesaItem, 0, len(page.Content))
-		for _, r := range page.Content {
-			numEmpenho := strings.TrimSpace(r.EmpenhoExercicio)
-			if numEmpenho == "" && r.Empenho > 0 {
-				numEmpenho = strconv.FormatInt(r.Empenho, 10)
+		for pageIdx := 0; pageIdx < 10; pageIdx++ {
+			q := url.Values{}
+			q.Set("page", strconv.Itoa(pageIdx))
+			q.Set("size", strconv.Itoa(pageSize))
+			q.Set("entidade", strconv.Itoa(entidade))
+			q.Set("exercicio", strconv.Itoa(ano))
+			q.Set("search", rsql)
+			if inicio != "" {
+				q.Set("dataInicial", inicio)
+			}
+			if fim != "" {
+				q.Set("dataFinal", fim)
 			}
 
-			fornecedor := strings.TrimSpace(r.Nome)
-			docFornecedor := ""
-			if parts := strings.SplitN(fornecedor, " - ", 2); len(parts) == 2 {
-				digits := cleanDigits(parts[0])
-				if len(digits) == 11 {
-					docFornecedor = maskCPF(parts[0], digits)
-					fornecedor = strings.TrimSpace(parts[1])
-				} else if len(digits) == 14 {
-					docFornecedor = strings.TrimSpace(parts[0])
-					fornecedor = strings.TrimSpace(parts[1])
+			u := fmt.Sprintf("%s/empenhos/lista?%s", base, q.Encode())
+			body, status, err := doElotechGet(ctx, client, u, nil)
+			if err != nil {
+				if pageIdx == 0 {
+					return nil, err
+				}
+				break
+			}
+			bodyStr := strings.TrimSpace(string(body))
+			if status != http.StatusOK || bodyStr == "" {
+				break
+			}
+			if pageIdx > 0 && bodyStr == prevBody {
+				break
+			}
+			prevBody = bodyStr
+
+			var page elotechPage[elotechEmpenhoDTO]
+			if err := json.Unmarshal(body, &page); err != nil {
+				if pageIdx == 0 {
+					return nil, fmt.Errorf("erro ao decodificar Elotech /empenhos/lista: %w", err)
+				}
+				break
+			}
+			if pageIdx == 0 {
+				if len(page.Content) == 0 && page.TotalElements == 0 {
+					break
+				}
+				totalElements = page.TotalElements
+			}
+			if len(page.Content) == 0 {
+				break
+			}
+
+			for _, r := range page.Content {
+				numEmpenho := strings.TrimSpace(r.EmpenhoExercicio)
+				if numEmpenho == "" && r.Empenho > 0 {
+					numEmpenho = strconv.FormatInt(r.Empenho, 10)
+				}
+
+				fornecedor := strings.TrimSpace(r.Nome)
+				docFornecedor := ""
+				if parts := strings.SplitN(fornecedor, " - ", 2); len(parts) == 2 {
+					digits := cleanDigits(parts[0])
+					if len(digits) == 11 {
+						docFornecedor = maskCPF(parts[0], digits)
+						fornecedor = strings.TrimSpace(parts[1])
+					} else if len(digits) == 14 {
+						docFornecedor = strings.TrimSpace(parts[0])
+						fornecedor = strings.TrimSpace(parts[1])
+					}
+				}
+
+				items = append(items, DespesaItem{
+					NumeroEmpenho:       numEmpenho,
+					Ano:                 r.Exercicio,
+					Data:                strings.TrimSpace(r.Data),
+					Fornecedor:          fornecedor,
+					DocumentoFornecedor: docFornecedor,
+					Elemento:            strings.TrimSpace(r.FonteRecurso),
+					Historico:           strings.TrimSpace(r.Historico),
+					ValorEmpenhado:      r.ValorEmpenhado,
+					ValorLiquidado:      r.ValorLiquidado,
+					ValorPago:           r.ValorPago,
+					Fonte:               "Portal Municipal (Elotech)",
+				})
+				if len(items) >= limit {
+					break
 				}
 			}
 
-			items = append(items, DespesaItem{
-				NumeroEmpenho:       numEmpenho,
-				Ano:                 r.Exercicio,
-				Data:                strings.TrimSpace(r.Data),
-				Fornecedor:          fornecedor,
-				DocumentoFornecedor: docFornecedor,
-				Elemento:            strings.TrimSpace(r.FonteRecurso),
-				Historico:           strings.TrimSpace(r.Historico),
-				ValorEmpenhado:      r.ValorEmpenhado,
-				ValorLiquidado:      r.ValorLiquidado,
-				ValorPago:           r.ValorPago,
-				Fonte:               "Portal Municipal (Elotech)",
-			})
+			if len(items) >= limit || len(page.Content) < pageSize || (page.TotalPages > 0 && pageIdx+1 >= page.TotalPages) || (totalElements > 0 && len(items) >= totalElements) {
+				break
+			}
 		}
 
-		return &DespesasResult{
-			Municipio:      m,
-			Fonte:          "Portal Municipal (Elotech)",
-			Plataforma:     "elotech",
-			PortalURL:      base,
-			TotalRegistros: page.TotalElements,
-			Despesas:       items,
-			Disponivel:     true,
-		}, nil
+		if len(items) > 0 || totalElements > 0 {
+			return &DespesasResult{
+				Municipio:      m,
+				Fonte:          "Portal Municipal (Elotech)",
+				Plataforma:     "elotech",
+				PortalURL:      base,
+				TotalRegistros: totalElements,
+				Despesas:       items,
+				Disponivel:     true,
+			}, nil
+		}
 	}
 
 	return &DespesasResult{
@@ -523,75 +596,107 @@ func QueryElotechReceitas(ctx context.Context, client *http.Client, m *Municipio
 func QueryElotechLicitacoes(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*LicitacoesResult, error) {
 	base := strings.TrimRight(p.BaseURL, "/")
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 	entidade := resolveElotechEntidade(p)
 
 	for _, ano := range resolveElotechYears(p) {
-		q := url.Values{}
-		q.Set("page", "0")
-		q.Set("size", strconv.Itoa(limit))
-		q.Set("entidade", strconv.Itoa(entidade))
-		q.Set("exercicio", strconv.Itoa(ano))
-		if strings.TrimSpace(p.NomeFiltro) != "" {
-			q.Set("objeto", strings.TrimSpace(p.NomeFiltro))
-		}
-		if p.Inicio != "" {
-			q.Set("dataAberturaMaior", p.Inicio)
-		}
+		var items []LicitacaoItem
+		totalElements := 0
+		prevBody := ""
 
-		u := fmt.Sprintf("%s/api/licitacoes?%s", base, q.Encode())
-		body, status, err := doElotechGet(ctx, client, u, nil)
-		if err != nil {
-			return nil, err
-		}
-		if status != http.StatusOK || len(strings.TrimSpace(string(body))) == 0 {
-			continue
-		}
-
-		var page elotechPage[elotechLicitacaoDTO]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, fmt.Errorf("erro ao decodificar Elotech /api/licitacoes: %w", err)
-		}
-		if len(page.Content) == 0 && page.TotalElements == 0 {
-			continue
-		}
-
-		items := make([]LicitacaoItem, 0, len(page.Content))
-		for _, r := range page.Content {
-			num := strings.TrimSpace(r.DisplayLicitacao)
-			if num == "" && r.NumeroLicitacao > 0 {
-				num = strconv.FormatInt(r.NumeroLicitacao, 10)
+		for pageIdx := 0; pageIdx < 10; pageIdx++ {
+			q := url.Values{}
+			q.Set("page", strconv.Itoa(pageIdx))
+			q.Set("size", strconv.Itoa(pageSize))
+			q.Set("entidade", strconv.Itoa(entidade))
+			q.Set("exercicio", strconv.Itoa(ano))
+			if strings.TrimSpace(p.NomeFiltro) != "" {
+				q.Set("objeto", strings.TrimSpace(p.NomeFiltro))
 			}
-			if num == "" && r.Licitacao > 0 {
-				num = strconv.FormatInt(r.Licitacao, 10)
-			}
-			dataAbertura := strings.TrimSpace(r.DataAbertura)
-			if dataAbertura == "" {
-				dataAbertura = strings.TrimSpace(r.DataPublicacao)
+			if p.Inicio != "" {
+				q.Set("dataAberturaMaior", p.Inicio)
 			}
 
-			items = append(items, LicitacaoItem{
-				Numero:          num,
-				Ano:             r.Exercicio,
-				Modalidade:      strings.TrimSpace(r.Descricao),
-				Situacao:        strings.TrimSpace(r.TipoCancelamento),
-				DataAbertura:    dataAbertura,
-				Objeto:          strings.TrimSpace(r.Objeto),
-				ValorEstimado:   r.ValorMaximo,
-				ValorHomologado: r.TotalVencido,
-				Link:            base,
-				Fonte:           "Portal Municipal (Elotech)",
-			})
+			u := fmt.Sprintf("%s/api/licitacoes?%s", base, q.Encode())
+			body, status, err := doElotechGet(ctx, client, u, nil)
+			if err != nil {
+				if pageIdx == 0 {
+					return nil, err
+				}
+				break
+			}
+			bodyStr := strings.TrimSpace(string(body))
+			if status != http.StatusOK || bodyStr == "" {
+				break
+			}
+			if pageIdx > 0 && bodyStr == prevBody {
+				break
+			}
+			prevBody = bodyStr
+
+			var page elotechPage[elotechLicitacaoDTO]
+			if err := json.Unmarshal(body, &page); err != nil {
+				if pageIdx == 0 {
+					return nil, fmt.Errorf("erro ao decodificar Elotech /api/licitacoes: %w", err)
+				}
+				break
+			}
+			if pageIdx == 0 {
+				if len(page.Content) == 0 && page.TotalElements == 0 {
+					break
+				}
+				totalElements = page.TotalElements
+			}
+			if len(page.Content) == 0 {
+				break
+			}
+
+			for _, r := range page.Content {
+				num := strings.TrimSpace(r.DisplayLicitacao)
+				if num == "" && r.NumeroLicitacao > 0 {
+					num = strconv.FormatInt(r.NumeroLicitacao, 10)
+				}
+				if num == "" && r.Licitacao > 0 {
+					num = strconv.FormatInt(r.Licitacao, 10)
+				}
+				dataAbertura := strings.TrimSpace(r.DataAbertura)
+				if dataAbertura == "" {
+					dataAbertura = strings.TrimSpace(r.DataPublicacao)
+				}
+
+				items = append(items, LicitacaoItem{
+					Numero:          num,
+					Ano:             r.Exercicio,
+					Modalidade:      strings.TrimSpace(r.Descricao),
+					Situacao:        strings.TrimSpace(r.TipoCancelamento),
+					DataAbertura:    dataAbertura,
+					Objeto:          strings.TrimSpace(r.Objeto),
+					ValorEstimado:   r.ValorMaximo,
+					ValorHomologado: r.TotalVencido,
+					Link:            base,
+					Fonte:           "Portal Municipal (Elotech)",
+				})
+				if len(items) >= limit {
+					break
+				}
+			}
+
+			if len(items) >= limit || len(page.Content) < pageSize || (page.TotalPages > 0 && pageIdx+1 >= page.TotalPages) || (totalElements > 0 && len(items) >= totalElements) {
+				break
+			}
 		}
 
-		return &LicitacoesResult{
-			Municipio:      m,
-			Fonte:          "Portal Municipal (Elotech)",
-			Plataforma:     "elotech",
-			PortalURL:      base,
-			TotalRegistros: page.TotalElements,
-			Licitacoes:     items,
-			Disponivel:     true,
-		}, nil
+		if len(items) > 0 || totalElements > 0 {
+			return &LicitacoesResult{
+				Municipio:      m,
+				Fonte:          "Portal Municipal (Elotech)",
+				Plataforma:     "elotech",
+				PortalURL:      base,
+				TotalRegistros: totalElements,
+				Licitacoes:     items,
+				Disponivel:     true,
+			}, nil
+		}
 	}
 
 	return &LicitacoesResult{

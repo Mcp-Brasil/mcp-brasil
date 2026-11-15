@@ -291,34 +291,75 @@ func fetchEPublicaModule(ctx context.Context, client *http.Client, p PortalQuery
 		return nil, 0, 0, base, fmt.Errorf("e-Pública: TenantID (alias da entidade) não informado")
 	}
 	limit := normalizeLimit(p.Limit)
+	scanLimit := limit
+	if strings.TrimSpace(p.NomeFiltro) != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+	pageSize := normalizePageSize(limit, 200)
 	hc := portalConnectorHTTPClient(client)
 	years := resolveEPublicaYears(p)
 
 	var lastStatus int
 	for _, ano := range years {
-		u := fmt.Sprintf(
-			"%s/rest/%s/%s?exercicio=%d&page=1&size=%d",
-			base, url.PathEscape(alias), strings.TrimLeft(modulePath, "/"), ano, limit,
-		)
-		body, status, err := doJSONGet(ctx, hc, u)
-		if err != nil {
-			return nil, 0, ano, base, err
-		}
-		lastStatus = status
-		if status != http.StatusOK {
-			if p.Ano > 0 {
-				return nil, 0, ano, base, fmt.Errorf("e-Pública /%s retornou HTTP %d", modulePath, status)
+		var allRows []map[string]any
+		total := 0
+		prevBody := ""
+		failedYear := false
+
+		for pageIdx := 1; pageIdx <= 10; pageIdx++ {
+			u := fmt.Sprintf(
+				"%s/rest/%s/%s?exercicio=%d&page=%d&size=%d",
+				base, url.PathEscape(alias), strings.TrimLeft(modulePath, "/"), ano, pageIdx, pageSize,
+			)
+			body, status, err := doJSONGet(ctx, hc, u)
+			if err != nil {
+				if pageIdx == 1 {
+					return nil, 0, ano, base, err
+				}
+				break
 			}
+			lastStatus = status
+			if status != http.StatusOK {
+				if pageIdx == 1 {
+					if p.Ano > 0 {
+						return nil, 0, ano, base, fmt.Errorf("e-Pública /%s retornou HTTP %d", modulePath, status)
+					}
+					failedYear = true
+				}
+				break
+			}
+			bodyStr := strings.TrimSpace(string(body))
+			if pageIdx > 1 && (bodyStr == "" || bodyStr == prevBody) {
+				break
+			}
+			prevBody = bodyStr
+
+			rows, pageTotal, err := decodeEPublicaPage(body)
+			if err != nil {
+				if pageIdx == 1 {
+					return nil, 0, ano, base, fmt.Errorf("erro ao decodificar e-Pública /%s: %w", modulePath, err)
+				}
+				break
+			}
+			if pageIdx == 1 {
+				total = pageTotal
+			}
+			if len(rows) == 0 {
+				break
+			}
+			allRows = append(allRows, rows...)
+			if len(allRows) >= scanLimit || len(rows) < pageSize || (total > 0 && len(allRows) >= total) {
+				break
+			}
+		}
+
+		if failedYear || (len(allRows) == 0 && len(years) > 1) {
 			continue
 		}
-		rows, total, err := decodeEPublicaPage(body)
-		if err != nil {
-			return nil, 0, ano, base, fmt.Errorf("erro ao decodificar e-Pública /%s: %w", modulePath, err)
+		if len(allRows) > scanLimit {
+			allRows = allRows[:scanLimit]
 		}
-		if len(rows) == 0 && len(years) > 1 {
-			continue
-		}
-		return rows, total, ano, base, nil
+		return allRows, total, ano, base, nil
 	}
 
 	if lastStatus >= 400 {

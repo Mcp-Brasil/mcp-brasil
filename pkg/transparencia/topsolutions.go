@@ -159,6 +159,7 @@ func QueryTopSolutionsServidores(ctx context.Context, client *http.Client, m *Mu
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		nome := mapGetStr(r, "nome", "txtNome", "nomeServidor")
 		if nome == "" {
@@ -167,6 +168,10 @@ func QueryTopSolutionsServidores(ctx context.Context, client *http.Client, m *Mu
 		cargo := mapGetStr(r, "cargo", "cargoFuncao", "txtCargo")
 		orgao := mapGetStr(r, "orgao", "lotacao", "txtOrgao")
 		if filtro != "" && !strings.Contains(strings.ToLower(nome+" "+cargo+" "+orgao), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		bruto := mapGetFloat(r, "vlrRemuneracaoBruta", "salarioBruto")
@@ -194,9 +199,6 @@ func QueryTopSolutionsServidores(ctx context.Context, client *http.Client, m *Mu
 			Fonte:          "Portal Municipal (TopSolutions RN)",
 			PortalURL:      p.BaseURL,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	msg := ""
@@ -208,7 +210,7 @@ func QueryTopSolutionsServidores(ctx context.Context, client *http.Client, m *Mu
 		Fonte:          "Portal Municipal (TopSolutions RN)",
 		Plataforma:     "topsolutions_rn",
 		PortalURL:      p.BaseURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Servidores:     items,
 		Disponivel:     true,
 		Mensagem:       msg,
@@ -257,6 +259,7 @@ func QueryTopSolutionsDespesas(ctx context.Context, client *http.Client, m *Muni
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		ex := int(mapGetFloat(r, "exercicio"))
 		emp := mapGetFloat(r, "vlrEmpenhado")
@@ -272,6 +275,10 @@ func QueryTopSolutionsDespesas(ctx context.Context, client *http.Client, m *Muni
 		if filtro != "" && !strings.Contains(strings.ToLower(unidade), filtro) {
 			continue
 		}
+		matchedTotal++
+		if len(items) >= limit {
+			continue
+		}
 		items = append(items, DespesaItem{
 			Ano:            ex,
 			Orgao:          mapGetStr(r, "codOrgao"),
@@ -282,9 +289,6 @@ func QueryTopSolutionsDespesas(ctx context.Context, client *http.Client, m *Muni
 			ValorPago:      pago,
 			Fonte:          "Portal Municipal (TopSolutions RN)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	return &DespesasResult{
@@ -292,7 +296,7 @@ func QueryTopSolutionsDespesas(ctx context.Context, client *http.Client, m *Muni
 		Fonte:          "Portal Municipal (TopSolutions RN)",
 		Plataforma:     "topsolutions_rn",
 		PortalURL:      p.BaseURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Despesas:       items,
 		Disponivel:     true,
 	}, nil
@@ -324,7 +328,9 @@ func QueryTopSolutionsReceitas(ctx context.Context, client *http.Client, m *Muni
 		return nil, err
 	}
 
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		cod := mapGetStr(r, "codOrigem", "codCategoria")
 		desc := mapGetStr(r, "txtDescricaoOrigem", "txtDescricaoCategoria", "txtDescricaoNaturezaReceita")
@@ -335,6 +341,13 @@ func QueryTopSolutionsReceitas(ctx context.Context, client *http.Client, m *Muni
 		if cat == "" {
 			cat = mapGetStr(r, "txtDescricaoFonteRecurso", "txtDescricaoUnidade")
 		}
+		if filtro != "" && !strings.Contains(strings.ToLower(cod+" "+desc+" "+cat), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
+			continue
+		}
 		items = append(items, ReceitaItem{
 			Codigo:          cod,
 			Descricao:       desc,
@@ -343,9 +356,6 @@ func QueryTopSolutionsReceitas(ctx context.Context, client *http.Client, m *Muni
 			ValorArrecadado: mapGetFloat(r, "vlrArrecadacao"),
 			Fonte:           "Portal Municipal (TopSolutions RN)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	return &ReceitasResult{
@@ -353,7 +363,7 @@ func QueryTopSolutionsReceitas(ctx context.Context, client *http.Client, m *Muni
 		Fonte:          "Portal Municipal (TopSolutions RN)",
 		Plataforma:     "topsolutions_rn",
 		PortalURL:      p.BaseURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Receitas:       items,
 		Disponivel:     true,
 	}, nil
@@ -383,6 +393,7 @@ func QueryTopSolutionsContratos(ctx context.Context, client *http.Client, m *Mun
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "txtNomeRazaoContratada", "txtNomeRazaoContratante", "fornecedor")
 		objeto := mapGetStr(r, "txtObjeto", "objeto")
@@ -391,6 +402,10 @@ func QueryTopSolutionsContratos(ctx context.Context, client *http.Client, m *Mun
 		}
 		ex := int(mapGetFloat(r, "numExercicioFinanc", "ano"))
 		if p.Ano > 0 && ex > 0 && ex != p.Ano {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		items = append(items, ContratoItem{
@@ -406,9 +421,6 @@ func QueryTopSolutionsContratos(ctx context.Context, client *http.Client, m *Mun
 			Valor:               mapGetFloat(r, "vlrContrato", "vlrTotal", "vlrValor"),
 			Fonte:               "Portal Municipal (TopSolutions RN)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	return &ContratosResult{
@@ -416,7 +428,7 @@ func QueryTopSolutionsContratos(ctx context.Context, client *http.Client, m *Mun
 		Fonte:          "Portal Municipal (TopSolutions RN)",
 		Plataforma:     "topsolutions_rn",
 		PortalURL:      p.BaseURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Contratos:      items,
 		Disponivel:     true,
 	}, nil
@@ -446,10 +458,15 @@ func QueryTopSolutionsLicitacoes(ctx context.Context, client *http.Client, m *Mu
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		objeto := mapGetStr(r, "txtObjeto", "objeto")
 		mod := mapGetStr(r, "txtModalidade", "txtModalidadeLicit")
 		if filtro != "" && !strings.Contains(strings.ToLower(objeto+" "+mod), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		num := mapGetStr(r, "numLicitacao", "numProcesso", "numCertame")
@@ -464,9 +481,6 @@ func QueryTopSolutionsLicitacoes(ctx context.Context, client *http.Client, m *Mu
 			ValorHomologado: mapGetFloat(r, "vlrHomologado", "valorHomologado"),
 			Fonte:           "Portal Municipal (TopSolutions RN)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	return &LicitacoesResult{
@@ -474,7 +488,7 @@ func QueryTopSolutionsLicitacoes(ctx context.Context, client *http.Client, m *Mu
 		Fonte:          "Portal Municipal (TopSolutions RN)",
 		Plataforma:     "topsolutions_rn",
 		PortalURL:      p.BaseURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Licitacoes:     items,
 		Disponivel:     true,
 	}, nil

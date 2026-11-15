@@ -234,41 +234,77 @@ func fetchFacilGrid(
 	}
 	ano = resolveFacilYear(p)
 	limit := normalizeLimit(p.Limit)
-
-	payload := map[string]any{
-		"parameters": map[string]any{
-			"start":  0,
-			"length": limit,
-			"draw":   1,
-		},
-		"ano":      strconv.Itoa(ano),
-		"dtInicio": strings.TrimSpace(p.Inicio),
-		"dtFim":    strings.TrimSpace(p.Fim),
+	scanLimit := limit
+	if strings.TrimSpace(p.NomeFiltro) != "" && scanLimit < 500 {
+		scanLimit = 500
 	}
-	for k, v := range extraFields {
-		payload[k] = v
-	}
-
+	pageSize := normalizePageSize(scanLimit, 200)
 	target := fmt.Sprintf("%s%s?databaseId=%s", baseURL, endpointPath, url.QueryEscape(dbID))
-	body, status, reqErr := doPortalJSONPost(ctx, client, target, payload)
-	if reqErr != nil {
-		return nil, 0, baseURL, ano, reqErr
-	}
-	if status != http.StatusOK {
-		return nil, 0, baseURL, ano, fmt.Errorf("Fácil Transparência %s retornou HTTP %d", endpointPath, status)
-	}
 
-	rows, total, decErr := decodeFlexiblePortalList(body, "data", "Data")
-	if decErr != nil {
-		return nil, 0, baseURL, ano, fmt.Errorf("erro ao decodificar Fácil %s: %w", endpointPath, decErr)
-	}
-	if total == 0 {
-		var obj map[string]any
-		if json.Unmarshal(body, &obj) == nil && obj != nil {
-			total = int(mapGetFloat(obj, "recordsFiltered", "recordsTotal", "total"))
+	var allRows []map[string]any
+	hasTotal := false
+	prevBody := ""
+	for draw := 1; draw <= 10; draw++ {
+		payload := map[string]any{
+			"parameters": map[string]any{
+				"start":  (draw - 1) * pageSize,
+				"length": pageSize,
+				"draw":   draw,
+			},
+			"ano":      strconv.Itoa(ano),
+			"dtInicio": strings.TrimSpace(p.Inicio),
+			"dtFim":    strings.TrimSpace(p.Fim),
+		}
+		for k, v := range extraFields {
+			payload[k] = v
+		}
+
+		body, status, reqErr := doPortalJSONPost(ctx, client, target, payload)
+		if reqErr != nil {
+			if draw == 1 {
+				return nil, 0, baseURL, ano, reqErr
+			}
+			break
+		}
+		if status != http.StatusOK {
+			if draw == 1 {
+				return nil, 0, baseURL, ano, fmt.Errorf("Fácil Transparência %s retornou HTTP %d", endpointPath, status)
+			}
+			break
+		}
+		bodyStr := strings.TrimSpace(string(body))
+		if draw > 1 && (bodyStr == "" || bodyStr == prevBody) {
+			break
+		}
+		prevBody = bodyStr
+
+		pageRows, pageTotal, pageHasTotal, decErr := decodeFlexiblePortalListMeta(body, "data", "Data")
+		if decErr != nil {
+			if draw == 1 {
+				return nil, 0, baseURL, ano, fmt.Errorf("erro ao decodificar Fácil %s: %w", endpointPath, decErr)
+			}
+			break
+		}
+		if !pageHasTotal {
+			var obj map[string]any
+			if json.Unmarshal(body, &obj) == nil && obj != nil {
+				pageTotal = int(mapGetFloat(obj, "recordsFiltered", "recordsTotal", "total"))
+				pageHasTotal = pageTotal > 0
+			}
+		}
+		if pageHasTotal && pageTotal > total {
+			total = pageTotal
+			hasTotal = true
+		}
+		if len(pageRows) == 0 {
+			break
+		}
+		allRows = append(allRows, pageRows...)
+		if len(allRows) >= scanLimit || len(pageRows) < pageSize || (hasTotal && total > 0 && len(allRows) >= total) {
+			break
 		}
 	}
-	return rows, total, baseURL, ano, nil
+	return allRows, total, baseURL, ano, nil
 }
 
 // QueryFacilServidores consulta servidores via POST /api/servidor/ServidorGetNomeGrid?databaseId=<id>.
@@ -281,10 +317,15 @@ func QueryFacilServidores(ctx context.Context, client *http.Client, m *Municipio
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		nome := mapGetStr(r, "nome", "Nome", "servidor", "Servidor", "nomeServidor", "funcionario")
 		if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		comp := mapGetStr(r, "competencia", "Competencia", "mesAno", "referencia")
@@ -318,13 +359,12 @@ func QueryFacilServidores(ctx context.Context, client *http.Client, m *Municipio
 			Fonte:          "Portal Municipal (Fácil Transparência)",
 			PortalURL:      baseURL,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -357,11 +397,16 @@ func QueryFacilDespesas(ctx context.Context, client *http.Client, m *Municipio, 
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "fornecedor", "Fornecedor", "credor", "Credor", "nomeFornecedor", "razaoSocial")
 		historico := mapGetStr(r, "historico", "Historico", "descricao", "Descricao", "especificacao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+historico), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "ano", "Ano", "exercicio", "Exercicio"))
@@ -386,13 +431,10 @@ func QueryFacilDespesas(ctx context.Context, client *http.Client, m *Municipio, 
 			ValorPago:           mapGetFloat(r, "valorPago", "ValorPago", "pago", "Pago"),
 			Fonte:               "Portal Municipal (Fácil Transparência)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	if total == 0 {
-		total = len(items)
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -421,10 +463,15 @@ func QueryFacilReceitas(ctx context.Context, client *http.Client, m *Municipio, 
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		desc := mapGetStr(r, "descricao", "Descricao", "especificacao", "receita", "Receita", "nome")
 		if filtro != "" && !strings.Contains(strings.ToLower(desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		items = append(items, ReceitaItem{
@@ -436,13 +483,12 @@ func QueryFacilReceitas(ctx context.Context, client *http.Client, m *Municipio, 
 			ValorArrecadado: mapGetFloat(r, "valorArrecadado", "ValorArrecadado", "arrecadado", "Arrecadado", "realizado", "Realizado"),
 			Fonte:           "Portal Municipal (Fácil Transparência)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -474,11 +520,16 @@ func QueryFacilLicitacoes(ctx context.Context, client *http.Client, m *Municipio
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		objeto := mapGetStr(r, "objeto", "Objeto", "descricao", "Descricao")
 		modalidade := mapGetStr(r, "modalidade", "Modalidade", "tipo")
 		if filtro != "" && !strings.Contains(strings.ToLower(objeto+" "+modalidade), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "ano", "Ano", "exercicio", "Exercicio"))
@@ -498,13 +549,12 @@ func QueryFacilLicitacoes(ctx context.Context, client *http.Client, m *Municipio
 			Link:            mapGetStr(r, "link", "url", "Link"),
 			Fonte:           "Portal Municipal (Fácil Transparência)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" {
+		total = matchedTotal
+	} else if total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {

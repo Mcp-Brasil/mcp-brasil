@@ -280,9 +280,14 @@ func QueryDiretorioDigitalServidores(ctx context.Context, client *http.Client, m
 		}
 
 		items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+		matchedTotal := 0
 		for _, r := range rows {
 			nome := mapGetStr(r, "nome", "Nome", "servidor", "Servidor", "funcionario", "nom_servidor")
 			if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
+				continue
+			}
+			matchedTotal++
+			if len(items) >= limit {
 				continue
 			}
 
@@ -318,16 +323,13 @@ func QueryDiretorioDigitalServidores(ctx context.Context, client *http.Client, m
 				Fonte:          diretorioDigitalFonte,
 				PortalURL:      portalURL,
 			})
-			if len(items) >= limit {
-				break
-			}
 		}
 
 		if len(items) == 0 && filtro != "" {
 			continue
 		}
-		if total == 0 {
-			total = len(items)
+		if filtro != "" || total == 0 {
+			total = matchedTotal
 		}
 
 		return &ServidoresResult{

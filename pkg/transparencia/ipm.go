@@ -120,28 +120,29 @@ func resolveIPMDateWindow(p PortalQueryParams) (string, string) {
 	return inicio, fim
 }
 
-func decodeIPMRecords(body []byte, preferredKeys ...string) ([]map[string]any, int, error) {
+func decodeIPMRecordsMeta(body []byte, preferredKeys ...string) ([]map[string]any, int, bool, error) {
 	if ipmIsHTMLOrCaptcha(body) {
-		return nil, 0, fmt.Errorf("portal IPM retornou HTML ou desafio anti-bot/CAPTCHA")
+		return nil, 0, false, fmt.Errorf("portal IPM retornou HTML ou desafio anti-bot/CAPTCHA")
 	}
 	trimmed := strings.TrimSpace(string(body))
 	if trimmed == "" {
-		return nil, 0, nil
+		return nil, 0, false, nil
 	}
 	if strings.HasPrefix(trimmed, "[") {
 		var rows []map[string]any
 		if err := json.Unmarshal([]byte(trimmed), &rows); err != nil {
-			return nil, 0, err
+			return nil, 0, false, err
 		}
-		return rows, len(rows), nil
+		return rows, 0, false, nil
 	}
 
 	var obj map[string]any
 	if err := json.Unmarshal([]byte(trimmed), &obj); err != nil {
-		return nil, 0, err
+		return nil, 0, false, err
 	}
 
-	total := int(mapGetFloat(obj, "totalRegistros", "total", "totalElements", "quantidade"))
+	total := int(mapGetFloat(obj, "totalRegistros", "TotalRegistros", "total", "Total", "totalElements", "TotalElements", "quantidade"))
+	hasExplicitTotal := total > 0
 
 	keys := append([]string{}, preferredKeys...)
 	keys = append(keys, "retorno", "registros", "content", "dados", "items")
@@ -160,13 +161,21 @@ func decodeIPMRecords(body []byte, preferredKeys ...string) ([]map[string]any, i
 				rows = append(rows, row)
 			}
 		}
-		if total == 0 {
-			total = len(rows)
-		}
-		return rows, total, nil
+		return rows, total, hasExplicitTotal, nil
 	}
 
-	return nil, total, nil
+	return nil, total, hasExplicitTotal, nil
+}
+
+func decodeIPMRecords(body []byte, preferredKeys ...string) ([]map[string]any, int, error) {
+	rows, total, hasTotal, err := decodeIPMRecordsMeta(body, preferredKeys...)
+	if err != nil {
+		return nil, 0, err
+	}
+	if !hasTotal {
+		total = len(rows)
+	}
+	return rows, total, nil
 }
 
 func ipmExtractYear(s string, fallback int) int {
@@ -223,65 +232,104 @@ func ProbeIPM(ctx context.Context, client *http.Client, baseURL string) bool {
 func QueryIPMServidores(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*ServidoresResult, error) {
 	base := strings.TrimRight(strings.TrimSpace(p.BaseURL), "/")
 	limit := normalizeLimit(p.Limit)
-	u := fmt.Sprintf("%s/api/transparencia-pessoal-funcionarios?pagina=1", base)
-
-	body, status, err := doIPMGet(ctx, client, u)
-	if err != nil {
-		return nil, err
-	}
-	if !isIPMOKStatus(status) {
-		return nil, fmt.Errorf("IPM /api/transparencia-pessoal-funcionarios retornou HTTP %d", status)
-	}
-
-	rows, total, err := decodeIPMRecords(body, "registros", "retorno")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao decodificar IPM servidores: %w", err)
-	}
-
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
-	items := make([]ServidorItem, 0, minInt(limit, len(rows)))
-	for _, r := range rows {
-		nome := mapGetStr(r, "nome", "servidor", "funcionario", "nomServidor")
-		if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
-			continue
+	scanCap := limit
+	if filtro != "" && scanCap < 500 {
+		scanCap = 500
+	}
+
+	var items []ServidorItem
+	total := 0
+	hasExplicitTotal := false
+	scanned := 0
+	matchedTotal := 0
+	prevBody := ""
+
+	for pagina := 1; pagina <= 10; pagina++ {
+		u := fmt.Sprintf("%s/api/transparencia-pessoal-funcionarios?pagina=%d", base, pagina)
+		body, status, err := doIPMGet(ctx, client, u)
+		if err != nil {
+			if pagina == 1 {
+				return nil, err
+			}
+			break
+		}
+		if !isIPMOKStatus(status) {
+			if pagina == 1 {
+				return nil, fmt.Errorf("IPM /api/transparencia-pessoal-funcionarios retornou HTTP %d", status)
+			}
+			break
+		}
+		bodyStr := strings.TrimSpace(string(body))
+		if pagina > 1 && (bodyStr == "" || bodyStr == prevBody) {
+			break
+		}
+		prevBody = bodyStr
+
+		rows, pageTotal, pageHasTotal, err := decodeIPMRecordsMeta(body, "registros", "retorno")
+		if err != nil {
+			if pagina == 1 {
+				return nil, fmt.Errorf("erro ao decodificar IPM servidores: %w", err)
+			}
+			break
+		}
+		if pageHasTotal && pageTotal > total {
+			total = pageTotal
+			hasExplicitTotal = true
+		}
+		if len(rows) == 0 {
+			break
+		}
+		scanned += len(rows)
+
+		for _, r := range rows {
+			nome := mapGetStr(r, "nome", "servidor", "funcionario", "nomServidor")
+			if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
+				continue
+			}
+			matchedTotal++
+			if len(items) >= limit {
+				continue
+			}
+
+			local := mapGetStr(r, "localTrabalho", "centroCusto", "local")
+			lotacao := mapGetStr(r, "centroCusto", "lotacao", "departamento", "setor")
+			if lotacao == "" {
+				lotacao = local
+			}
+
+			items = append(items, ServidorItem{
+				Nome:           nome,
+				Matricula:      mapGetStr(r, "matricula", "codigo", "numMatricula"),
+				CPFParcial:     maskCPF(mapGetStr(r, "cpfFormatado", "cpf_parcial"), mapGetStr(r, "cpf", "numCpf")),
+				Cargo:          mapGetStr(r, "cargo", "descricaoCargo", "cargoDescricao"),
+				Funcao:         mapGetStr(r, "funcao", "funcaoDescricao", "descricaoFuncao"),
+				Lotacao:        lotacao,
+				LocalTrabalho:  local,
+				Vinculo:        mapGetStr(r, "regime", "vinculo", "tipoVinculo", "categoria"),
+				Situacao:       mapGetStr(r, "situacao", "status"),
+				SalarioBase:    mapGetFloat(r, "salarioBase", "vencimentoBase", "remuneracaoBase"),
+				SalarioBruto:   mapGetFloat(r, "salarioBruto", "totalProventos", "remuneracaoBruta"),
+				Descontos:      mapGetFloat(r, "descontos", "totalDescontos"),
+				SalarioLiquido: mapGetFloat(r, "salarioLiquido", "liquido"),
+				Competencia:    mapGetStr(r, "competencia", "mesAno"),
+				CargaHoraria:   mapGetStr(r, "horasSemanais", "cargaHoraria"),
+				DataAdmissao:   mapGetStr(r, "admissao", "dataAdmissao", "dtAdmissao"),
+				Orgao:          mapGetStr(r, "entidade", "orgao", "entidadeDescricao"),
+				Fonte:          ipmFonte,
+				PortalURL:      base,
+			})
 		}
 
-		local := mapGetStr(r, "localTrabalho", "centroCusto", "local")
-		lotacao := mapGetStr(r, "centroCusto", "lotacao", "departamento", "setor")
-		if lotacao == "" {
-			lotacao = local
-		}
-
-		items = append(items, ServidorItem{
-			Nome:           nome,
-			Matricula:      mapGetStr(r, "matricula", "codigo", "numMatricula"),
-			CPFParcial:     maskCPF(mapGetStr(r, "cpfFormatado", "cpf_parcial"), mapGetStr(r, "cpf", "numCpf")),
-			Cargo:          mapGetStr(r, "cargo", "descricaoCargo", "cargoDescricao"),
-			Funcao:         mapGetStr(r, "funcao", "funcaoDescricao", "descricaoFuncao"),
-			Lotacao:        lotacao,
-			LocalTrabalho:  local,
-			Vinculo:        mapGetStr(r, "regime", "vinculo", "tipoVinculo", "categoria"),
-			Situacao:       mapGetStr(r, "situacao", "status"),
-			SalarioBase:    mapGetFloat(r, "salarioBase", "vencimentoBase", "remuneracaoBase"),
-			SalarioBruto:   mapGetFloat(r, "salarioBruto", "totalProventos", "remuneracaoBruta"),
-			Descontos:      mapGetFloat(r, "descontos", "totalDescontos"),
-			SalarioLiquido: mapGetFloat(r, "salarioLiquido", "liquido"),
-			Competencia:    mapGetStr(r, "competencia", "mesAno"),
-			CargaHoraria:   mapGetStr(r, "horasSemanais", "cargaHoraria"),
-			DataAdmissao:   mapGetStr(r, "admissao", "dataAdmissao", "dtAdmissao"),
-			Orgao:          mapGetStr(r, "entidade", "orgao", "entidadeDescricao"),
-			Fonte:          ipmFonte,
-			PortalURL:      base,
-		})
-		if len(items) >= limit {
+		if (filtro == "" && len(items) >= limit) || scanned >= scanCap || (hasExplicitTotal && total > 0 && scanned >= total) {
 			break
 		}
 	}
 
 	if filtro != "" {
-		total = len(items)
+		total = matchedTotal
 	} else if total == 0 {
-		total = len(rows)
+		total = scanned
 	}
 
 	msg := ""
@@ -327,12 +375,17 @@ func QueryIPMDespesas(ctx context.Context, client *http.Client, m *Municipio, p 
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "nomeCredor", "credor", "fornecedor", "nomeFornecedor")
 		historico := mapGetStr(r, "historico", "especificacao", "descricao")
 		if filtro != "" &&
 			!strings.Contains(strings.ToLower(fornecedor), filtro) &&
 			!strings.Contains(strings.ToLower(historico), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -363,13 +416,10 @@ func QueryIPMDespesas(ctx context.Context, client *http.Client, m *Municipio, p 
 			ValorPago:           mapGetFloat(r, "valorPago", "pago"),
 			Fonte:               ipmFonte,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	if filtro != "" {
-		total = len(items)
+		total = matchedTotal
 	} else if total == 0 {
 		total = len(rows)
 	}
@@ -417,12 +467,17 @@ func QueryIPMReceitas(ctx context.Context, client *http.Client, m *Municipio, p 
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		codigo := mapGetStr(r, "codigoReceita", "codigo", "receitaCodigo", "estrutural", "rubrica")
 		descricao := mapGetStr(r, "receitaDescricao", "descricao", "especificacao", "nomeReceita")
 		if filtro != "" &&
 			!strings.Contains(strings.ToLower(descricao), filtro) &&
 			!strings.Contains(strings.ToLower(codigo), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -435,13 +490,10 @@ func QueryIPMReceitas(ctx context.Context, client *http.Client, m *Municipio, p 
 			ValorArrecadado: mapGetFloat(r, "valorArrecadado", "valorRealizado", "arrecadado", "realizado", "valorReceita"),
 			Fonte:           ipmFonte,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	if filtro != "" {
-		total = len(items)
+		total = matchedTotal
 	} else if total == 0 {
 		total = len(rows)
 	}
@@ -501,6 +553,7 @@ func QueryIPMLicitacoes(ctx context.Context, client *http.Client, m *Municipio, 
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		numero := mapGetStr(r, "numeroLicitacao", "numero", "nroLicitacao", "numeroProcesso", "processo")
 		modalidade := mapGetStr(r, "modalidadeDescricao", "modalidade", "tipoModalidade")
@@ -509,6 +562,10 @@ func QueryIPMLicitacoes(ctx context.Context, client *http.Client, m *Municipio, 
 			!strings.Contains(strings.ToLower(objeto), filtro) &&
 			!strings.Contains(strings.ToLower(modalidade), filtro) &&
 			!strings.Contains(strings.ToLower(numero), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -534,13 +591,10 @@ func QueryIPMLicitacoes(ctx context.Context, client *http.Client, m *Municipio, 
 			Link:            link,
 			Fonte:           ipmFonte,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	if filtro != "" {
-		total = len(items)
+		total = matchedTotal
 	} else if total == 0 {
 		total = len(rows)
 	}
@@ -600,6 +654,7 @@ func QueryIPMContratos(ctx context.Context, client *http.Client, m *Municipio, p
 
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 	for _, r := range rows {
 		numero := mapGetStr(r, "numeroContrato", "numero", "nroContrato")
 		fornecedor := mapGetStr(r, "nomeContratado", "nomeFornecedor", "fornecedor", "credor", "razaoSocial", "contratado")
@@ -608,6 +663,10 @@ func QueryIPMContratos(ctx context.Context, client *http.Client, m *Municipio, p
 			!strings.Contains(strings.ToLower(fornecedor), filtro) &&
 			!strings.Contains(strings.ToLower(objeto), filtro) &&
 			!strings.Contains(strings.ToLower(numero), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 
@@ -635,13 +694,10 @@ func QueryIPMContratos(ctx context.Context, client *http.Client, m *Municipio, p
 			Valor:               mapGetFloat(r, "valor", "valorContrato", "valorTotal", "valorInicial"),
 			Fonte:               ipmFonte,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
 	if filtro != "" {
-		total = len(items)
+		total = matchedTotal
 	} else if total == 0 {
 		total = len(rows)
 	}

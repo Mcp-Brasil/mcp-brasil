@@ -206,26 +206,61 @@ func fetchMemoryList(
 	baseURL = resolveMemoryBaseURL(p)
 	ano = resolveMemoryYear(p)
 	limit := normalizeLimit(p.Limit)
-
-	q := url.Values{}
-	q.Set("page", "1")
-	q.Set("size", strconv.Itoa(limit))
-	target := fmt.Sprintf("%s%s?%s", baseURL, endpointPath, q.Encode())
-
-	body, status, reqErr := doMemoryGet(ctx, client, target, tenantID, entidade, ano, extraHeaders)
-	if reqErr != nil {
-		return nil, 0, baseURL, ano, reqErr
+	scanLimit := limit
+	if strings.TrimSpace(p.NomeFiltro) != "" && scanLimit < 500 {
+		scanLimit = 500
 	}
-	if status != http.StatusOK {
-		return nil, 0, baseURL, ano, fmt.Errorf("Memory OpenKnowledge %s retornou HTTP %d", endpointPath, status)
-	}
-
+	pageSize := normalizePageSize(scanLimit, 200)
 	keys := append([]string{"results", "servidores", "despesas", "empenhos", "receitas", "contratos", "licitacoes"}, extraKeys...)
-	rows, total, decErr := decodeFlexiblePortalList(body, keys...)
-	if decErr != nil {
-		return nil, 0, baseURL, ano, fmt.Errorf("erro ao decodificar Memory OpenKnowledge %s: %w", endpointPath, decErr)
+
+	var allRows []map[string]any
+	hasTotal := false
+	prevBody := ""
+	for page := 1; page <= 10; page++ {
+		q := url.Values{}
+		q.Set("page", strconv.Itoa(page))
+		q.Set("size", strconv.Itoa(pageSize))
+		target := fmt.Sprintf("%s%s?%s", baseURL, endpointPath, q.Encode())
+
+		body, status, reqErr := doMemoryGet(ctx, client, target, tenantID, entidade, ano, extraHeaders)
+		if reqErr != nil {
+			if page == 1 {
+				return nil, 0, baseURL, ano, reqErr
+			}
+			break
+		}
+		if status != http.StatusOK {
+			if page == 1 {
+				return nil, 0, baseURL, ano, fmt.Errorf("Memory OpenKnowledge %s retornou HTTP %d", endpointPath, status)
+			}
+			break
+		}
+		bodyStr := strings.TrimSpace(string(body))
+		if page > 1 && (bodyStr == "" || bodyStr == prevBody) {
+			break
+		}
+		prevBody = bodyStr
+
+		pageRows, pageTotal, pageHasTotal, decErr := decodeFlexiblePortalListMeta(body, keys...)
+		if decErr != nil {
+			if page == 1 {
+				return nil, 0, baseURL, ano, fmt.Errorf("erro ao decodificar Memory OpenKnowledge %s: %w", endpointPath, decErr)
+			}
+			break
+		}
+		if pageHasTotal && pageTotal > total {
+			total = pageTotal
+			hasTotal = true
+		}
+		if len(pageRows) == 0 {
+			break
+		}
+		allRows = append(allRows, pageRows...)
+		if len(allRows) >= scanLimit || len(pageRows) < pageSize || (hasTotal && total > 0 && len(allRows) >= total) {
+			break
+		}
 	}
-	return rows, total, baseURL, ano, nil
+	return allRows, total, baseURL, ano, nil
 }
 
 // QueryMemoryServidores consulta servidores públicos no endpoint Memory /lai/pessoal/servidor/.
@@ -238,10 +273,15 @@ func QueryMemoryServidores(ctx context.Context, client *http.Client, m *Municipi
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		nome := mapGetStr(r, "nome", "Nome", "nomeServidor", "servidor", "funcionario")
 		if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		comp := mapGetStr(r, "competencia", "Competencia", "mesAno", "referencia")
@@ -275,13 +315,10 @@ func QueryMemoryServidores(ctx context.Context, client *http.Client, m *Municipi
 			Fonte:          "Portal Municipal (Memory OpenKnowledge)",
 			PortalURL:      baseURL,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -310,11 +347,16 @@ func QueryMemoryDespesas(ctx context.Context, client *http.Client, m *Municipio,
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "fornecedor", "Fornecedor", "credor", "nomeCredor", "nomeFornecedor", "razaoSocial")
 		historico := mapGetStr(r, "historico", "Historico", "descricao", "especificacao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+historico), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "exercicio", "ano", "Ano"))
@@ -339,13 +381,10 @@ func QueryMemoryDespesas(ctx context.Context, client *http.Client, m *Municipio,
 			ValorPago:           mapGetFloat(r, "valorPago", "valor_pago", "pago"),
 			Fonte:               "Portal Municipal (Memory OpenKnowledge)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -377,10 +416,15 @@ func QueryMemoryReceitas(ctx context.Context, client *http.Client, m *Municipio,
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		desc := mapGetStr(r, "descricao", "Descricao", "especificacao", "nome", "receita")
 		if filtro != "" && !strings.Contains(strings.ToLower(desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		items = append(items, ReceitaItem{
@@ -392,13 +436,10 @@ func QueryMemoryReceitas(ctx context.Context, client *http.Client, m *Municipio,
 			ValorArrecadado: mapGetFloat(r, "valorArrecadado", "valor_arrecadado", "arrecadado", "realizado", "valorRealizado"),
 			Fonte:           "Portal Municipal (Memory OpenKnowledge)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -427,11 +468,16 @@ func QueryMemoryContratos(ctx context.Context, client *http.Client, m *Municipio
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		fornecedor := mapGetStr(r, "fornecedor", "Fornecedor", "contratado", "nomeFornecedor", "razaoSocial")
 		objeto := mapGetStr(r, "objeto", "Objeto", "descricao", "Descricao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+objeto), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "exercicio", "ano", "Ano"))
@@ -453,13 +499,10 @@ func QueryMemoryContratos(ctx context.Context, client *http.Client, m *Municipio
 			Valor:               mapGetFloat(r, "valor", "Valor", "valorContratado", "valorTotal", "valorGlobal"),
 			Fonte:               "Portal Municipal (Memory OpenKnowledge)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -488,11 +531,16 @@ func QueryMemoryLicitacoes(ctx context.Context, client *http.Client, m *Municipi
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		objeto := mapGetStr(r, "objeto", "Objeto", "descricao", "Descricao")
 		modalidade := mapGetStr(r, "modalidade", "Modalidade", "tipo", "descricaoModalidade")
 		if filtro != "" && !strings.Contains(strings.ToLower(objeto+" "+modalidade), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(mapGetFloat(r, "exercicio", "ano", "Ano"))
@@ -512,13 +560,10 @@ func QueryMemoryLicitacoes(ctx context.Context, client *http.Client, m *Municipi
 			Link:            mapGetStr(r, "link", "url", "Link"),
 			Fonte:           "Portal Municipal (Memory OpenKnowledge)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {

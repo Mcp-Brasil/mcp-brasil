@@ -688,11 +688,20 @@ func decodeBethaRows(body []byte) ([]map[string]any, int, error) {
 
 func executeBethaConsulta(ctx context.Context, client *http.Client, apiBase, portalHash string, entry bethaMenuEntry, p PortalQueryParams) ([]map[string]any, int, error) {
 	limit := normalizeLimit(p.Limit)
+	pageSize := normalizePageSize(limit, 200)
 	payload := map[string]any{}
 	if filtro := strings.TrimSpace(p.NomeFiltro); filtro != "" {
 		payload["texto"] = filtro
 	}
 
+	buildURL := func(offset int, chosenID string) string {
+		if chosenID != "" {
+			return fmt.Sprintf("%s/api/busca/%d/agrupador/%s?offset=%d&nivel=1&limit=%d", apiBase, entry.ConsultaID, url.PathEscape(chosenID), offset, pageSize)
+		}
+		return fmt.Sprintf("%s/api/busca-textual/%d?offset=%d&limit=%d", apiBase, entry.ConsultaID, offset, pageSize)
+	}
+
+	chosenID := ""
 	if entry.Tipo == "AGRUPADOR" || entry.Tipo == "LISTA_EM_ARVORE" {
 		agrupURL := fmt.Sprintf("%s/api/consulta/%d/agrupadores/nivel/1", apiBase, entry.ConsultaID)
 		body, status, err := doBethaRequest(ctx, client, http.MethodGet, agrupURL, portalHash, nil)
@@ -710,7 +719,7 @@ func executeBethaConsulta(ctx context.Context, client *http.Client, apiBase, por
 			return nil, 0, nil
 		}
 
-		chosenID := agrupadores[0].resolvedID()
+		chosenID = agrupadores[0].resolvedID()
 		if p.Ano > 0 {
 			yearStr := strconv.Itoa(p.Ano)
 			for _, ag := range agrupadores {
@@ -725,27 +734,59 @@ func executeBethaConsulta(ctx context.Context, client *http.Client, apiBase, por
 		if chosenID == "" {
 			return nil, 0, nil
 		}
+	}
 
-		buscaURL := fmt.Sprintf("%s/api/busca/%d/agrupador/%s?offset=0&nivel=1&limit=%d", apiBase, entry.ConsultaID, url.PathEscape(chosenID), limit)
-		resBody, resStatus, err := doBethaRequest(ctx, client, http.MethodPost, buscaURL, portalHash, payload)
+	var allRows []map[string]any
+	total := 0
+	prevBody := ""
+	offset := 0
+	for pageIdx := 0; pageIdx < 10; pageIdx++ {
+		targetURL := buildURL(offset, chosenID)
+		resBody, resStatus, err := doBethaRequest(ctx, client, http.MethodPost, targetURL, portalHash, payload)
 		if err != nil {
-			return nil, 0, err
+			if pageIdx == 0 {
+				return nil, 0, err
+			}
+			break
 		}
 		if resStatus != http.StatusOK {
-			return nil, 0, fmt.Errorf("Betha /api/busca/%d/agrupador/%s retornou HTTP %d", entry.ConsultaID, chosenID, resStatus)
+			if pageIdx == 0 {
+				if chosenID != "" {
+					return nil, 0, fmt.Errorf("Betha /api/busca/%d/agrupador/%s retornou HTTP %d", entry.ConsultaID, chosenID, resStatus)
+				}
+				return nil, 0, fmt.Errorf("Betha /api/busca-textual/%d retornou HTTP %d", entry.ConsultaID, resStatus)
+			}
+			break
 		}
-		return decodeBethaRows(resBody)
-	}
+		bodyStr := strings.TrimSpace(string(resBody))
+		if pageIdx > 0 && bodyStr == prevBody {
+			break
+		}
+		prevBody = bodyStr
 
-	buscaTextualURL := fmt.Sprintf("%s/api/busca-textual/%d?offset=0&limit=%d", apiBase, entry.ConsultaID, limit)
-	resBody, resStatus, err := doBethaRequest(ctx, client, http.MethodPost, buscaTextualURL, portalHash, payload)
-	if err != nil {
-		return nil, 0, err
+		rows, pageTotal, err := decodeBethaRows(resBody)
+		if err != nil {
+			if pageIdx == 0 {
+				return nil, 0, err
+			}
+			break
+		}
+		if pageIdx == 0 {
+			total = pageTotal
+		}
+		if len(rows) == 0 {
+			break
+		}
+		allRows = append(allRows, rows...)
+		offset += len(rows)
+		if len(allRows) >= limit || len(rows) < pageSize || (total > 0 && len(allRows) >= total) {
+			break
+		}
 	}
-	if resStatus != http.StatusOK {
-		return nil, 0, fmt.Errorf("Betha /api/busca-textual/%d retornou HTTP %d", entry.ConsultaID, resStatus)
+	if len(allRows) > limit {
+		allRows = allRows[:limit]
 	}
-	return decodeBethaRows(resBody)
+	return allRows, total, nil
 }
 
 func normFieldKey(s string) string {

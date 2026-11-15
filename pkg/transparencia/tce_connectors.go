@@ -121,22 +121,46 @@ func (c *TCEClient) FetchTCEPIServidores(ctx context.Context, m *Municipio, ano 
 		Vinculo string `json:"vinculo"`
 	}
 
+	pageSize := normalizePageSize(limit, 200)
 	for _, y := range years {
-		u := fmt.Sprintf("%s/servidores/%d/%d/lista?pagina=1&qtdePorPagina=%d&valorFiltro=%s",
-			c.tcePIBaseURL, pref.ID, y, limit, url.QueryEscape(strings.TrimSpace(filtro)))
-		body, status, err := doJSONGet(ctx, c.client, u)
-		if err != nil {
-			return nil, err
-		}
-		if status != http.StatusOK {
-			continue
-		}
 		var raw []piServ
-		if err := json.Unmarshal(body, &raw); err != nil {
-			continue
+		prevBody := ""
+		for pagina := 1; pagina <= 10; pagina++ {
+			u := fmt.Sprintf("%s/servidores/%d/%d/lista?pagina=%d&qtdePorPagina=%d&valorFiltro=%s",
+				c.tcePIBaseURL, pref.ID, y, pagina, pageSize, url.QueryEscape(strings.TrimSpace(filtro)))
+			body, status, err := doJSONGet(ctx, c.client, u)
+			if err != nil {
+				if pagina == 1 {
+					return nil, err
+				}
+				break
+			}
+			if status != http.StatusOK {
+				break
+			}
+			bodyStr := strings.TrimSpace(string(body))
+			if pagina > 1 && (bodyStr == "" || bodyStr == prevBody) {
+				break
+			}
+			prevBody = bodyStr
+
+			var pageRaw []piServ
+			if err := json.Unmarshal(body, &pageRaw); err != nil {
+				break
+			}
+			if len(pageRaw) == 0 {
+				break
+			}
+			raw = append(raw, pageRaw...)
+			if len(raw) >= limit || len(pageRaw) < pageSize {
+				break
+			}
 		}
 		if len(raw) == 0 {
 			continue
+		}
+		if len(raw) > limit {
+			raw = raw[:limit]
 		}
 		items := make([]ServidorItem, 0, len(raw))
 		for _, r := range raw {
@@ -343,10 +367,11 @@ func (c *TCEClient) FetchTCECEServidores(ctx context.Context, m *Municipio, ano,
 		return nil, err
 	}
 	limit = normalizeLimit(limit)
-	fetchCount := limit
-	if filtro != "" && fetchCount < 100 {
-		fetchCount = 100
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
 	}
+	pageSize := normalizePageSize(scanLimit, 200)
 
 	years := []int{ano}
 	if ano <= 0 {
@@ -381,51 +406,89 @@ func (c *TCEClient) FetchTCECEServidores(ctx context.Context, m *Municipio, ano,
 	for _, y := range years {
 		exOrc := fmt.Sprintf("%04d00", y)
 		refDoc := fmt.Sprintf("%04d%02d", y, mes)
-		u := fmt.Sprintf("%s/agentes_publicos_municipais?codigo_municipio=%s&exercicio_orcamento=%s&data_referencia_doc=%s&$count=%d&$start_index=0",
-			c.tceCEBaseURL, url.QueryEscape(codCE), exOrc, refDoc, fetchCount)
-		body, status, err := doJSONGet(ctx, c.client, u)
-		if err != nil {
-			return nil, err
+		var allElements []ceAgente
+		prevBody := ""
+		for page := 0; page < 5; page++ {
+			u := fmt.Sprintf("%s/agentes_publicos_municipais?codigo_municipio=%s&exercicio_orcamento=%s&data_referencia_doc=%s&$count=%d&$start_index=%d",
+				c.tceCEBaseURL, url.QueryEscape(codCE), exOrc, refDoc, pageSize, page*pageSize)
+			body, status, err := doJSONGet(ctx, c.client, u)
+			if err != nil {
+				if page == 0 {
+					return nil, err
+				}
+				break
+			}
+			if status != http.StatusOK {
+				break
+			}
+			bodyStr := strings.TrimSpace(string(body))
+			if page > 0 && (bodyStr == "" || bodyStr == prevBody) {
+				break
+			}
+			prevBody = bodyStr
+			var wrapper struct {
+				Elements []ceAgente `json:"elements"`
+			}
+			if err := json.Unmarshal(body, &wrapper); err != nil {
+				break
+			}
+			if len(wrapper.Elements) == 0 {
+				break
+			}
+			allElements = append(allElements, wrapper.Elements...)
+			if len(allElements) >= scanLimit || len(wrapper.Elements) < pageSize {
+				break
+			}
 		}
-		if status != http.StatusOK {
-			continue
-		}
-		var wrapper struct {
-			Elements []ceAgente `json:"elements"`
-		}
-		if err := json.Unmarshal(body, &wrapper); err != nil {
-			continue
-		}
-		if len(wrapper.Elements) == 0 {
+		if len(allElements) == 0 {
 			continue
 		}
 
-		// Enriquece remuneração via /sim/agentes_publicos_folha (best-effort)
+		// Enriquece remuneração via /sim/agentes_publicos_folha com paginação (best-effort)
 		type folhaSum struct{ bruto, desc float64 }
 		folhaMap := make(map[string]folhaSum)
-		uFolha := fmt.Sprintf("%s/agentes_publicos_folha?codigo_municipio=%s&exercicio_orcamento=%s&data_referencia_doc=%s&$count=500&$start_index=0",
-			c.tceCEBaseURL, url.QueryEscape(codCE), exOrc, refDoc)
-		if fBody, fStatus, fErr := doJSONGet(ctx, c.client, uFolha); fErr == nil && fStatus == http.StatusOK {
+		prevFolhaBody := ""
+		for page := 0; page < 5; page++ {
+			uFolha := fmt.Sprintf("%s/agentes_publicos_folha?codigo_municipio=%s&exercicio_orcamento=%s&data_referencia_doc=%s&$count=500&$start_index=%d",
+				c.tceCEBaseURL, url.QueryEscape(codCE), exOrc, refDoc, page*500)
+			fBody, fStatus, fErr := doJSONGet(ctx, c.client, uFolha)
+			if fErr != nil || fStatus != http.StatusOK {
+				break
+			}
+			fBodyStr := strings.TrimSpace(string(fBody))
+			if page > 0 && (fBodyStr == "" || fBodyStr == prevFolhaBody) {
+				break
+			}
+			prevFolhaBody = fBodyStr
 			var fWrap struct {
 				Elements []ceFolhaItem `json:"elements"`
 			}
-			if json.Unmarshal(fBody, &fWrap) == nil {
-				for _, fi := range fWrap.Elements {
-					cur := folhaMap[fi.CPFAgente]
-					if fi.Dedutivel {
-						cur.desc += fi.ValorItem
-					} else {
-						cur.bruto += fi.ValorItem
-					}
-					folhaMap[fi.CPFAgente] = cur
+			if json.Unmarshal(fBody, &fWrap) != nil || len(fWrap.Elements) == 0 {
+				break
+			}
+			for _, fi := range fWrap.Elements {
+				cur := folhaMap[fi.CPFAgente]
+				if fi.Dedutivel {
+					cur.desc += fi.ValorItem
+				} else {
+					cur.bruto += fi.ValorItem
 				}
+				folhaMap[fi.CPFAgente] = cur
+			}
+			if len(fWrap.Elements) < 500 {
+				break
 			}
 		}
 
-		items := make([]ServidorItem, 0, minInt(limit, len(wrapper.Elements)))
-		for _, r := range wrapper.Elements {
+		items := make([]ServidorItem, 0, minInt(limit, len(allElements)))
+		matchedTotal := 0
+		for _, r := range allElements {
 			nome := strings.TrimSpace(r.NomeServidor)
 			if filtroLow != "" && !strings.Contains(strings.ToLower(nome), filtroLow) {
+				continue
+			}
+			matchedTotal++
+			if len(items) >= limit {
 				continue
 			}
 			fs := folhaMap[r.CPFSrv]
@@ -449,16 +512,13 @@ func (c *TCEClient) FetchTCECEServidores(ctx context.Context, m *Municipio, ano,
 				Fonte:          "TCE-CE Dados Abertos (SIM)",
 				PortalURL:      c.tceCEBaseURL,
 			})
-			if len(items) >= limit {
-				break
-			}
 		}
 		return &ServidoresResult{
 			Municipio:      m,
 			Fonte:          "TCE-CE Dados Abertos (SIM)",
 			Plataforma:     "tce_ce_sim",
 			PortalURL:      c.tceCEBaseURL,
-			TotalRegistros: len(items),
+			TotalRegistros: matchedTotal,
 			Servidores:     items,
 			Disponivel:     true,
 		}, nil

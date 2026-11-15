@@ -348,38 +348,47 @@ func selectSmarapdCandidates(discovered []smarapdVisaoRef, keywords []string, fa
 	return out
 }
 
-func decodeSmarapdFilterResponse(body []byte) ([]map[string]any, int, error) {
-	rows, total, err := decodeFlexiblePortalList(body, "Dados", "Lista", "Itens", "Items", "Resultado", "Rows")
+func decodeSmarapdFilterResponseMeta(body []byte) ([]map[string]any, int, bool, error) {
+	rows, total, hasTotal, err := decodeFlexiblePortalListMeta(body, "Dados", "Lista", "Itens", "Items", "Resultado", "Rows")
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, false, err
 	}
 	if len(rows) > 0 {
-		return rows, total, nil
+		return rows, total, hasTotal, nil
 	}
 
 	trimmed := strings.TrimSpace(string(body))
 	if !strings.HasPrefix(trimmed, "{") {
-		return rows, total, nil
+		return rows, total, hasTotal, nil
 	}
 	var obj map[string]any
 	if err := json.Unmarshal([]byte(trimmed), &obj); err != nil {
-		return nil, 0, err
+		return nil, 0, false, err
 	}
 	for _, wrapperKey := range []string{"Dados", "dados", "Data", "data", "Resultado", "resultado"} {
 		if sub, ok := obj[wrapperKey].(map[string]any); ok && sub != nil {
 			subBytes, mErr := json.Marshal(sub)
 			if mErr == nil {
-				if subRows, subTot, dErr := decodeFlexiblePortalList(subBytes, "Dados", "Lista", "Itens", "Items"); dErr == nil && len(subRows) > 0 {
-					if subTot == 0 {
-						subTot = int(smarapdGetFloat(obj, "TotalRegistros", "Total", "TotalItems", "Count"))
+				if subRows, subTot, subHasTotal, dErr := decodeFlexiblePortalListMeta(subBytes, "Dados", "Lista", "Itens", "Items"); dErr == nil && len(subRows) > 0 {
+					if !subHasTotal {
+						subTot = int(smarapdGetFloat(obj, "TotalRegistros", "totalRegistros", "Total", "total", "TotalItems", "totalItems", "Count", "count"))
+						subHasTotal = subTot > 0
 					}
-					if subTot == 0 {
-						subTot = len(subRows)
-					}
-					return subRows, subTot, nil
+					return subRows, subTot, subHasTotal, nil
 				}
 			}
 		}
+	}
+	return rows, total, hasTotal, nil
+}
+
+func decodeSmarapdFilterResponse(body []byte) ([]map[string]any, int, error) {
+	rows, total, hasTotal, err := decodeSmarapdFilterResponseMeta(body)
+	if err != nil {
+		return nil, 0, err
+	}
+	if !hasTotal {
+		total = len(rows)
 	}
 	return rows, total, nil
 }
@@ -397,6 +406,11 @@ func fetchSmarapdModule(
 	}
 
 	limit := normalizeLimit(p.Limit)
+	scanLimit := limit
+	if strings.TrimSpace(p.NomeFiltro) != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+	pageSize := normalizePageSize(scanLimit, 200)
 	discovered := discoverSmarapdVisoes(ctx, client, rootURL, origin, referer)
 	candidates := selectSmarapdCandidates(discovered, keywords, fallbacks)
 
@@ -407,35 +421,71 @@ func fetchSmarapdModule(
 	maxAttempts := minInt(len(candidates), 4)
 	for i := 0; i < maxAttempts; i++ {
 		cand := candidates[i]
-		payload := map[string]any{
-			"ChaveModulo":         cand.ChaveModulo,
-			"NomeVisao":           cand.NomeVisao,
-			"Pagina":              1,
-			"QuantidadeRegistros": limit,
-			"Filtros":             []any{},
-			"Ordenacao":           []any{},
+		var allRows []map[string]any
+		candTotal := 0
+		candHasTotal := false
+		prevBody := ""
+		candOK := false
+
+		for page := 1; page <= 10; page++ {
+			payload := map[string]any{
+				"ChaveModulo":         cand.ChaveModulo,
+				"NomeVisao":           cand.NomeVisao,
+				"Pagina":              page,
+				"QuantidadeRegistros": pageSize,
+				"Filtros":             []any{},
+				"Ordenacao":           []any{},
+			}
+			body, status, reqErr := doSmarapdRequest(ctx, client, http.MethodPost, origin, referer, rootURL+"/paiportalserver/modulovisao/filter", payload)
+			if reqErr != nil {
+				if page == 1 {
+					lastErr = reqErr
+				}
+				break
+			}
+			lastStatus = status
+			if status != http.StatusOK {
+				if page == 1 {
+					lastErr = fmt.Errorf("SmarAPD /paiportalserver/modulovisao/filter (%s/%s) retornou HTTP %d", cand.ChaveModulo, cand.NomeVisao, status)
+				}
+				break
+			}
+			bodyStr := strings.TrimSpace(string(body))
+			if page > 1 && (bodyStr == "" || bodyStr == prevBody) {
+				break
+			}
+			prevBody = bodyStr
+
+			parsed, tot, totHas, decErr := decodeSmarapdFilterResponseMeta(body)
+			if decErr != nil {
+				if page == 1 {
+					lastErr = fmt.Errorf("erro ao decodificar SmarAPD (%s/%s): %w", cand.ChaveModulo, cand.NomeVisao, decErr)
+				}
+				break
+			}
+			candOK = true
+			hadSuccess = true
+			if totHas && tot > candTotal {
+				candTotal = tot
+				candHasTotal = true
+			}
+			if len(parsed) == 0 {
+				break
+			}
+			allRows = append(allRows, parsed...)
+			if len(allRows) >= scanLimit || len(parsed) < pageSize || (candHasTotal && candTotal > 0 && len(allRows) >= candTotal) {
+				break
+			}
 		}
-		body, status, reqErr := doSmarapdRequest(ctx, client, http.MethodPost, origin, referer, rootURL+"/paiportalserver/modulovisao/filter", payload)
-		if reqErr != nil {
-			lastErr = reqErr
-			continue
+
+		if !candHasTotal && len(allRows) > 0 {
+			candTotal = len(allRows)
 		}
-		lastStatus = status
-		if status != http.StatusOK {
-			lastErr = fmt.Errorf("SmarAPD /paiportalserver/modulovisao/filter (%s/%s) retornou HTTP %d", cand.ChaveModulo, cand.NomeVisao, status)
-			continue
-		}
-		parsed, tot, decErr := decodeSmarapdFilterResponse(body)
-		if decErr != nil {
-			lastErr = fmt.Errorf("erro ao decodificar SmarAPD (%s/%s): %w", cand.ChaveModulo, cand.NomeVisao, decErr)
-			continue
-		}
-		hadSuccess = true
-		if len(parsed) > 0 {
-			return parsed, tot, rootURL, nil
+		if candOK && len(allRows) > 0 {
+			return allRows, candTotal, rootURL, nil
 		}
 		if total == 0 {
-			total = tot
+			total = candTotal
 		}
 	}
 
@@ -469,10 +519,15 @@ func QuerySmarapdServidores(ctx context.Context, client *http.Client, m *Municip
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ServidorItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		nome := smarapdGetStr(r, "Nome", "NomeServidor", "Servidor", "Funcionario", "NomeFuncionario")
 		if filtro != "" && !strings.Contains(strings.ToLower(nome), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		cpfFmt := smarapdGetStr(r, "CPFFormatado", "CPFParcial", "CpfMascarado")
@@ -509,13 +564,10 @@ func QuerySmarapdServidores(ctx context.Context, client *http.Client, m *Municip
 			Fonte:          "Portal Municipal (SmarAPD PAI)",
 			PortalURL:      rootURL,
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -552,11 +604,16 @@ func QuerySmarapdDespesas(ctx context.Context, client *http.Client, m *Municipio
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]DespesaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		fornecedor := smarapdGetStr(r, "Fornecedor", "Credor", "NomeFornecedor", "NomeCredor", "RazaoSocial", "Favorecido")
 		historico := smarapdGetStr(r, "Historico", "Descricao", "HistoricoEmpenho", "Especificacao")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+historico), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(smarapdGetFloat(r, "Ano", "Exercicio", "AnoEmpenho"))
@@ -581,13 +638,10 @@ func QuerySmarapdDespesas(ctx context.Context, client *http.Client, m *Municipio
 			ValorPago:           smarapdGetFloat(r, "ValorPago", "Pago", "VlrPago"),
 			Fonte:               "Portal Municipal (SmarAPD PAI)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -624,10 +678,15 @@ func QuerySmarapdReceitas(ctx context.Context, client *http.Client, m *Municipio
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ReceitaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		desc := smarapdGetStr(r, "Descricao", "Especificacao", "Receita", "Nome", "NomeReceita")
 		if filtro != "" && !strings.Contains(strings.ToLower(desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		items = append(items, ReceitaItem{
@@ -639,13 +698,10 @@ func QuerySmarapdReceitas(ctx context.Context, client *http.Client, m *Municipio
 			ValorArrecadado: smarapdGetFloat(r, "ValorArrecadado", "Arrecadado", "Realizado", "ValorRealizado"),
 			Fonte:           "Portal Municipal (SmarAPD PAI)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -682,11 +738,16 @@ func QuerySmarapdContratos(ctx context.Context, client *http.Client, m *Municipi
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]ContratoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		fornecedor := smarapdGetStr(r, "Fornecedor", "Contratado", "NomeFornecedor", "NomeContratado", "RazaoSocial")
 		objeto := smarapdGetStr(r, "Objeto", "Descricao", "ObjetoContrato")
 		if filtro != "" && !strings.Contains(strings.ToLower(fornecedor+" "+objeto), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(smarapdGetFloat(r, "Ano", "Exercicio", "AnoContrato"))
@@ -708,13 +769,10 @@ func QuerySmarapdContratos(ctx context.Context, client *http.Client, m *Municipi
 			Valor:               smarapdGetFloat(r, "Valor", "ValorTotal", "ValorContrato", "ValorGlobal", "ValorContratado"),
 			Fonte:               "Portal Municipal (SmarAPD PAI)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
@@ -751,11 +809,16 @@ func QuerySmarapdLicitacoes(ctx context.Context, client *http.Client, m *Municip
 	limit := normalizeLimit(p.Limit)
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	items := make([]LicitacaoItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
 
 	for _, r := range rows {
 		objeto := smarapdGetStr(r, "Objeto", "Descricao", "ObjetoLicitacao")
 		modalidade := smarapdGetStr(r, "Modalidade", "DescricaoModalidade", "Tipo")
 		if filtro != "" && !strings.Contains(strings.ToLower(objeto+" "+modalidade), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
 			continue
 		}
 		itemAno := int(smarapdGetFloat(r, "Ano", "Exercicio", "AnoLicitacao"))
@@ -781,13 +844,10 @@ func QuerySmarapdLicitacoes(ctx context.Context, client *http.Client, m *Municip
 			Link:            smarapdGetStr(r, "Link", "URL", "Url"),
 			Fonte:           "Portal Municipal (SmarAPD PAI)",
 		})
-		if len(items) >= limit {
-			break
-		}
 	}
 
-	if total == 0 {
-		total = len(items)
+	if filtro != "" || total == 0 {
+		total = matchedTotal
 	}
 	msg := ""
 	if len(items) == 0 {
