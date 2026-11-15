@@ -34,3 +34,21 @@ jobs:
 
       - name: Test
         run: uv run pytest -v
+
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Go test
+        run: go test -count=1 -race ./...
+
+      - name: Build Go binary
+        run: make build-go
