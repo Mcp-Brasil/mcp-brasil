@@ -384,89 +384,156 @@ func tableDomainHeaderKeywords(domain string) []string {
 }
 
 func fetchHTMLDomainTables(ctx context.Context, client *http.Client, baseURL, domain string) (usedURL string, topLinks []string, tables []htmlTable, err error) {
-	finalURL, body, err := fetchHTMLPage(ctx, client, baseURL)
-	if err != nil {
-		return baseURL, nil, nil, err
-	}
-	usedURL = finalURL
+	return fetchHTMLDomainTablesWithParams(ctx, client, PortalQueryParams{BaseURL: baseURL}, domain)
+}
 
-	baseParsed, _ := url.Parse(finalURL)
+func scorePageLinks(baseURL, body, domain string) []struct {
+	link  htmlLink
+	score int
+} {
+	baseParsed, _ := url.Parse(baseURL)
 	baseHost := ""
 	if baseParsed != nil {
 		baseHost = baseParsed.Hostname()
 	}
-
-	headerKWs := tableDomainHeaderKeywords(domain)
-	rootTables := extractHTMLTables(finalURL, body)
-	for _, tb := range rootTables {
-		if tableHeaderScore(tb.Headers, headerKWs) >= 2 {
-			tables = append(tables, tb)
-		}
-	}
-
-	links := extractHTMLAnchorLinks(finalURL, body)
+	links := extractHTMLAnchorLinks(baseURL, body)
 	kws := htmlDomainKeywords(domain)
-	type scoredLink struct {
+	var cands []struct {
 		link  htmlLink
 		score int
 	}
-	var cands []scoredLink
 	for _, lk := range links {
 		if sc := scoreHTMLLink(lk, baseHost, kws); sc > 0 {
-			cands = append(cands, scoredLink{link: lk, score: sc})
+			cands = append(cands, struct {
+				link  htmlLink
+				score int
+			}{link: lk, score: sc})
 		}
 	}
 	sort.SliceStable(cands, func(i, j int) bool {
 		return cands[i].score > cands[j].score
 	})
+	return cands
+}
 
+func fetchHTMLDomainTablesWithParams(ctx context.Context, client *http.Client, p PortalQueryParams, domain string) (usedURL string, topLinks []string, tables []htmlTable, err error) {
+	sessClient := sessionHTTPClient(client)
+	finalURL, body, err := fetchHTMLPage(ctx, sessClient, p.BaseURL)
+	if err != nil {
+		return p.BaseURL, nil, nil, err
+	}
+	usedURL = finalURL
+
+	headerKWs := tableDomainHeaderKeywords(domain)
+	rootUsedURL, rootMatched, rootFallback := extractPageAllTables(ctx, sessClient, finalURL, body, domain, headerKWs, p)
+
+	cands := scorePageLinks(finalURL, body, domain)
+	topLinkSeen := make(map[string]struct{})
+	addTopLink := func(u string) {
+		if len(topLinks) >= 5 {
+			return
+		}
+		if _, ok := topLinkSeen[u]; !ok {
+			topLinkSeen[u] = struct{}{}
+			topLinks = append(topLinks, u)
+		}
+	}
 	for i := 0; i < len(cands) && i < 5; i++ {
-		topLinks = append(topLinks, cands[i].link.URL)
+		addTopLink(cands[i].link.URL)
 	}
 
-	if len(tables) > 0 {
-		return usedURL, topLinks, tables, nil
+	if len(rootMatched) > 0 {
+		return rootUsedURL, topLinks, rootMatched, nil
 	}
 
-	// Visita até 2 subpáginas mais relevantes quando a página inicial não contém a tabela do módulo
+	// Visita até 2 subpáginas de nível 1 (ex.: Home -> /transparencia ou direto ao módulo)
+	// e coleta candidatas de nível 2 caso o nível 1 seja um hub de links.
 	visited := map[string]struct{}{finalURL: {}}
-	fetched := 0
+	type scoredCand struct {
+		link  htmlLink
+		score int
+	}
+	var level2Cands []scoredCand
+	var fallbackTables []htmlTable
+	fallbackUsedURL := usedURL
+
+	fetchedL1 := 0
 	for _, c := range cands {
-		if fetched >= 2 {
+		if fetchedL1 >= 2 {
 			break
 		}
 		if _, ok := visited[c.link.URL]; ok {
 			continue
 		}
 		visited[c.link.URL] = struct{}{}
-		fetched++
+		fetchedL1++
 
-		subFinal, subBody, subErr := fetchHTMLPage(ctx, client, c.link.URL)
+		subFinal, subBody, subErr := fetchHTMLPage(ctx, sessClient, c.link.URL)
 		if subErr != nil {
 			continue
 		}
-		subTables := extractHTMLTables(subFinal, subBody)
-		matched := false
-		for _, tb := range subTables {
-			if tableHeaderScore(tb.Headers, headerKWs) >= 2 {
-				tables = append(tables, tb)
-				matched = true
+		visited[subFinal] = struct{}{}
+
+		subUsedURL, subMatched, subFallback := extractPageAllTables(ctx, sessClient, subFinal, subBody, domain, headerKWs, p)
+		if len(subMatched) > 0 {
+			return subUsedURL, topLinks, subMatched, nil
+		}
+		if len(subFallback) > 0 && len(fallbackTables) == 0 {
+			fallbackTables = append(fallbackTables, subFallback...)
+			fallbackUsedURL = subUsedURL
+		}
+
+		subLinks := scorePageLinks(subFinal, subBody, domain)
+		for i, sl := range subLinks {
+			if i < 3 {
+				addTopLink(sl.link.URL)
 			}
-		}
-		if matched {
-			usedURL = subFinal
-			break
-		}
-		if len(subTables) > 0 && len(tables) == 0 {
-			tables = append(tables, subTables...)
-			usedURL = subFinal
+			// Apenas segue no salto 2 links que casam palavras-chave do domínio (score > 20),
+			// evitando loops em links genéricos "transparência" (+5/+15).
+			if sl.score > 20 {
+				if _, seen := visited[sl.link.URL]; !seen {
+					level2Cands = append(level2Cands, scoredCand{link: sl.link, score: sl.score})
+				}
+			}
 		}
 	}
 
-	if len(tables) == 0 {
-		tables = rootTables
+	// Salto 2: Home -> Hub Transparência -> Página específica do módulo
+	sort.SliceStable(level2Cands, func(i, j int) bool {
+		return level2Cands[i].score > level2Cands[j].score
+	})
+	fetchedL2 := 0
+	for _, c2 := range level2Cands {
+		if fetchedL2 >= 2 {
+			break
+		}
+		if _, ok := visited[c2.link.URL]; ok {
+			continue
+		}
+		visited[c2.link.URL] = struct{}{}
+		fetchedL2++
+
+		l2Final, l2Body, l2Err := fetchHTMLPage(ctx, sessClient, c2.link.URL)
+		if l2Err != nil {
+			continue
+		}
+		l2UsedURL, l2Matched, l2Fallback := extractPageAllTables(ctx, sessClient, l2Final, l2Body, domain, headerKWs, p)
+		if len(l2Matched) > 0 {
+			return l2UsedURL, topLinks, l2Matched, nil
+		}
+		if len(l2Fallback) > 0 && len(fallbackTables) == 0 {
+			fallbackTables = append(fallbackTables, l2Fallback...)
+			fallbackUsedURL = l2UsedURL
+		}
 	}
-	return usedURL, topLinks, tables, nil
+
+	if len(fallbackTables) > 0 {
+		return fallbackUsedURL, topLinks, fallbackTables, nil
+	}
+	if len(rootFallback) > 0 {
+		return rootUsedURL, topLinks, rootFallback, nil
+	}
+	return usedURL, topLinks, nil, nil
 }
 
 func findColIdx(normHeaders []string, candidates ...string) int {
@@ -525,7 +592,7 @@ func htmlNoRowsMessage(plat, usedURL string, topLinks []string) string {
 
 // QueryHTMLPortalServidores consulta servidores públicos a partir de tabelas HTML em portais sem API estruturada.
 func QueryHTMLPortalServidores(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams, plataforma string) (*ServidoresResult, error) {
-	usedURL, topLinks, tables, err := fetchHTMLDomainTables(ctx, client, p.BaseURL, "servidores")
+	usedURL, topLinks, tables, err := fetchHTMLDomainTablesWithParams(ctx, client, p, "servidores")
 	if err != nil {
 		return nil, err
 	}
@@ -619,7 +686,7 @@ func QueryHTMLPortalServidores(ctx context.Context, client *http.Client, m *Muni
 
 // QueryHTMLPortalDespesas consulta despesas/empenhos a partir de tabelas HTML em portais sem API estruturada.
 func QueryHTMLPortalDespesas(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams, plataforma string) (*DespesasResult, error) {
-	usedURL, topLinks, tables, err := fetchHTMLDomainTables(ctx, client, p.BaseURL, "despesas")
+	usedURL, topLinks, tables, err := fetchHTMLDomainTablesWithParams(ctx, client, p, "despesas")
 	if err != nil {
 		return nil, err
 	}
@@ -707,7 +774,7 @@ func QueryHTMLPortalDespesas(ctx context.Context, client *http.Client, m *Munici
 
 // QueryHTMLPortalReceitas consulta receitas a partir de tabelas HTML em portais sem API estruturada.
 func QueryHTMLPortalReceitas(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams, plataforma string) (*ReceitasResult, error) {
-	usedURL, topLinks, tables, err := fetchHTMLDomainTables(ctx, client, p.BaseURL, "receitas")
+	usedURL, topLinks, tables, err := fetchHTMLDomainTablesWithParams(ctx, client, p, "receitas")
 	if err != nil {
 		return nil, err
 	}
@@ -781,7 +848,7 @@ func QueryHTMLPortalReceitas(ctx context.Context, client *http.Client, m *Munici
 
 // QueryHTMLPortalLicitacoes consulta licitações a partir de tabelas HTML em portais sem API estruturada.
 func QueryHTMLPortalLicitacoes(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams, plataforma string) (*LicitacoesResult, error) {
-	usedURL, topLinks, tables, err := fetchHTMLDomainTables(ctx, client, p.BaseURL, "licitacoes")
+	usedURL, topLinks, tables, err := fetchHTMLDomainTablesWithParams(ctx, client, p, "licitacoes")
 	if err != nil {
 		return nil, err
 	}
@@ -951,7 +1018,7 @@ func QueryHTMLPortalContratos(ctx context.Context, client *http.Client, m *Munic
 
 // QueryHTMLPortalDiarias consulta diárias e passagens a partir de tabelas HTML em portais sem API estruturada.
 func QueryHTMLPortalDiarias(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams, plataforma string) (*DiariasResult, error) {
-	usedURL, topLinks, tables, err := fetchHTMLDomainTables(ctx, client, p.BaseURL, "diarias")
+	usedURL, topLinks, tables, err := fetchHTMLDomainTablesWithParams(ctx, client, p, "diarias")
 	if err != nil {
 		return nil, err
 	}

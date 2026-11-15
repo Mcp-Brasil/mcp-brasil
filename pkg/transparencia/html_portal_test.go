@@ -236,3 +236,175 @@ func TestHubRoutingHTMLPortal(t *testing.T) {
 		t.Fatalf("Hub html_portal diarias inesperado: err=%v res=%+v", err, di)
 	}
 }
+
+func TestHTMLPortalScriptJSONAndXHRMock(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client := &http.Client{Timeout: 3 * time.Second}
+	m := &transparencia.Municipio{CodigoIBGE: "3157807", Nome: "Santa Luzia", UF: "MG"}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/next-servidores":
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			_, _ = w.Write([]byte(`<!doctype html><html><body>
+				<div id="__next"></div>
+				<script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{"servidores":[{"nome":"ANA NEXTJS","cpf":"123.456.789-01","cargo":"Engenheira","bruto":"9.800,50","liquido":"7.500,00"}]}}}</script>
+			</body></html>`))
+		case "/datatables-despesas":
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			_, _ = w.Write([]byte(`<!doctype html><html><body>
+				<table id="tblDesp"><thead><tr><th>Empenho</th><th>Fornecedor</th><th>CPF/CNPJ</th><th>Valor Empenhado</th></tr></thead><tbody></tbody></table>
+				<script>$('#tblDesp').DataTable({ ajax: { url: '/api/despesas-dt.json' } });</script>
+			</body></html>`))
+		case "/api/despesas-dt.json":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"draw":1,"recordsTotal":1,"aaData":[["2025/001","CONSTRUTORA BETA","11.222.333/0001-44","R$ 42.500,00"]]}`))
+		case "/fetch-receitas":
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			_, _ = w.Write([]byte(`<!doctype html><html><body>
+				<div id="app"></div>
+				<script>fetch('/dados/receitas.json').then(r => r.json());</script>
+			</body></html>`))
+		case "/dados/receitas.json":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"dados":[{"codigo":"1.1.1","descricao":"IPTU","arrecadado":"85000.25","previsto":"90000.00"}]}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	serv, err := transparencia.QueryHTMLPortalServidores(ctx, client, m, transparencia.PortalQueryParams{BaseURL: srv.URL + "/next-servidores", Limit: 5}, "cms_wordpress_html")
+	if err != nil || !serv.Disponivel || len(serv.Servidores) != 1 || serv.Servidores[0].Nome != "ANA NEXTJS" || serv.Servidores[0].CPFParcial != "***.456.789-**" || serv.Servidores[0].SalarioBruto != 9800.50 {
+		t.Fatalf("Next/script JSON servidores inesperado: err=%v res=%+v", err, serv)
+	}
+
+	desp, err := transparencia.QueryHTMLPortalDespesas(ctx, client, m, transparencia.PortalQueryParams{BaseURL: srv.URL + "/datatables-despesas", Ano: 2025, Limit: 5}, "html_portal")
+	if err != nil || !desp.Disponivel || len(desp.Despesas) != 1 || desp.Despesas[0].Fornecedor != "CONSTRUTORA BETA" || desp.Despesas[0].DocumentoFornecedor != "11.222.333/0001-44" || desp.Despesas[0].ValorEmpenhado != 42500.00 {
+		t.Fatalf("DataTables ajax despesas inesperado: err=%v res=%+v", err, desp)
+	}
+
+	rec, err := transparencia.QueryHTMLPortalReceitas(ctx, client, m, transparencia.PortalQueryParams{BaseURL: srv.URL + "/fetch-receitas", Limit: 5}, "html_portal")
+	if err != nil || !rec.Disponivel || len(rec.Receitas) != 1 || rec.Receitas[0].Descricao != "IPTU" || rec.Receitas[0].ValorArrecadado != 85000.25 {
+		t.Fatalf("fetch XHR receitas inesperado: err=%v res=%+v", err, rec)
+	}
+}
+
+func TestHTMLPortalTwoHopAndCSVExportMock(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client := &http.Client{Timeout: 3 * time.Second}
+	m := &transparencia.Municipio{CodigoIBGE: "3157807", Nome: "Santa Luzia", UF: "MG"}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/":
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			_, _ = w.Write([]byte(`<html><body>
+				<h1>Prefeitura Municipal</h1>
+				<a href="/transparencia">Portal da Transparência</a>
+			</body></html>`))
+		case "/transparencia":
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			_, _ = w.Write([]byte(`<html><body>
+				<h2>Menu Transparência</h2>
+				<a href="/transparencia/licitacoes-hub">Licitações e Editais</a>
+			</body></html>`))
+		case "/transparencia/licitacoes-hub":
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			_, _ = w.Write([]byte(`<html><body>
+				<h2>Licitações</h2>
+				<p>Clique para baixar:</p>
+				<a href="/exports/licitacoes.csv">Exportar CSV de Licitações</a>
+			</body></html>`))
+		case "/exports/licitacoes.csv":
+			w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+			_, _ = w.Write([]byte("\xef\xbb\xbfRelatorio Municipal\nNumero;Modalidade;Objeto;Situacao;Valor Estimado\n012/2025;Pregão Eletrônico;Compra de computadores;Homologada;R$ 125.000,00\n"))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	lic, err := transparencia.QueryHTMLPortalLicitacoes(ctx, client, m, transparencia.PortalQueryParams{BaseURL: srv.URL, Ano: 2025, Limit: 5}, "prefeitura_html")
+	if err != nil || !lic.Disponivel || len(lic.Licitacoes) != 1 {
+		t.Fatalf("2-hop + CSV export licitacoes inesperado: err=%v res=%+v", err, lic)
+	}
+	if lic.Licitacoes[0].Numero != "012/2025" || lic.Licitacoes[0].ValorEstimado != 125000.00 {
+		t.Fatalf("dados CSV inesperados: %+v", lic.Licitacoes[0])
+	}
+}
+
+func TestHTMLPortalFormSubmissionAndSafetyMock(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client := &http.Client{Timeout: 3 * time.Second}
+	m := &transparencia.Municipio{CodigoIBGE: "3157807", Nome: "Santa Luzia", UF: "MG"}
+
+	var loginSubmitted bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/contratos-form":
+			if r.Method == http.MethodGet {
+				http.SetCookie(w, &http.Cookie{Name: "PHPSESSID", Value: "sess-abc-123", Path: "/"})
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				_, _ = w.Write([]byte(`<html><body>
+					<form method="POST" action="/contratos-form">
+						<input type="hidden" name="_token" value="csrf-xyz" />
+						<select name="ano">
+							<option value="2024">2024</option>
+							<option value="2025" selected>2025</option>
+						</select>
+						<input type="submit" value="Pesquisar Contratos" />
+					</form>
+				</body></html>`))
+				return
+			}
+			c, err := r.Cookie("PHPSESSID")
+			if err != nil || c.Value != "sess-abc-123" {
+				http.Error(w, "missing session cookie", http.StatusBadRequest)
+				return
+			}
+			if err := r.ParseForm(); err != nil || r.FormValue("_token") != "csrf-xyz" || r.FormValue("ano") != "2025" {
+				http.Error(w, "invalid form payload", http.StatusBadRequest)
+				return
+			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			_, _ = w.Write([]byte(`<html><body><table>
+				<tr><th>Contrato</th><th>Fornecedor</th><th>CPF/CNPJ</th><th>Valor</th></tr>
+				<tr><td>CT-55/2025</td><td>SERVICOS FORM LTDA</td><td>22.333.444/0001-55</td><td>R$ 75.400,00</td></tr>
+			</table></body></html>`))
+		case "/login-portal":
+			if r.Method == http.MethodPost {
+				loginSubmitted = true
+			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			_, _ = w.Write([]byte(`<html><body>
+				<form method="POST" action="/login-portal">
+					<input type="text" name="usuario" />
+					<input type="password" name="senha" />
+					<input type="submit" value="Entrar" />
+				</form>
+			</body></html>`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	ct, err := transparencia.QueryHTMLPortalContratos(ctx, client, m, transparencia.PortalQueryParams{BaseURL: srv.URL + "/contratos-form", Ano: 2025, Limit: 5}, "html_portal")
+	if err != nil || !ct.Disponivel || len(ct.Contratos) != 1 {
+		t.Fatalf("auto form submission contratos inesperado: err=%v res=%+v", err, ct)
+	}
+	if ct.Contratos[0].Numero != "CT-55/2025" || ct.Contratos[0].Valor != 75400.00 {
+		t.Fatalf("contrato pós-POST inesperado: %+v", ct.Contratos[0])
+	}
+
+	if _, err := transparencia.QueryHTMLPortalContratos(ctx, client, m, transparencia.PortalQueryParams{BaseURL: srv.URL + "/login-portal", Ano: 2025, Limit: 5}, "html_portal"); err == nil {
+		t.Fatalf("esperava erro sem tabelas para formulário de login")
+	}
+	if loginSubmitted {
+		t.Fatalf("formulário com campo password NÃO deveria ter sido submetido")
+	}
+}
