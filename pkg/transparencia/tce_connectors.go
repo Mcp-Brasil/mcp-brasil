@@ -44,10 +44,10 @@ type TCEClient struct {
 	tceCEBaseURL string
 	tceSPBaseURL string
 
-	mu         sync.Mutex
-	piPrefs    []PIPrefeitura
-	ceMunis    []ceMunicipio
-	spMunis    []spMunicipio
+	mu      sync.Mutex
+	piPrefs []PIPrefeitura
+	ceMunis []ceMunicipio
+	spMunis []spMunicipio
 }
 
 // NewTCEClient cria um cliente para os TCEs estaduais com API pública estruturada.
@@ -612,12 +612,12 @@ func (c *TCEClient) FetchTCESPReceitas(ctx context.Context, m *Municipio, ano, m
 	}
 
 	type spRec struct {
-		Orgao         string `json:"orgao"`
-		Mes           string `json:"mes"`
-		FonteRecurso  string `json:"ds_fonte_recurso"`
-		Alinea        string `json:"ds_alinea"`
-		SubAlinea     string `json:"ds_subalinea"`
-		ValorStr      string `json:"vl_arrecadacao"`
+		Orgao        string `json:"orgao"`
+		Mes          string `json:"mes"`
+		FonteRecurso string `json:"ds_fonte_recurso"`
+		Alinea       string `json:"ds_alinea"`
+		SubAlinea    string `json:"ds_subalinea"`
+		ValorStr     string `json:"vl_arrecadacao"`
 	}
 
 	for _, y := range years {

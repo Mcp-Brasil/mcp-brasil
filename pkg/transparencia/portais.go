@@ -119,21 +119,21 @@ type quasarServidorRaw struct {
 }
 
 type quasarDespesaRaw struct {
-	NumEmpenho        string  `json:"numEmpenho"`
-	NumAnoEmpenho     int     `json:"numAnoEmpenho"`
-	DatMovimento      string  `json:"datMovimento"`
-	DatUltimoMov      string  `json:"datUltimoMovimento"`
-	NomFornecedor     string  `json:"nomFornecedor"`
-	DesAgrupamento    string  `json:"desAgrupamento"`
-	DesDocFornecedor  string  `json:"desDocumentoFornecedor"`
-	DesOrgao          string  `json:"desOrgao"`
-	DesUnidade        string  `json:"desUnidade"`
-	DesFuncao         string  `json:"desFuncao"`
-	DesDespesaOrc     string  `json:"desDespesaOrcamentaria"`
-	DesEmpenhoHist    string  `json:"desEmpenhoHistorico"`
-	VlrEmpenhado      float64 `json:"vlrEmpenhado"`
-	VlrLiquidado      float64 `json:"vlrLiquidado"`
-	VlrPago           float64 `json:"vlrPago"`
+	NumEmpenho       string  `json:"numEmpenho"`
+	NumAnoEmpenho    int     `json:"numAnoEmpenho"`
+	DatMovimento     string  `json:"datMovimento"`
+	DatUltimoMov     string  `json:"datUltimoMovimento"`
+	NomFornecedor    string  `json:"nomFornecedor"`
+	DesAgrupamento   string  `json:"desAgrupamento"`
+	DesDocFornecedor string  `json:"desDocumentoFornecedor"`
+	DesOrgao         string  `json:"desOrgao"`
+	DesUnidade       string  `json:"desUnidade"`
+	DesFuncao        string  `json:"desFuncao"`
+	DesDespesaOrc    string  `json:"desDespesaOrcamentaria"`
+	DesEmpenhoHist   string  `json:"desEmpenhoHistorico"`
+	VlrEmpenhado     float64 `json:"vlrEmpenhado"`
+	VlrLiquidado     float64 `json:"vlrLiquidado"`
+	VlrPago          float64 `json:"vlrPago"`
 }
 
 type quasarReceitaRaw struct {

@@ -14,16 +14,16 @@ import (
 // Engine é o motor de alta performance em Go para pesquisa e conexão de transparência
 // de todos os municípios e estados brasileiros.
 type Engine struct {
-	mu             sync.RWMutex
-	estados        []*Estado
-	municipios     []*Municipio
-	byIBGE         map[string]*Municipio
-	bySIAFI        map[string]*Municipio
-	byCNPJ         map[string]*Municipio
-	byUF           map[string][]*Municipio
-	estadosByUF    map[string]*Estado
-	estadosByCode  map[int]*Estado
-	muniNormIndex  []*indexedMuni
+	mu                sync.RWMutex
+	estados           []*Estado
+	municipios        []*Municipio
+	byIBGE            map[string]*Municipio
+	bySIAFI           map[string]*Municipio
+	byCNPJ            map[string]*Municipio
+	byUF              map[string][]*Municipio
+	estadosByUF       map[string]*Estado
+	estadosByCode     map[int]*Estado
+	muniNormIndex     []*indexedMuni
 	megasoftList      []MegasoftMunicipio
 	megasoftByIBGE    map[string]MegasoftMunicipio
 	portalCatalogList []PortalCatalogMunicipio
@@ -161,22 +161,22 @@ func (e *Engine) loadEstados() error {
 		pncpURL := fmt.Sprintf("https://pncp.gov.br/app/editais?uf=%s", uf)
 
 		est := &Estado{
-			CodigoUF:             codeUF,
-			UF:                   uf,
-			Nome:                 nome,
-			Latitude:             lat,
-			Longitude:            lon,
-			Regiao:               regiao,
-			Capital:              info.CapitalNome,
-			PortalTransparencia:  info.TransparenciaGov,
-			PortalGoverno:        info.PortalEstado,
-			TribunalContasNome:   info.NomeEstado,
-			TribunalContasURL:    info.URLEstado,
-			AssembleiaNome:       info.AssembleiaNome,
-			AssembleiaURL:        info.AssembleiaURL,
-			SiconfiEnteID:        strconv.Itoa(codeUF),
+			CodigoUF:              codeUF,
+			UF:                    uf,
+			Nome:                  nome,
+			Latitude:              lat,
+			Longitude:             lon,
+			Regiao:                regiao,
+			Capital:               info.CapitalNome,
+			PortalTransparencia:   info.TransparenciaGov,
+			PortalGoverno:         info.PortalEstado,
+			TribunalContasNome:    info.NomeEstado,
+			TribunalContasURL:     info.URLEstado,
+			AssembleiaNome:        info.AssembleiaNome,
+			AssembleiaURL:         info.AssembleiaURL,
+			SiconfiEnteID:         strconv.Itoa(codeUF),
 			RadarTransparenciaURL: radarURL,
-			PNCPURL:              pncpURL,
+			PNCPURL:               pncpURL,
 		}
 
 		e.estados = append(e.estados, est)
@@ -862,18 +862,18 @@ func (e *Engine) CompareTransparencia(alvos []string) (*ComparativoRelatorio, er
 		if len(alvoTrim) == 2 {
 			if est, err := e.GetEstado(alvoTrim); err == nil {
 				rel.Itens = append(rel.Itens, &ComparativoItem{
-					Tipo:                 "estado",
-					Nome:                 est.Nome,
-					UF:                   est.UF,
-					CodigoIBGE:           strconv.Itoa(est.CodigoUF),
-					Regiao:               est.Regiao,
-					Capital:              false,
-					PortalTransparencia:  est.PortalTransparencia,
-					TribunalContasNome:   est.TribunalContasNome,
-					TribunalContasURL:    est.TribunalContasURL,
+					Tipo:                  "estado",
+					Nome:                  est.Nome,
+					UF:                    est.UF,
+					CodigoIBGE:            strconv.Itoa(est.CodigoUF),
+					Regiao:                est.Regiao,
+					Capital:               false,
+					PortalTransparencia:   est.PortalTransparencia,
+					TribunalContasNome:    est.TribunalContasNome,
+					TribunalContasURL:     est.TribunalContasURL,
 					RadarTransparenciaURL: est.RadarTransparenciaURL,
-					SiconfiURL:           fmt.Sprintf("https://siconfi.tesouro.gov.br/siconfi/index.jsf?cod_ibge=%d", est.CodigoUF),
-					PNCPURL:              est.PNCPURL,
+					SiconfiURL:            fmt.Sprintf("https://siconfi.tesouro.gov.br/siconfi/index.jsf?cod_ibge=%d", est.CodigoUF),
+					PNCPURL:               est.PNCPURL,
 				})
 				continue
 			}
@@ -886,21 +886,21 @@ func (e *Engine) CompareTransparencia(alvos []string) (*ComparativoRelatorio, er
 			est, _ := e.GetEstado(m.UF)
 			dos := BuildMunicipioDossier(m, est)
 			rel.Itens = append(rel.Itens, &ComparativoItem{
-				Tipo:                 "municipio",
-				Nome:                 m.Nome,
-				UF:                   m.UF,
-				CodigoIBGE:           m.CodigoIBGE,
-				SiafiID:              m.SiafiID,
-				CNPJ:                 m.CNPJ,
-				Populacao:            m.Populacao,
-				Regiao:               m.Regiao,
-				Capital:              m.Capital,
-				PortalTransparencia:  dos.PortalTransparenciaPrefeitura,
-				TribunalContasNome:   dos.TribunalContasCompetente,
-				TribunalContasURL:    dos.TribunalContasURL,
+				Tipo:                  "municipio",
+				Nome:                  m.Nome,
+				UF:                    m.UF,
+				CodigoIBGE:            m.CodigoIBGE,
+				SiafiID:               m.SiafiID,
+				CNPJ:                  m.CNPJ,
+				Populacao:             m.Populacao,
+				Regiao:                m.Regiao,
+				Capital:               m.Capital,
+				PortalTransparencia:   dos.PortalTransparenciaPrefeitura,
+				TribunalContasNome:    dos.TribunalContasCompetente,
+				TribunalContasURL:     dos.TribunalContasURL,
 				RadarTransparenciaURL: dos.RadarTransparenciaURL,
-				SiconfiURL:           dos.SiconfiURL,
-				PNCPURL:              dos.PNCPURL,
+				SiconfiURL:            dos.SiconfiURL,
+				PNCPURL:               dos.PNCPURL,
 			})
 		}
 	}

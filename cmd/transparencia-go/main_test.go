@@ -271,6 +271,3 @@ func TestCLIMegasoftModulesMock(t *testing.T) {
 		t.Errorf("CPF parcial no detalhe CLI incorreto: %v", det["cpf_parcial"])
 	}
 }
-
-
-

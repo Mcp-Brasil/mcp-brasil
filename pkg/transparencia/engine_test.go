@@ -355,4 +355,3 @@ func BenchmarkSearchSpeed(b *testing.B) {
 		_ = engine.SearchMunicipios(q, "", 10)
 	}
 }
-

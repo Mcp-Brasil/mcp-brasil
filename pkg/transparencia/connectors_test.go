@@ -768,4 +768,3 @@ func TestMegasoftConnectorMock(t *testing.T) {
 		t.Errorf("Concursos ausente no report completo: %+v", rep.Concursos)
 	}
 }
-

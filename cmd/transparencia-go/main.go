@@ -227,7 +227,6 @@ func cmdSearch(engine *transparencia.Engine, args []string) {
 		return
 	}
 
-
 	fmt.Printf("Encontrados %d municípios em %v:\n\n", len(munis), elapsed)
 	fmt.Printf("%-8s %-30s %-4s %-12s %-6s %-6s %s\n", "IBGE", "MUNICÍPIO", "UF", "REGIÃO", "CAPITAL", "SIAFI", "PORTAL TRANSPARÊNCIA")
 	fmt.Println(strings.Repeat("-", 105))
@@ -1503,4 +1502,3 @@ func truncateStr(s string, max int) string {
 	}
 	return string(runes[:max-3]) + "..."
 }
-

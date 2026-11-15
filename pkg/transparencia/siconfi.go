@@ -211,4 +211,3 @@ func (c *SiconfiClient) FetchEntregas(ctx context.Context, idEnte string, ano in
 
 	return res.Items, nil
 }
-

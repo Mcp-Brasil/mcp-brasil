@@ -32,10 +32,10 @@ type tceExtraConfig struct {
 	paBaseURL string
 	rsBaseURL string
 
-	mu          sync.Mutex
-	rnJuris     []RNJurisdicionado
-	scMunis     []SCMunicipio
-	rsMunis     []RSMunicipio
+	mu      sync.Mutex
+	rnJuris []RNJurisdicionado
+	scMunis []SCMunicipio
+	rsMunis []RSMunicipio
 }
 
 var (
@@ -1000,12 +1000,12 @@ func (c *TCEClient) FetchTCERNLicitacoes(ctx context.Context, m *Municipio, ano,
 	}
 
 	type rnLicitacao struct {
-		NumeroLicitacao string  `json:"numeroLicitacao"`
-		AnoLicitacao    any     `json:"anoLicitacao"`
-		Modalidade      string  `json:"modalidade"`
-		DescricaoObjeto string  `json:"descricaoObjeto"`
+		NumeroLicitacao  string  `json:"numeroLicitacao"`
+		AnoLicitacao     any     `json:"anoLicitacao"`
+		Modalidade       string  `json:"modalidade"`
+		DescricaoObjeto  string  `json:"descricaoObjeto"`
 		ValorTotalOrcado float64 `json:"valorTotalOrcado"`
-		Situacao        string  `json:"situacaoProcedimentoLicitacao"`
+		Situacao         string  `json:"situacaoProcedimentoLicitacao"`
 	}
 
 	for _, y := range years {

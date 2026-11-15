@@ -2,23 +2,23 @@ package transparencia
 
 // Estado representa uma Unidade Federativa brasileira (26 estados + DF).
 type Estado struct {
-	CodigoUF             int     `json:"codigo_uf"`
-	UF                   string  `json:"uf"`
-	Nome                 string  `json:"nome"`
-	Latitude             float64 `json:"latitude"`
-	Longitude            float64 `json:"longitude"`
-	Regiao               string  `json:"regiao"`
-	Capital              string  `json:"capital"`
-	TotalMunicipios      int     `json:"total_municipios"`
-	PortalTransparencia  string  `json:"portal_transparencia"`
-	PortalGoverno        string  `json:"portal_governo"`
-	TribunalContasNome   string  `json:"tribunal_contas_nome"`
-	TribunalContasURL    string  `json:"tribunal_contas_url"`
-	AssembleiaNome       string  `json:"assembleia_nome"`
-	AssembleiaURL        string  `json:"assembleia_url"`
-	SiconfiEnteID        string  `json:"siconfi_ente_id"`
-	RadarTransparenciaURL string `json:"radar_transparencia_url"`
-	PNCPURL              string  `json:"pncp_url"`
+	CodigoUF              int     `json:"codigo_uf"`
+	UF                    string  `json:"uf"`
+	Nome                  string  `json:"nome"`
+	Latitude              float64 `json:"latitude"`
+	Longitude             float64 `json:"longitude"`
+	Regiao                string  `json:"regiao"`
+	Capital               string  `json:"capital"`
+	TotalMunicipios       int     `json:"total_municipios"`
+	PortalTransparencia   string  `json:"portal_transparencia"`
+	PortalGoverno         string  `json:"portal_governo"`
+	TribunalContasNome    string  `json:"tribunal_contas_nome"`
+	TribunalContasURL     string  `json:"tribunal_contas_url"`
+	AssembleiaNome        string  `json:"assembleia_nome"`
+	AssembleiaURL         string  `json:"assembleia_url"`
+	SiconfiEnteID         string  `json:"siconfi_ente_id"`
+	RadarTransparenciaURL string  `json:"radar_transparencia_url"`
+	PNCPURL               string  `json:"pncp_url"`
 }
 
 // Municipio representa um município brasileiro (5.570 municípios + DF + Fernando de Noronha).
@@ -64,19 +64,19 @@ type MunicipioDossier struct {
 
 // EstadoDossier consolida a identidade de transparência de uma UF.
 type EstadoDossier struct {
-	Estado               *Estado      `json:"estado"`
-	TotalMunicipios      int          `json:"total_municipios"`
-	MunicipiosPrincipais []*Municipio `json:"municipios_principais,omitempty"`
-	PortalTransparencia  string       `json:"portal_transparencia"`
-	PortalGoverno        string       `json:"portal_governo"`
-	TribunalContasNome   string       `json:"tribunal_contas_nome"`
-	TribunalContasURL    string       `json:"tribunal_contas_url"`
-	AssembleiaNome       string       `json:"assembleia_nome"`
-	AssembleiaURL        string       `json:"assembleia_url"`
-	RadarTransparenciaURL string      `json:"radar_transparencia_url"`
-	SiconfiURL           string       `json:"siconfi_url"`
-	SiconfiAPI           string       `json:"siconfi_api"`
-	PNCPURL              string       `json:"pncp_url"`
+	Estado                *Estado      `json:"estado"`
+	TotalMunicipios       int          `json:"total_municipios"`
+	MunicipiosPrincipais  []*Municipio `json:"municipios_principais,omitempty"`
+	PortalTransparencia   string       `json:"portal_transparencia"`
+	PortalGoverno         string       `json:"portal_governo"`
+	TribunalContasNome    string       `json:"tribunal_contas_nome"`
+	TribunalContasURL     string       `json:"tribunal_contas_url"`
+	AssembleiaNome        string       `json:"assembleia_nome"`
+	AssembleiaURL         string       `json:"assembleia_url"`
+	RadarTransparenciaURL string       `json:"radar_transparencia_url"`
+	SiconfiURL            string       `json:"siconfi_url"`
+	SiconfiAPI            string       `json:"siconfi_api"`
+	PNCPURL               string       `json:"pncp_url"`
 }
 
 // FiscalItem representa uma linha de dado contábil/fiscal do SICONFI (DCA ou RREO).
@@ -127,21 +127,21 @@ type Stats struct {
 
 // ComparativoItem é um item no relatório de comparação de transparência.
 type ComparativoItem struct {
-	Tipo                 string  `json:"tipo"` // "municipio" ou "estado"
-	Nome                 string  `json:"nome"`
-	UF                   string  `json:"uf"`
-	CodigoIBGE           string  `json:"codigo_ibge"`
-	SiafiID              string  `json:"siafi_id,omitempty"`
-	CNPJ                 string  `json:"cnpj,omitempty"`
-	Populacao            int     `json:"populacao,omitempty"`
-	Regiao               string  `json:"regiao"`
-	Capital              bool    `json:"capital"`
-	PortalTransparencia  string  `json:"portal_transparencia"`
-	TribunalContasNome   string  `json:"tribunal_contas_nome"`
-	TribunalContasURL    string  `json:"tribunal_contas_url"`
+	Tipo                  string `json:"tipo"` // "municipio" ou "estado"
+	Nome                  string `json:"nome"`
+	UF                    string `json:"uf"`
+	CodigoIBGE            string `json:"codigo_ibge"`
+	SiafiID               string `json:"siafi_id,omitempty"`
+	CNPJ                  string `json:"cnpj,omitempty"`
+	Populacao             int    `json:"populacao,omitempty"`
+	Regiao                string `json:"regiao"`
+	Capital               bool   `json:"capital"`
+	PortalTransparencia   string `json:"portal_transparencia"`
+	TribunalContasNome    string `json:"tribunal_contas_nome"`
+	TribunalContasURL     string `json:"tribunal_contas_url"`
 	RadarTransparenciaURL string `json:"radar_transparencia_url"`
-	SiconfiURL           string  `json:"siconfi_url"`
-	PNCPURL              string  `json:"pncp_url"`
+	SiconfiURL            string `json:"siconfi_url"`
+	PNCPURL               string `json:"pncp_url"`
 }
 
 // ComparativoRelatorio agrega múltiplos itens comparados.
@@ -180,25 +180,25 @@ type PortalDiscoveryResult struct {
 
 // ServidorItem representa um registro de servidor público e remuneração.
 type ServidorItem struct {
-	Nome          string  `json:"nome"`
-	Matricula     string  `json:"matricula,omitempty"`
-	CPFParcial    string  `json:"cpf_parcial,omitempty"`
-	Cargo         string  `json:"cargo,omitempty"`
-	Funcao        string  `json:"funcao,omitempty"`
-	Lotacao       string  `json:"lotacao,omitempty"`
-	LocalTrabalho string  `json:"local_trabalho,omitempty"`
-	Vinculo       string  `json:"vinculo,omitempty"`
-	Situacao      string  `json:"situacao,omitempty"`
-	SalarioBase   float64 `json:"salario_base,omitempty"`
-	SalarioBruto  float64 `json:"salario_bruto,omitempty"`
-	Descontos     float64 `json:"descontos,omitempty"`
+	Nome           string  `json:"nome"`
+	Matricula      string  `json:"matricula,omitempty"`
+	CPFParcial     string  `json:"cpf_parcial,omitempty"`
+	Cargo          string  `json:"cargo,omitempty"`
+	Funcao         string  `json:"funcao,omitempty"`
+	Lotacao        string  `json:"lotacao,omitempty"`
+	LocalTrabalho  string  `json:"local_trabalho,omitempty"`
+	Vinculo        string  `json:"vinculo,omitempty"`
+	Situacao       string  `json:"situacao,omitempty"`
+	SalarioBase    float64 `json:"salario_base,omitempty"`
+	SalarioBruto   float64 `json:"salario_bruto,omitempty"`
+	Descontos      float64 `json:"descontos,omitempty"`
 	SalarioLiquido float64 `json:"salario_liquido,omitempty"`
-	Competencia   string  `json:"competencia,omitempty"`
-	CargaHoraria  string  `json:"carga_horaria,omitempty"`
-	DataAdmissao  string  `json:"data_admissao,omitempty"`
-	Orgao         string  `json:"orgao,omitempty"`
-	Fonte         string  `json:"fonte"`
-	PortalURL     string  `json:"portal_url,omitempty"`
+	Competencia    string  `json:"competencia,omitempty"`
+	CargaHoraria   string  `json:"carga_horaria,omitempty"`
+	DataAdmissao   string  `json:"data_admissao,omitempty"`
+	Orgao          string  `json:"orgao,omitempty"`
+	Fonte          string  `json:"fonte"`
+	PortalURL      string  `json:"portal_url,omitempty"`
 }
 
 // ServidoresResult consolida a consulta de servidores públicos de um município.
@@ -537,5 +537,3 @@ type TransparenciaCompletaReport struct {
 	Limitacoes        []string               `json:"limitacoes,omitempty"`
 	TempoTotalMs      int64                  `json:"tempo_total_ms"`
 }
-
-

@@ -24,15 +24,15 @@ type elotechPage[T any] struct {
 }
 
 type elotechServidorFinanceiroDTO struct {
-	Entidade          int64   `json:"entidade"`
-	Matricula         int64   `json:"matricula"`
-	AnoCompetencia    int64   `json:"anoCompetencia"`
-	MesCompetencia    int64   `json:"mesCompetencia"`
-	SalarioBase       float64 `json:"salarioBase"`
-	Vencimentos       float64 `json:"vencimentos"`
-	Descontos         float64 `json:"descontos"`
-	OutrosProventos   float64 `json:"outrosProventos"`
-	DescricaoTipoFolha string `json:"descricaoTipoFolha"`
+	Entidade           int64   `json:"entidade"`
+	Matricula          int64   `json:"matricula"`
+	AnoCompetencia     int64   `json:"anoCompetencia"`
+	MesCompetencia     int64   `json:"mesCompetencia"`
+	SalarioBase        float64 `json:"salarioBase"`
+	Vencimentos        float64 `json:"vencimentos"`
+	Descontos          float64 `json:"descontos"`
+	OutrosProventos    float64 `json:"outrosProventos"`
+	DescricaoTipoFolha string  `json:"descricaoTipoFolha"`
 }
 
 type elotechServidorDTO struct {

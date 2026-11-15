@@ -1619,7 +1619,6 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3166006,Senhora de Oliveira,MG,siplan_html,https://www.senhoradeoliveira.mg.gov.br,https://www.senhoradeoliveira.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3166105,Senhora do Porto,MG,cms_wordpress_html,https://senhoradoporto.mg.gov.br/?cat=-1,https://senhoradoporto.mg.gov.br/?cat=-1,Portal municipal HTML sem API JSON/XML estruturada.
 3166402,Seritinga,MG,html_portal,https://seritinga.mg.gov.br,https://seritinga.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
-3166600,Serra da Saudade,MG,prefeitura_html,http://serradasaudade.com/,http://serradasaudade.com,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3167004,Serranos,MG,siplan_html,http://serranos.mg.gov.br/transparencia,https://serranos.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3167202,Sete Lagoas,MG,html_portal,https://www.setelagoas.mg.gov.br,https://www.setelagoas.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3167301,Silveirânia,MG,siplan_html,https://silveirania.mg.gov.br,https://silveirania.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.

@@ -7,15 +7,15 @@ import (
 
 // InfoTribunal guarda dados do Tribunal de Contas responsável pelo estado e seus municípios.
 type InfoTribunal struct {
-	NomeEstado        string
-	URLEstado         string
-	NomeMunicipios    string
-	URLMunicipios     string
-	AssembleiaNome    string
-	AssembleiaURL     string
-	PortalEstado      string
-	TransparenciaGov  string
-	CapitalNome       string
+	NomeEstado       string
+	URLEstado        string
+	NomeMunicipios   string
+	URLMunicipios    string
+	AssembleiaNome   string
+	AssembleiaURL    string
+	PortalEstado     string
+	TransparenciaGov string
+	CapitalNome      string
 }
 
 // Mapeamento oficial dos 27 estados (UFs) e seus órgãos fiscalizadores e portais de transparência.

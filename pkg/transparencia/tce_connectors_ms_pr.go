@@ -631,17 +631,17 @@ type tceSEReceita struct {
 }
 
 type tceSEContrato struct {
-	IDContrato         int     `json:"IdContrato"`
-	Fornecedor         string  `json:"Fornecedor"`
-	NrProcesso         string  `json:"NrProcesso"`
-	AnoProcesso        string  `json:"AnoProcesso"`
-	DataInicio         string  `json:"DataInicio"`
-	DataFim            string  `json:"DataFim"`
-	SetorResponsavel   string  `json:"SetorResponsavel"`
-	ValorGlobal        float64 `json:"ValorGlobal"`
-	Objeto             string  `json:"Objeto"`
-	TipoProcesso       string  `json:"TipoProcesso"`
-	QtdAditivos        int     `json:"QtdAditivos"`
+	IDContrato       int     `json:"IdContrato"`
+	Fornecedor       string  `json:"Fornecedor"`
+	NrProcesso       string  `json:"NrProcesso"`
+	AnoProcesso      string  `json:"AnoProcesso"`
+	DataInicio       string  `json:"DataInicio"`
+	DataFim          string  `json:"DataFim"`
+	SetorResponsavel string  `json:"SetorResponsavel"`
+	ValorGlobal      float64 `json:"ValorGlobal"`
+	Objeto           string  `json:"Objeto"`
+	TipoProcesso     string  `json:"TipoProcesso"`
+	QtdAditivos      int     `json:"QtdAditivos"`
 }
 
 // FetchTCESEDespesas consulta empenhos na API de Dados Abertos do TCE-SE (/api/Despesas/Empenhos).

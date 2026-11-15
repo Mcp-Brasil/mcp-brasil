@@ -37,16 +37,16 @@ func NewPNCPClientWithBaseURL(baseURL string, httpClient *http.Client) *PNCPClie
 }
 
 type pncpContratacaoRaw struct {
-	AnoCompra           int     `json:"anoCompra"`
-	NumeroControlePNCP  string  `json:"numeroControlePNCP"`
-	ObjetoCompra        string  `json:"objetoCompra"`
-	ModalidadeNome      string  `json:"modalidadeNome"`
-	SituacaoCompraNome  string  `json:"situacaoCompraNome"`
-	ValorTotalEstimado  float64 `json:"valorTotalEstimado"`
-	ValorTotalHomolog   float64 `json:"valorTotalHomologado"`
-	DataPublicacaoPNCP  string  `json:"dataPublicacaoPncp"`
-	DataAberturaProp    string  `json:"dataAberturaProposta"`
-	LinkPNCP            string  `json:"linkPncp"`
+	AnoCompra          int     `json:"anoCompra"`
+	NumeroControlePNCP string  `json:"numeroControlePNCP"`
+	ObjetoCompra       string  `json:"objetoCompra"`
+	ModalidadeNome     string  `json:"modalidadeNome"`
+	SituacaoCompraNome string  `json:"situacaoCompraNome"`
+	ValorTotalEstimado float64 `json:"valorTotalEstimado"`
+	ValorTotalHomolog  float64 `json:"valorTotalHomologado"`
+	DataPublicacaoPNCP string  `json:"dataPublicacaoPncp"`
+	DataAberturaProp   string  `json:"dataAberturaProposta"`
+	LinkPNCP           string  `json:"linkPncp"`
 }
 
 type pncpContratoRaw struct {

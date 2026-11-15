@@ -177,17 +177,17 @@ type megaMovSomatorio struct {
 }
 
 type megaServidorDetalheRaw struct {
-	MesAno         string                  `json:"mesAno"`
-	Matricula      any                     `json:"matricula"`
-	CPF            string                  `json:"cpf"`
-	Nome           string                  `json:"nome"`
-	Orgao          string                  `json:"orgao"`
-	Cargo          string                  `json:"cargo"`
-	DataAdmissao   string                  `json:"dataAdmissao"`
-	Departamento   string                  `json:"departamento"`
-	TipoDeVinculo  string                  `json:"tipoDeVinculo"`
-	CargaHoraria   any                     `json:"cargaHoraria"`
-	Situacao       string                  `json:"situacao"`
+	MesAno         string                    `json:"mesAno"`
+	Matricula      any                       `json:"matricula"`
+	CPF            string                    `json:"cpf"`
+	Nome           string                    `json:"nome"`
+	Orgao          string                    `json:"orgao"`
+	Cargo          string                    `json:"cargo"`
+	DataAdmissao   string                    `json:"dataAdmissao"`
+	Departamento   string                    `json:"departamento"`
+	TipoDeVinculo  string                    `json:"tipoDeVinculo"`
+	CargaHoraria   any                       `json:"cargaHoraria"`
+	Situacao       string                    `json:"situacao"`
 	MovVencimentos megaPage[megaMovRegistro] `json:"movimentoVencimentos"`
 	MovFerias      megaPage[megaMovRegistro] `json:"movimentoFerias"`
 	Mov13          megaPage[megaMovRegistro] `json:"movimento13Salario"`
@@ -197,17 +197,17 @@ type megaServidorDetalheRaw struct {
 }
 
 type megaDiariaRaw struct {
-	CodigoDaViagem    any     `json:"codigoDaViagem"`
-	Matricula         any     `json:"matriculaDoFuncionario"`
-	Nome              string  `json:"nomeDoFuncionario"`
-	Cargo             string  `json:"cargoDoFuncionario"`
-	Destino           string  `json:"destino"`
-	DataDaSaida       string  `json:"dataDaSaida"`
-	DataDaChegada     string  `json:"dataDaChegada"`
-	ValorDaDiaria     float64 `json:"valorDaDiaria"`
-	NumeroDeDiarias   float64 `json:"numeroDeDiarias"`
-	MotivoDaViagem    string  `json:"motivoDaViagem"`
-	NumeroDaLiquidacao string `json:"numeroDaLiquidacao"`
+	CodigoDaViagem     any     `json:"codigoDaViagem"`
+	Matricula          any     `json:"matriculaDoFuncionario"`
+	Nome               string  `json:"nomeDoFuncionario"`
+	Cargo              string  `json:"cargoDoFuncionario"`
+	Destino            string  `json:"destino"`
+	DataDaSaida        string  `json:"dataDaSaida"`
+	DataDaChegada      string  `json:"dataDaChegada"`
+	ValorDaDiaria      float64 `json:"valorDaDiaria"`
+	NumeroDeDiarias    float64 `json:"numeroDeDiarias"`
+	MotivoDaViagem     string  `json:"motivoDaViagem"`
+	NumeroDaLiquidacao string  `json:"numeroDaLiquidacao"`
 }
 
 type megaEmpenhoRaw struct {
@@ -235,39 +235,39 @@ type megaReceitaRaw struct {
 		Ano             int    `json:"ano"`
 		Mes             string `json:"mes"`
 	} `json:"chave"`
-	FonteDaReceita   string  `json:"fonteDaReceita"`
-	Receita          string  `json:"receita"`
-	Natureza         string  `json:"naturezaDaReceita"`
-	OrigemDoRecurso  string  `json:"origemDoRecurso"`
-	ValorOrcado      float64 `json:"valorOrcado"`
-	Arrecadacao      float64 `json:"arrecadacao"`
-	ValorAcumulado   float64 `json:"valorAcumulado"`
+	FonteDaReceita  string  `json:"fonteDaReceita"`
+	Receita         string  `json:"receita"`
+	Natureza        string  `json:"naturezaDaReceita"`
+	OrigemDoRecurso string  `json:"origemDoRecurso"`
+	ValorOrcado     float64 `json:"valorOrcado"`
+	Arrecadacao     float64 `json:"arrecadacao"`
+	ValorAcumulado  float64 `json:"valorAcumulado"`
 }
 
 type megaLicitacaoRaw struct {
-	Codigo          any    `json:"codigo"`
-	NumeroAno       string `json:"numeroAno"`
-	DataJulgamento  string `json:"dataDeJulgamento"`
-	DataPublicacao  string `json:"dataDePublicacao"`
-	Modalidade      string `json:"modalidade"`
-	Situacao        string `json:"situacao"`
-	Historico       string `json:"historico"`
-	Orgao           string `json:"orgao"`
+	Codigo         any    `json:"codigo"`
+	NumeroAno      string `json:"numeroAno"`
+	DataJulgamento string `json:"dataDeJulgamento"`
+	DataPublicacao string `json:"dataDePublicacao"`
+	Modalidade     string `json:"modalidade"`
+	Situacao       string `json:"situacao"`
+	Historico      string `json:"historico"`
+	Orgao          string `json:"orgao"`
 }
 
 type megaContratoRaw struct {
-	Codigo         any     `json:"codigo"`
-	Numero         string  `json:"numero"`
-	Modalidade     string  `json:"modalidade"`
-	Data           string  `json:"data"`
-	Vigencia       string  `json:"vigencia"`
-	NomeDoOrgao    string  `json:"nomeDoOrgao"`
-	Documento      string  `json:"cpfOuCnpjDoFornecedor"`
-	Fornecedor     string  `json:"nomeDoFornecedor"`
-	Objeto         string  `json:"objeto"`
-	Valor          float64 `json:"valor"`
-	ExercicioAno   int     `json:"exercicioAno"`
-	Situacao       string  `json:"situacao"`
+	Codigo       any     `json:"codigo"`
+	Numero       string  `json:"numero"`
+	Modalidade   string  `json:"modalidade"`
+	Data         string  `json:"data"`
+	Vigencia     string  `json:"vigencia"`
+	NomeDoOrgao  string  `json:"nomeDoOrgao"`
+	Documento    string  `json:"cpfOuCnpjDoFornecedor"`
+	Fornecedor   string  `json:"nomeDoFornecedor"`
+	Objeto       string  `json:"objeto"`
+	Valor        float64 `json:"valor"`
+	ExercicioAno int     `json:"exercicioAno"`
+	Situacao     string  `json:"situacao"`
 }
 
 type megaObraRaw struct {
