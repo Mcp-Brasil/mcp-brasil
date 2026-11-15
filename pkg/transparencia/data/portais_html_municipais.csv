@@ -2,6 +2,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 1100098,Espigão D'Oeste,RO,fiorilli_html,https://www.espigaodooeste.ro.gov.br,https://www.espigaodooeste.ro.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1100205,Porto Velho,RO,aspec_assesi_html,https://www.portovelho.ro.gov.br,https://www.portovelho.ro.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1100601,Cacaulândia,RO,fiorilli_html,https://cacaulandia.ro.gov.br,https://cacaulandia.ro.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+1300029,Alvarães,AM,prefeitura_html,https://alvaraes.am.gov.br/transparencia/,https://alvaraes.am.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 1300060,Amaturá,AM,cms_wordpress_html,https://amatura.am.gov.br/transparencia,https://amatura.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1300086,Anamã,AM,cms_wordpress_html,https://anama.am.gov.br/api-dados-abertos,https://anama.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1300144,Apuí,AM,cms_wordpress_html,https://apui.am.gov.br,https://apui.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -11,13 +12,17 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 1300607,Benjamin Constant,AM,cms_wordpress_html,https://benjaminconstant.am.gov.br/category/utilidade-publica,https://www.benjaminconstant.am.gov.br/diario-oficial,Portal municipal HTML sem API JSON/XML estruturada.
 1300631,Beruri,AM,fiorilli_html,https://pmberuri.am.gov.br,https://pmberuri.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1300680,Boa Vista do Ramos,AM,html_portal,https://www.portalbvr.com.br,https://www.portalbvr.com.br,Portal municipal HTML sem API JSON/XML estruturada.
+1300706,Boca do Acre,AM,prefeitura_html,https://bocadoacre.am.gov.br/transparencia/,https://bocadoacre.am.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 1300839,Caapiranga,AM,cms_wordpress_html,https://caapiranga.am.gov.br,https://caapiranga.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+1300904,Canutama,AM,prefeitura_html,https://transparenciamunicipalaam.org.br/p/canutama-camara,https://transparenciamunicipalaam.org.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 1301001,Carauari,AM,cms_wordpress_html,https://www.carauari.am.gov.br/transparencia,https://www.carauari.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1301159,Careiro da Várzea,AM,cms_wordpress_html,https://careirodavarzea.am.gov.br/transparencia,https://careirodavarzea.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1301209,Coari,AM,html_portal,https://transparencia.coari.am.gov.br/index.php?class=SicCidadaoPortal&amp;method=onShow,https://prefeitura.coari.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1301407,Eirunepé,AM,aam_html,https://transparenciamunicipalaam.org.br/p/eirunepe,https://transparenciamunicipalaam.org.br/p/eirunepe,Portal municipal HTML sem API JSON/XML estruturada.
+1301506,Envira,AM,prefeitura_html,https://envira.am.gov.br/transparencia/,https://envira.am.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 1301605,Fonte Boa,AM,cms_wordpress_html,https://transparenciamunicipalaam.org.br/p/fonte-boa,https://prefeituradefonteboa.com.br,Portal municipal HTML sem API JSON/XML estruturada.
 1301654,Guajará,AM,betha_html,https://guajara.am.gov.br,https://guajara.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+1301803,Ipixuna,AM,prefeitura_html,https://ipixuna.am.gov.br/transparencia/,https://ipixuna.am.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 1301951,Itamarati,AM,aam_html,https://transparenciamunicipalaam.org.br/p/itamarati,https://transparenciamunicipalaam.org.br/p/itamarati,Portal municipal HTML sem API JSON/XML estruturada.
 1302009,Itapiranga,AM,cms_wordpress_html,https://transparencia-am.com.br/a2184g113,https://itapiranga.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1302207,Juruá,AM,cms_wordpress_html,https://jurua.am.gov.br/transparencia,https://jurua.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -31,6 +36,8 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 1303403,Parintins,AM,html_portal,https://parintins.am.gov.br,https://parintins.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1303536,Presidente Figueiredo,AM,aam_html,https://transparenciamunicipalaam.org.br/p/presidente-figueiredo,https://transparenciamunicipalaam.org.br/p/presidente-figueiredo,Portal municipal HTML sem API JSON/XML estruturada.
 1303569,Rio Preto da Eva,AM,aam_html,https://riopretodaeva.am.gov.br/portal-da-transparencia,https://riopretodaeva.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+1303700,Santo Antônio do Içá,AM,prefeitura_html,https://www.santoantoniodoica.am.gov.br/,https://www.santoantoniodoica.am.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+1303908,São Paulo de Olivença,AM,prefeitura_html,https://saopaulodeolivenca.am.gov.br/portal-da-transparencia/,https://saopaulodeolivenca.am.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 1303957,São Sebastião do Uatumã,AM,html_portal,https://saosebastiaodouatuma.am.gov.br,https://saosebastiaodouatuma.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1304005,Silves,AM,aam_html,https://silves.am.gov.br,https://silves.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1304062,Tabatinga,AM,fiorilli_html,https://tabatinga.am.gov.br,https://www.tabatinga.am.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -144,6 +151,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 1600105,Amapá,AP,html_portal,https://www.amapa.ap.gov.br,https://www.amapa.ap.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1600253,Itaubal,AP,html_portal,https://www.itaubal.ap.gov.br/pagina/radar-da-transparencia-publica,https://www.itaubal.ap.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1600279,Laranjal do Jari,AP,cms_wordpress_html,https://laranjaldojari.ap.gov.br/transparencia,https://www.laranjaldojari.ap.gov.br/instituicao/instituicao/pmlj/pmlj,Portal municipal HTML sem API JSON/XML estruturada.
+1600402,Mazagão,AP,prefeitura_html,https://www.mazagao.ap.gov.br/acessoainformacao.php,https://www.mazagao.ap.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 1600535,Porto Grande,AP,html_portal,http://www.portogrande.ap.gov.br,http://www.portogrande.ap.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1600550,Pracuúba,AP,html_portal,https://pracuuba.portal.ap.gov.br,https://pracuuba.portal.ap.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1600808,Vitória do Jari,AP,html_portal,https://vitoriadojari.ap.gov.br,https://vitoriadojari.ap.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -173,8 +181,11 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 1720978,Talismã,TO,html_portal,https://www.talisma.to.gov.br/transparencia/servicos,https://www.talisma.to.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 1721257,Tupirama,TO,html_portal,https://www.tupirama.to.gov.br,https://www.tupirama.to.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2100055,Açailândia,MA,html_portal,https://acailandia.ma.gov.br/transparencia/licitacoes,https://acailandia.ma.gov.br/home,Portal municipal HTML sem API JSON/XML estruturada.
+2100105,Afonso Cunha,MA,prefeitura_html,https://www.afonsocunha.ma.gov.br/transparencia,https://www.afonsocunha.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2100204,Alcântara,MA,html_portal,https://transparencia.alcantara.ma.gov.br/index.php?class=export_file&amp;method=export_file_pdf&amp;extension=PDF&amp;token=109&amp;type=TransparenciaLegislacao,https://alcantara.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2100303,Aldeias Altas,MA,prefeitura_html,https://aldeiasaltas.ma.gov.br/transparencia,https://aldeiasaltas.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2100436,Alto Alegre do Maranhão,MA,html_portal,https://altoalegredomaranhao.ma.gov.br/transparencia,https://altoalegredomaranhao.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2100477,Alto Alegre do Pindaré,MA,prefeitura_html,https://www.altoalegredopindare.ma.gov.br/transparencia,https://www.altoalegredopindare.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2100550,Amapá do Maranhão,MA,html_portal,https://amapa.ma.gov.br/transparencia,https://amapa.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2100600,Amarante do Maranhão,MA,html_portal,https://www.amarante.ma.gov.br/noticia/caravana-maranhao-capacita-elas-promove-dois-dias-de-qualificacao-e-incentivo-ao-empreendedorismo-feminino,https://www.amarante.ma.gov.br/home,Portal municipal HTML sem API JSON/XML estruturada.
 2100709,Anajatuba,MA,aspec_assesi_html,https://www.anajatuba.ma.gov.br,https://www.anajatuba.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -183,8 +194,11 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2100873,Araguanã,MA,fiorilli_html,https://transparencia.araguana.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2101004,Arari,MA,html_portal,https://arari.ma.gov.br/transparencia/folha-de-pagamento,https://arari.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2101103,Axixá,MA,html_portal,https://axixa.ma.gov.br/transparencia/licitacoes,https://axixa.ma.gov.br/home,Portal municipal HTML sem API JSON/XML estruturada.
+2101202,Bacabal,MA,prefeitura_html,https://www.bacabal.ma.gov.br/transparencia,https://www.bacabal.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2101251,Bacabeira,MA,html_portal,https://bacabeira.ma.gov.br/transparencia,https://bacabeira.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2101350,Bacurituba,MA,html_portal,https://transparencia.bacurituba.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2101509,Barão de Grajaú,MA,prefeitura_html,https://www.baraodegrajau.ma.gov.br/transparencia,https://www.baraodegrajau.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2101608,Barra do Corda,MA,prefeitura_html,https://www.barradocorda.ma.gov.br/transparencia,https://www.barradocorda.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2101707,Barreirinhas,MA,html_portal,https://barreirinhas.ma.gov.br/transparencia,https://barreirinhas.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2101731,Belágua,MA,fiorilli_html,http://transparencia.belagua.ma.gov.br,https://www.belagua.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2101772,Bela Vista do Maranhão,MA,html_portal,https://belavista.ma.gov.br,https://belavista.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -194,6 +208,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2102002,Bom Jardim,MA,fiorilli_html,https://bomjardim.ma.gov.br,https://bomjardim.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2102101,Brejo,MA,fiorilli_html,https://transparencia.brejo.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2102150,Brejo de Areia,MA,html_portal,https://brejodeareia.ma.gov.br/transparencia/licitacoes,https://brejodeareia.ma.gov.br/home,Portal municipal HTML sem API JSON/XML estruturada.
+2102200,Buriti,MA,prefeitura_html,https://www.buriti.ma.gov.br/transparencia,https://www.buriti.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2102309,Buriti Bravo,MA,html_portal,http://www.ctrinfo.com.br/portaldoservidor/login,https://buritibravo.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2102374,Cachoeira Grande,MA,html_portal,https://www.cachoeiragrande.ma.gov.br/transparencia/lgpd#politica_privacidade,https://www.cachoeiragrande.ma.gov.br/home,Portal municipal HTML sem API JSON/XML estruturada.
 2102408,Cajapió,MA,fiorilli_html,http://transparencia.cajapio.ma.gov.br/sistemadeinformacao/esic/esic,https://www.cajapio.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -207,8 +222,10 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2103125,Central do Maranhão,MA,html_portal,https://centraldomaranhao.ma.gov.br/transparencia,https://centraldomaranhao.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2103158,Centro do Guilherme,MA,html_portal,https://transparencia.centrodoguilherme.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2103174,Centro Novo do Maranhão,MA,html_portal,https://centronovo.ma.gov.br/transparencia,https://centronovo.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2103208,Chapadinha,MA,prefeitura_html,https://www.chapadinha.ma.gov.br/transparencia,https://www.chapadinha.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2103257,Cidelândia,MA,html_portal,https://www.cidelandia.ma.gov.br/noticia/cidelandia-conquista-selo-ouro-em-transparencia-publica-e-entra-para-o-seleto-grupo-dos-municipios-mais-transparentes-do-maranhao,https://www.cidelandia.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2103406,Coelho Neto,MA,cms_wordpress_html,https://coelhoneto.ma.gov.br/linksrapidos/perguntas-e-respostas,https://coelhoneto.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2103505,Colinas,MA,prefeitura_html,https://www.colinas.ma.gov.br/transparencia,https://www.colinas.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2103554,Conceição do Lago-Açu,MA,html_portal,https://conceicaodolagoacu.ma.gov.br/transparencia,https://conceicaodolagoacu.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2103604,Coroatá,MA,cms_wordpress_html,https://coroata.ma.gov.br,https://coroata.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2103703,Cururupu,MA,html_portal,https://transparencia.cururupu.ma.gov.br/index.php?class=export_file&amp;method=export_file_pdf&amp;token=1645&amp;type=DocumentoDiario&amp;extension=PDF,https://cururupu.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -219,6 +236,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2104057,Estreito,MA,html_portal,https://transparencia.estreito.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2104073,Feira Nova do Maranhão,MA,fiorilli_html,https://www.feiranovadomaranhao.ma.gov.br/portal-transparencia,https://www.feiranovadomaranhao.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2104081,Fernando Falcão,MA,html_portal,http://transparencia.fernandofalcao.ma.gov.br,http://www.fernandofalcao.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2104099,Formosa da Serra Negra,MA,prefeitura_html,https://www.formosadaserranegra.ma.gov.br/transparencia,https://www.formosadaserranegra.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2104107,Fortaleza dos Nogueiras,MA,fiorilli_html,https://www.fortalezadosnogueiras.ma.gov.br,https://www.fortalezadosnogueiras.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2104206,Fortuna,MA,fiorilli_html,https://fortuna.ma.gov.br,https://fortuna.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2104404,Gonçalves Dias,MA,html_portal,http://transparencia.goncalvesdias.ma.gov.br,https://www.goncalvesdias.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -230,6 +248,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2104701,Graça Aranha,MA,html_portal,https://transparencia.gracaaranha.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2104909,Guimarães,MA,html_portal,https://transparencia.guimaraes.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2105005,Humberto de Campos,MA,html_portal,https://humbertodecampos.ma.gov.br/transparencia,https://humbertodecampos.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2105153,Igarapé do Meio,MA,prefeitura_html,https://www.igarapedomeio.ma.gov.br/transparencia,https://www.igarapedomeio.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2105203,Igarapé Grande,MA,html_portal,https://igarapegrande.ma.gov.br/transparencia,https://igarapegrande.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2105302,Imperatriz,MA,fiorilli_html,https://transparencia.imperatriz.ma.gov.br,https://imperatriz.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2105351,Itaipava do Grajaú,MA,html_portal,https://itaipava.ma.gov.br/transparencia,https://itaipava.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -248,10 +267,13 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2106409,Mata Roma,MA,html_portal,https://mataroma.ma.gov.br/transparencia,https://mataroma.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2106508,Matinha,MA,html_portal,https://transparencia.matinha.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2106607,Matões,MA,fiorilli_html,https://matoes.ma.gov.br,https://matoes.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2106631,Matões do Norte,MA,prefeitura_html,https://www.matoesdonorte.ma.gov.br/acessoainformacao.php,https://www.matoesdonorte.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2106672,Milagres do Maranhão,MA,fiorilli_html,https://transparencia.milagresdomaranhao.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2106755,Miranda do Norte,MA,html_portal,http://mirandadonorte.ma.gov.br,http://mirandadonorte.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2106805,Mirinzal,MA,html_portal,https://mirinzal.ma.gov.br,https://mirinzal.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2106904,Monção,MA,prefeitura_html,https://www.moncao.ma.gov.br/transparencia/,https://www.moncao.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2107100,Morros,MA,html_portal,https://morros.ma.gov.br,https://morros.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2107258,Nova Colinas,MA,prefeitura_html,https://www.novacolinas.ma.gov.br/transparencia,https://www.novacolinas.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2107308,Nova Iorque,MA,html_portal,https://novaiorque.ma.gov.br,https://novaiorque.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2107456,Olinda Nova do Maranhão,MA,html_portal,https://olindanova.ma.gov.br,https://olindanova.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2107605,Palmeirândia,MA,html_portal,https://palmeirandia.ma.gov.br/transparencia,https://palmeirandia.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -260,9 +282,12 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2108009,Pastos Bons,MA,html_portal,https://www.pastosbons.ma.gov.br,https://www.pastosbons.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2108108,Paulo Ramos,MA,html_portal,https://pauloramos.ma.gov.br,https://pauloramos.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2108256,Pedro do Rosário,MA,html_portal,https://pedrodorosario.ma.gov.br,https://pedrodorosario.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2108306,Penalva,MA,prefeitura_html,https://www.penalva.ma.gov.br/transparencia,https://www.penalva.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2108454,Peritoró,MA,html_portal,https://peritoro.ma.gov.br,https://peritoro.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2108801,Pirapemas,MA,prefeitura_html,https://www.pirapemas.ma.gov.br/transparencia,https://www.pirapemas.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2109007,Porto Franco,MA,fiorilli_html,https://portofranco.ma.gov.br,https://portofranco.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2109056,Porto Rico do Maranhão,MA,html_portal,http://www.ctrinfo.com.br/portaldoservidor/login,https://portorico.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2109106,Presidente Dutra,MA,prefeitura_html,https://www.presidentedutra.ma.gov.br/transparencia,https://www.presidentedutra.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2109205,Presidente Juscelino,MA,html_portal,https://presidentejuscelino.ma.gov.br/transparencia/lgpd#politica_privacidade,https://presidentejuscelino.ma.gov.br/home,Portal municipal HTML sem API JSON/XML estruturada.
 2109239,Presidente Médici,MA,html_portal,https://presidentemedici.ma.gov.br/transparencia,https://presidentemedici.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2109270,Presidente Sarney,MA,html_portal,https://presidentesarney.ma.gov.br,https://presidentesarney.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -275,30 +300,36 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2109809,Santa Helena,MA,fiorilli_html,https://santahelena.ma.gov.br,https://santahelena.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2110005,Santa Luzia,MA,fiorilli_html,https://santaluzia.ma.gov.br,https://santaluzia.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2110203,Santa Rita,MA,modernizacao_html,https://santarita.ma.gov.br,https://santarita.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2110237,Santana do Maranhão,MA,prefeitura_html,https://santanadomaranhao.ma.gov.br/transparencia/,https://santanadomaranhao.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2110278,Santo Amaro do Maranhão,MA,html_portal,http://www.ctrinfo.com.br/portaldoservidor/login,https://santoamaro.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2110401,São Benedito do Rio Preto,MA,html_portal,https://saobeneditodoriopreto.ma.gov.br/transparencia,https://saobeneditodoriopreto.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2110500,São Bento,MA,html_portal,https://transparencia.saobento.ma.gov.br/index.php?class=export_file&amp;method=export_file_pdf&amp;token=1364&amp;type=DocumentoDiario&amp;extension=PDF,https://saobento.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2110658,São Domingos do Azeitão,MA,html_portal,https://transparencia.saodomingosdoazeitao.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2110708,São Domingos do Maranhão,MA,prefeitura_html,https://www.saodomingosdomaranhao.ma.gov.br/transparencia,https://www.saodomingosdomaranhao.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2110807,São Félix de Balsas,MA,aspec_assesi_html,https://saofelixdebalsas.ma.gov.br,https://saofelixdebalsas.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2110856,São Francisco do Brejão,MA,html_portal,https://www.saofranciscodobrejao.ma.gov.br/portal-transparencia,https://www.saofranciscodobrejao.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2110906,São Francisco do Maranhão,MA,html_portal,https://transparencia.saofranciscodomaranhao.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2111003,São João Batista,MA,fiorilli_html,https://saojoaobatista.ma.gov.br,https://saojoaobatista.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2111029,São João do Carú,MA,prefeitura_html,https://www.saojoaodocaru.ma.gov.br/transparencia,https://www.saojoaodocaru.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2111052,São João do Paraíso,MA,fiorilli_html,https://saojoaodoparaiso.ma.gov.br,https://saojoaodoparaiso.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2111102,São João dos Patos,MA,cms_wordpress_html,https://saojoaodospatos.ma.gov.br/transparencia/perguntas-e-respostas,https://saojoaodospatos.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2111201,São José de Ribamar,MA,html_portal,https://transparencia.saojosederibamar.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2111532,São Pedro da Água Branca,MA,fiorilli_html,https://www.saopedrodaaguabranca.ma.gov.br,https://www.saopedrodaaguabranca.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2111573,São Pedro dos Crentes,MA,prefeitura_html,https://www.saopedrodoscrentes.ma.gov.br/transparencia,https://www.saopedrodoscrentes.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2111672,São Roberto,MA,fiorilli_html,https://saoroberto.ma.gov.br,https://saoroberto.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2111706,São Vicente Ferrer,MA,html_portal,https://saovicenteferrer.ma.gov.br/transparencia,https://saovicenteferrer.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2111722,Satubinha,MA,html_portal,https://satubinha.ma.gov.br/transparencia,https://satubinha.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2111748,Senador Alexandre Costa,MA,html_portal,https://senadoralexandrecosta.ma.gov.br/transparencia,https://senadoralexandrecosta.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2111763,Senador La Rocque,MA,aspec_assesi_html,https://www.senadorlarocque.ma.gov.br,https://www.senadorlarocque.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2111805,Sítio Novo,MA,fiorilli_html,https://www.sitionovo.ma.gov.br,https://www.sitionovo.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2111904,Sucupira do Norte,MA,prefeitura_html,https://www.sucupiradonorte.ma.gov.br/transparencia,https://www.sucupiradonorte.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2111953,Sucupira do Riachão,MA,fiorilli_html,https://sucupiradoriachao.ma.gov.br/transparencia/execucao-orcamentaria,https://sucupiradoriachao.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2112100,Timbiras,MA,html_portal,http://transparencia.timbiras.ma.gov.br,https://timbiras.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2112209,Timon,MA,html_portal,https://transparencia.timon.ma.gov.br,https://timon.ma.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
 2112274,Tufilândia,MA,html_portal,https://transparencia.tufilandia.ma.gov.br/index.php?class=Home&method=onShow,https://transparencia.tufilandia.ma.gov.br/index.php?class=Home&method=onShow,Portal municipal HTML sem API JSON/XML estruturada.
 2112308,Tuntum,MA,aspec_assesi_html,https://www.tuntum.ma.gov.br,https://www.tuntum.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2112407,Turiaçu,MA,html_portal,https://turiacu.ma.gov.br/transparencia,https://turiacu.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2112506,Tutóia,MA,prefeitura_html,https://tutoia.ma.gov.br/transparencia,https://tutoia.ma.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2112605,Urbano Santos,MA,fiorilli_html,http://transparencia.urbanosantos.ma.gov.br,https://www.urbanosantos.ma.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2112902,Vitória do Mearim,MA,html_portal,https://www.vitoriadomearim.ma.gov.br/transparencia/licitacoes,https://www.vitoriadomearim.ma.gov.br/home,Portal municipal HTML sem API JSON/XML estruturada.
 2113009,Vitorino Freire,MA,html_portal,https://transparencia.vitorinofreire.ma.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
@@ -503,9 +534,14 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2211704,Wall Ferraz,PI,html_portal,https://wallferraz.pi.gov.br/wallferraz/portalnoticias,https://wallferraz.pi.gov.br/wallferraz/portalnoticias,Portal municipal HTML sem API JSON/XML estruturada.
 2300101,Abaiara,CE,aspec_assesi_html,https://abaiara.ce.gov.br,https://abaiara.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2300507,Alcântaras,CE,html_portal,https://alcantaras.ce.gov.br,https://alcantaras.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2300804,Antonina do Norte,CE,prefeitura_html,https://antoninadonorte.ce.gov.br/transparencia/,https://antoninadonorte.ce.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2301208,Aracoiaba,CE,aspec_assesi_html,https://www.aracoiaba.ce.gov.br,https://www.aracoiaba.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2301257,Ararendá,CE,html_portal,https://ararenda.ce.gov.br/transparencia/despesas,https://ararenda.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2301307,Araripe,CE,prefeitura_html,https://araripe.ce.gov.br/transparencia/,https://araripe.ce.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2301505,Arneiroz,CE,prefeitura_html,https://www.arneiroz.ce.gov.br/transparencia,https://www.arneiroz.ce.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2302503,Brejo Santo,CE,prefeitura_html,https://www.brejosanto.ce.gov.br/transparencia/,https://www.brejosanto.ce.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2303659,Catunda,CE,html_portal,https://catunda.ce.gov.br/transparencia/despesas,https://catunda.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2304251,Cruz,CE,prefeitura_html,https://prefeitura.cruz.ce.gov.br/transparencia-municipal/,https://prefeitura.cruz.ce.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2305209,Hidrolândia,CE,aspec_assesi_html,https://www.hidrolandia.ce.gov.br,https://www.hidrolandia.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2305407,Icó,CE,aspec_assesi_html,https://www.ico.ce.gov.br,https://www.ico.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2305506,Iguatu,CE,html_portal,https://www.iguatu.ce.gov.br,https://www.iguatu.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -515,10 +551,17 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2307700,Maranguape,CE,aspec_assesi_html,https://maranguape.ce.gov.br,https://maranguape.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2308401,Missão Velha,CE,aspec_assesi_html,https://missaovelha.ce.gov.br,https://missaovelha.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2308807,Moraújo,CE,html_portal,https://moraujo.ce.gov.br/transparencia,https://moraujo.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2309003,Mucambo,CE,prefeitura_html,https://mucambo.ce.gov.br/transparencia/,https://mucambo.ce.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2309201,Nova Olinda,CE,prefeitura_html,https://novaolinda.ce.gov.br/transparencia.html,https://novaolinda.ce.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2309904,Pacujá,CE,prefeitura_html,https://www.pacuja.ce.gov.br/transparencia.php,https://www.pacuja.ce.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2310605,Penaforte,CE,html_portal,https://penaforte.ce.gov.br,https://penaforte.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2310951,Pires Ferreira,CE,prefeitura_html,http://www.sstransparenciamunicipal.net/SSFOLHA/sisfo_login.php?entcod=219,http://www.sstransparenciamunicipal.net,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2311108,Porteiras,CE,html_portal,https://porteiras.ce.gov.br,https://porteiras.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2312601,São Luís do Curu,CE,html_portal,https://saoluisdocuru.ce.gov.br,https://saoluisdocuru.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2312809,Senador Sá,CE,prefeitura_html,https://www.senadorsa.ce.gov.br/transparencia,https://www.senadorsa.ce.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2312908,Sobral,CE,html_portal,https://www.sobral.ce.gov.br,https://www.sobral.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2313203,Tamboril,CE,prefeitura_html,https://www.tamboril.ce.gov.br/acessoainformacao.php,https://www.tamboril.ce.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2313252,Tarrafas,CE,prefeitura_html,https://tarrafas.ce.gov.br/transparencia,https://tarrafas.ce.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2313757,Umirim,CE,html_portal,https://www.umirim.ce.gov.br,https://www.umirim.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2314003,Várzea Alegre,CE,aspec_assesi_html,https://varzeaalegre.ce.gov.br,https://varzeaalegre.ce.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2400208,Açu,RN,aspec_assesi_html,https://assu.rn.gov.br,https://assu.rn.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -585,26 +628,41 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2504504,Condado,PB,html_portal,https://transparencia.condado.pb.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2504603,Conde,PB,html_portal,https://conde.pb.gov.br,https://conde.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2504702,Congo,PB,html_portal,https://www.congo.pb.gov.br,https://www.congo.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2504850,Coxixola,PB,prefeitura_html,https://www.coxixola.pb.gov.br/transparencia,https://www.coxixola.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2505105,Cuité,PB,cms_wordpress_html,https://cuite.pb.gov.br/utilidade-publica,https://cuite.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2505279,Curral de Cima,PB,html_portal,https://curraldecima.pb.gov.br/noticia/Projeto-%E2%80%9CAdote-um-Cofrinho%E2%80%9D-incentiva-educa%C3%A7%C3%A3o-financeira-entre-estudantes-de-Curral-de-Cima,https://curraldecima.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2505303,Curral Velho,PB,html_portal,https://transparencia.curralvelho.pb.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2505352,Damião,PB,prefeitura_html,https://www.damiao.pb.gov.br/transparencia,https://www.damiao.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2505402,Desterro,PB,cms_wordpress_html,https://www.desterro.pb.gov.br/portal-da-transparencia/ldo,https://www.desterro.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2505501,Vista Serrana,PB,ipm_html,https://vistaserrana.atende.net,,Portal municipal HTML sem API JSON/XML estruturada.
 2505600,Diamante,PB,html_portal,https://transparencia.diamante.pb.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2505709,Dona Inês,PB,cms_wordpress_html,https://transparencia.pmdonaines.pb.gov.br/category/diario-oficial,https://pmdonaines.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2505907,Emas,PB,html_portal,https://transparencia.emas.pb.gov.br,https://emas.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2506103,Fagundes,PB,prefeitura_html,https://www.fagundes.pb.gov.br/,https://www.fagundes.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2506251,Gado Bravo,PB,prefeitura_html,https://www.gadobravo.pb.gov.br/transparencia,https://www.gadobravo.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2506400,Gurinhém,PB,prefeitura_html,https://www.gurinhem.pb.gov.br/portal-da-transparencia/,https://www.gurinhem.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2506509,Gurjão,PB,html_portal,https://www.gurjao.pb.gov.br,https://www.gurjao.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2506608,Ibiara,PB,html_portal,https://transparencia.ibiara.pb.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2506707,Imaculada,PB,html_portal,https://transparencia.imaculada.pb.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2506806,Ingá,PB,prefeitura_html,https://inga.pb.gov.br/transparencia-e-acesso-a-educacao-infantil-creches/,https://inga.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2506905,Itabaiana,PB,html_portal,https://itabaiana.pb.gov.br,https://itabaiana.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2507002,Itaporanga,PB,aspec_assesi_html,https://itaporanga.pb.gov.br,https://itaporanga.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2507200,Itatuba,PB,prefeitura_html,https://itatuba.pb.gov.br/,https://itatuba.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2507408,Jericó,PB,prefeitura_html,https://www.jerico.pb.gov.br/transparencia/loa,https://www.jerico.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2507606,Juarez Távora,PB,prefeitura_html,https://www.juareztavora.pb.gov.br/transparencia,https://www.juareztavora.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2507804,Junco do Seridó,PB,html_portal,https://transparencia.juncodoserido.pb.gov.br,https://juncodoserido.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2508000,Juru,PB,html_portal,https://transparencia.juru.pb.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2508109,Lagoa,PB,html_portal,https://lagoa.pb.gov.br/transparencia/ldo,https://lagoa.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2508208,Lagoa de Dentro,PB,cms_wordpress_html,https://www.lagoadedentro.pb.gov.br/transparencia/contratos,https://www.lagoadedentro.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2508307,Lagoa Seca,PB,prefeitura_html,https://lagoaseca.pb.gov.br/transparencia-fiscal/,https://lagoaseca.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2508406,Lastro,PB,prefeitura_html,https://www.lastro.pb.gov.br/transparencia,https://www.lastro.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2508505,Livramento,PB,html_portal,https://livramento.pb.gov.br,https://livramento.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2508554,Logradouro,PB,prefeitura_html,https://www.logradouro.pb.gov.br/transparencia,https://www.logradouro.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2508604,Lucena,PB,prefeitura_html,https://www.lucena.pb.gov.br/transparencia,https://www.lucena.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2508802,Malta,PB,ipm_html,https://malta.atende.net,,Portal municipal HTML sem API JSON/XML estruturada.
 2509008,Manaíra,PB,html_portal,https://transparencia.manaira.pb.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2509339,Matinhas,PB,prefeitura_html,https://www.matinhas.pb.gov.br/transparencia,https://www.matinhas.pb.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2509370,Mato Grosso,PB,prefeitura_html,https://radardatransparencia.atricon.org.br/,https://radardatransparencia.atricon.org.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2509396,Maturéia,PB,ipm_html,https://matureia.atende.net,,Portal municipal HTML sem API JSON/XML estruturada.
 2509503,Montadas,PB,ipm_html,https://montadas.atende.net,,Portal municipal HTML sem API JSON/XML estruturada.
 2509701,Monteiro,PB,aspec_assesi_html,https://www.monteiro.pb.gov.br,https://www.monteiro.pb.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -817,17 +875,23 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2616308,Vicência,PE,aspec_assesi_html,https://www.vicencia.pe.gov.br,https://www.vicencia.pe.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2616506,Xexéu,PE,html_portal,https://site.xexeu.pe.gov.br,https://site.xexeu.pe.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2700102,Água Branca,AL,html_portal,https://aguabranca.al.gov.br,https://www.aguabranca.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2700201,Anadia,AL,prefeitura_html,https://www.anadia.al.gov.br/,https://www.anadia.al.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2700300,Arapiraca,AL,cms_wordpress_html,https://web.arapiraca.al.gov.br,https://web.arapiraca.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2700409,Atalaia,AL,html_portal,https://atalaia.al.gov.br,https://atalaia.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2700508,Barra de Santo Antônio,AL,prefeitura_html,https://www.barradesantoantonio.al.gov.br/,https://www.barradesantoantonio.al.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2700607,Barra de São Miguel,AL,html_portal,https://barradesaomiguel.al.gov.br/transparencia/pesquisas,https://barradesaomiguel.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2700706,Batalha,AL,prefeitura_html,https://www.batalha.al.gov.br/portal-transparencia/,https://www.batalha.al.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2700805,Belém,AL,html_portal,https://belem.al.gov.br,https://belem.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2700904,Belo Monte,AL,html_portal,https://www.belomonte.al.gov.br,https://www.belomonte.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2701100,Branquinha,AL,prefeitura_html,http://portalbranquinha.tcgestaopublica.com.br/Principal,http://portalbranquinha.tcgestaopublica.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2701209,Cacimbinhas,AL,html_portal,https://app.cacimbinhas.mgsoft.srv.br/contracheque,https://site.cacimbinhas.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2701308,Cajueiro,AL,html_portal,https://www.cajueiro.al.gov.br/transparencia/receitas,https://www.cajueiro.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2701357,Campestre,AL,html_portal,https://campestre.al.gov.br,https://www.campestre.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2701506,Campo Grande,AL,agora_html,https://campogrande.al.gov.br,https://campogrande.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2701605,Canapi,AL,prefeitura_html,https://radardatransparencia.atricon.org.br/,https://radardatransparencia.atricon.org.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2701704,Capela,AL,html_portal,https://capela.al.gov.br,https://www.capela.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2701803,Carneiros,AL,html_portal,https://carneiros.al.gov.br,https://www.carneiros.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2701902,Chã Preta,AL,prefeitura_html,https://www.kalana.com.br/transparencia/12334629000157/0000/despesas,https://www.kalana.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2702009,Coité do Nóia,AL,html_portal,https://coitedonoia.al.gov.br,https://coitedonoia.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2702108,Colônia Leopoldina,AL,html_portal,https://www.colonialeopoldina.al.gov.br/transparencia/receitas,https://www.colonialeopoldina.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2702207,Coqueiro Seco,AL,html_portal,https://coqueiroseco.al.gov.br/transparencia/pesquisas,https://coqueiroseco.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -845,6 +909,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2703403,Jacaré dos Homens,AL,cms_wordpress_html,https://jacaredoshomens.al.gov.br,https://jacaredoshomens.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2703700,Jaramataia,AL,html_portal,https://www.jaramataia.al.gov.br/portal-transparencia,https://www.jaramataia.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2703809,Joaquim Gomes,AL,html_portal,https://joaquimgomes.al.gov.br,https://joaquimgomes.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2704104,Lagoa da Canoa,AL,prefeitura_html,https://transparencia.lagoadacanoa.al.gov.br,https://transparencia.lagoadacanoa.al.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2704203,Limoeiro de Anadia,AL,html_portal,https://limoeirodeanadia.nfse.srv.br/auth/login,https://www.limoeirodeanadia.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2704302,Maceió,AL,html_portal,https://maceio.al.gov.br,https://maceio.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2704500,Maragogi,AL,govbr_html,https://maragogi.al.gov.br,https://maragogi.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -880,6 +945,8 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2707602,Quebrangulo,AL,html_portal,https://www.quebrangulo.al.gov.br,https://www.quebrangulo.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2707701,Rio Largo,AL,html_portal,https://transparencia.riolargo.al.gov.br/dados-abertos,https://transparencia.riolargo.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2707909,Santa Luzia do Norte,AL,cms_wordpress_html,https://santaluziadonorte.al.gov.br/portal-da-transparencia,https://santaluziadonorte.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2708006,Santana do Ipanema,AL,prefeitura_html,https://www.santanadoipanema.al.gov.br/transparencia,https://www.santanadoipanema.al.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2708105,Santana do Mundaú,AL,prefeitura_html,https://radardatransparencia.atricon.org.br/,https://radardatransparencia.atricon.org.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2708204,São Brás,AL,html_portal,https://saobras.al.gov.br/transparencia,https://saobras.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2708303,São José da Laje,AL,cms_wordpress_html,https://transparencia.saojosedalaje.al.gov.br,https://saojosedalaje.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2708402,São José da Tapera,AL,html_portal,https://transparencia.saojosedatapera.al.gov.br/dados-abertos,https://transparencia.saojosedatapera.al.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -934,12 +1001,16 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2900108,Abaíra,BA,html_portal,https://transparencia.abaira.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2900207,Abaré,BA,html_portal,https://transparencia.abare.ba.gov.br/leis-atos-normativos,https://www.abare.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2900355,Adustina,BA,html_portal,https://transparencia.adustina.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2900504,Érico Cardoso,BA,prefeitura_html,https://ericocardoso.ba.gov.br/transparencia/,https://ericocardoso.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2900603,Aiquara,BA,html_portal,https://transparencia.aiquara.ba.gov.br/e-sic,https://www.aiquara.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2900702,Alagoinhas,BA,html_portal,https://transparencia.alagoinhas.ba.gov.br/ppa.php,https://www.alagoinhas.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2900801,Alcobaça,BA,modernizacao_html,https://pmalcobaca.ba.gov.br,https://pmalcobaca.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2901106,Amélia Rodrigues,BA,html_portal,https://www.ameliarodrigues.ba.gov.br,https://www.ameliarodrigues.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2901205,Anagé,BA,prefeitura_html,https://anage.ba.gov.br/transparencia,https://anage.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2901304,Andaraí,BA,html_portal,https://www.andarai.ba.gov.br,https://www.andarai.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2901353,Andorinha,BA,prefeitura_html,https://pmandorinha.transparenciaoficialba.com/diariooficial/,https://pmandorinha.transparenciaoficialba.com,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2901403,Angical,BA,cms_wordpress_html,https://portaldatransparencia.angical.ba.gov.br,https://angical.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2901502,Anguera,BA,prefeitura_html,https://radardatransparencia.atricon.org.br/,https://radardatransparencia.atricon.org.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2901601,Antas,BA,html_portal,https://transparencia.antas.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2901700,Antônio Cardoso,BA,html_portal,https://transparencia.antoniocardoso.ba.gov.br/leis-atos-normativos,https://www.antoniocardoso.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2901809,Antônio Gonçalves,BA,html_portal,https://www.transparencia.brejolandia.ba.gov.br,https://www.antoniogoncalves.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -958,41 +1029,59 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2903003,Barra do Mendes,BA,html_portal,https://transparencia.barradomendes.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2903102,Barra do Rocha,BA,html_portal,https://www.barradorocha.ba.gov.br,https://www.barradorocha.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2903201,Barreiras,BA,el_gpi_html,https://barreiras.ba.gov.br,https://barreiras.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2903276,Barrocas,BA,prefeitura_html,http://www.barrocas.ba.gov.br/,http://www.barrocas.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2903300,Barro Preto,BA,html_portal,https://diario.barropreto.ba.gov.br,https://www.barropreto.ba.gov.br/site/diariooficial,Portal municipal HTML sem API JSON/XML estruturada.
 2903508,Belo Campo,BA,html_portal,https://transparencia.belocampo.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2903607,Biritinga,BA,prefeitura_html,https://www.biritinga.ba.gov.br/,https://www.biritinga.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2903706,Boa Nova,BA,html_portal,https://transparencia.boanova.ba.gov.br/e-sic,https://www.boanova.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2903904,Bom Jesus da Lapa,BA,prefeitura_html,https://bomjesusdalapa.ba.gov.br/transparencia/,https://bomjesusdalapa.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2903953,Bom Jesus da Serra,BA,html_portal,https://transparencia.bomjesusdaserra.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2904050,Bonito,BA,html_portal,https://bonito.ba.gov.br,https://bonito.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2904100,Boquira,BA,html_portal,https://transparencia.boquira.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2904209,Botuporã,BA,prefeitura_html,https://botupora.ba.gov.br/transparencia/,https://botupora.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2904308,Brejões,BA,html_portal,https://transparencia.brejoes.ba.gov.br/e-sic,https://www.brejoes.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2904407,Brejolândia,BA,html_portal,https://transparencia.brejolandia.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2904506,Brotas de Macaúbas,BA,prefeitura_html,https://www.brotasdemacaubas.ba.gov.br/transparencia,https://www.brotasdemacaubas.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2904753,Buritirama,BA,prefeitura_html,https://buritirama.ba.gov.br/transparencia/,https://buritirama.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2904803,Caatiba,BA,prefeitura_html,http://impublicacoes.org/transparencia131/receita_.php?id=ba_pm_caatiba,http://impublicacoes.org,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2904852,Cabaceiras do Paraguaçu,BA,html_portal,https://www.cabaceirasdoparaguacu.ba.gov.br,https://www.cabaceirasdoparaguacu.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2904902,Cachoeira,BA,html_portal,https://transparencia.cachoeira.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2905008,Caculé,BA,prefeitura_html,https://cacule.ba.gov.br/transparencia/,https://cacule.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2905107,Caém,BA,html_portal,https://www.caem.ba.gov.br/transparencia/publicacoes.php?id_cat=4&id_sub=26&id_ite=0,https://www.caem.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2905156,Caetanos,BA,html_portal,https://diario.caetanos.ba.gov.br,https://www.caetanos.ba.gov.br/site/diariooficial,Portal municipal HTML sem API JSON/XML estruturada.
 2905206,Caetité,BA,html_portal,https://caetite.ba.gov.br,https://caetite.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2905305,Cafarnaum,BA,prefeitura_html,https://cafarnaum.ba.gov.br/,https://cafarnaum.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2905404,Cairu,BA,html_portal,https://transparencia.cairu.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2905503,Caldeirão Grande,BA,cms_wordpress_html,https://www.caldeiraogrande.ba.gov.br/www.transparencia.sobradinho.ba.gov.br,https://www.caldeiraogrande.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2905701,Camaçari,BA,html_portal,https://www.camacari.ba.gov.br,https://www.camacari.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2905800,Camamu,BA,html_portal,https://transparencia.camamu.ba.gov.br/e-sic,https://www.camamu.ba.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
+2905909,Campo Alegre de Lourdes,BA,prefeitura_html,https://campoalegredelourdes.ba.gov.br/transparencia/,https://campoalegredelourdes.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2906204,Canarana,BA,cms_wordpress_html,https://canarana.ba.gov.br/transparencia/receitas,https://canarana.ba.gov.br/transparencia,Portal municipal HTML sem API JSON/XML estruturada.
+2906303,Canavieiras,BA,prefeitura_html,https://www.canavieiras.ba.gov.br/transparencia,https://www.canavieiras.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2906402,Candeal,BA,html_portal,https://transparencia.candeal.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2906501,Candeias,BA,html_portal,https://transparencia.candeias.ba.gov.br,https://transparencia.candeias.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2906600,Candiba,BA,html_portal,https://candiba.ba.gov.br/transparencia/obras-publicas,https://candiba.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2906709,Cândido Sales,BA,html_portal,http://www.candidosales.ba.gov.br,http://www.candidosales.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2906808,Cansanção,BA,prefeitura_html,https://www.cansancao.ba.gov.br/transparencia,https://www.cansancao.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2906857,Capela do Alto Alegre,BA,html_portal,https://capeladoaltoalegre.ba.gov.br/portal-da-transparencia,,Portal municipal HTML sem API JSON/XML estruturada.
 2906873,Capim Grosso,BA,modernizacao_html,https://transparencia.capimgrosso.ba.gov.br/despesas,https://capimgrosso.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2906899,Caraíbas,BA,html_portal,https://transparencia.caraibas.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2906907,Caravelas,BA,el_gpi_html,https://caravelas.ba.gov.br,https://caravelas.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2907004,Cardeal da Silva,BA,prefeitura_html,https://api.brtransparencia.com.br/storage/56272476-27d2-4413-8404-6b6e36c3840a/site/ppa.pdf,https://api.brtransparencia.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2907202,Casa Nova,BA,prefeitura_html,https://casanova.ba.gov.br/transparencia/,https://casanova.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2907301,Castro Alves,BA,html_portal,https://www.castroalves.ba.gov.br,https://www.castroalves.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2907400,Catolândia,BA,html_portal,https://catolandia.ba.gov.br,https://catolandia.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2907558,Caturama,BA,html_portal,https://caturama.ba.gov.br/dados-abertos,https://caturama.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2907608,Central,BA,prefeitura_html,https://www.central.ba.gov.br/transparencia,https://www.central.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2908101,Cocos,BA,html_portal,https://www.cocos.ba.gov.br,https://www.cocos.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2908200,Conceição da Feira,BA,prefeitura_html,https://conceicaodafeira.ba.gov.br/transparencia/,https://conceicaodafeira.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2908309,Conceição do Almeida,BA,modernizacao_html,https://conceicaodoalmeida.ba.gov.br,https://www.conceicaodoalmeida.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2908408,Conceição do Coité,BA,cms_wordpress_html,https://conceicaodocoite.ba.gov.br/transparencia-municipal-online,https://conceicaodocoite.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2908507,Conceição do Jacuípe,BA,html_portal,https://transparencia.conceicaodojacuipe.ba.gov.br/e-sic,https://www.conceicaodojacuipe.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2908705,Condeúba,BA,prefeitura_html,https://condeuba.ba.gov.br/,https://condeuba.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2909000,Cordeiros,BA,html_portal,https://transparencia.cordeiros.ba.gov.br/e-sic,https://www.cordeiros.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2909109,Coribe,BA,html_portal,https://transparencia.coribe.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2909208,Coronel João Sá,BA,prefeitura_html,https://www.coroneljoaosa.ba.gov.br/transparencia/,https://www.coroneljoaosa.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2909307,Correntina,BA,html_portal,https://doem.org.br/ba/correntina,https://doem.org.br/ba/correntina,Portal municipal HTML sem API JSON/XML estruturada.
 2909505,Cravolândia,BA,html_portal,https://www.cravolandia.ba.gov.br,https://www.cravolandia.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2909604,Crisópolis,BA,html_portal,https://crisopolis.ba.gov.br,https://crisopolis.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1013,6 +1102,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2910909,Firmino Alves,BA,html_portal,https://transparencia.firminoalves.ba.gov.br/homepage,https://transparencia.firminoalves.ba.gov.br/homepage,Portal municipal HTML sem API JSON/XML estruturada.
 2911006,Floresta Azul,BA,html_portal,https://transparencia.florestaazul.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2911105,Formosa do Rio Preto,BA,html_portal,https://avalia.atricon.org.br/usuarios/login/?next=,https://avalia.atricon.org.br/usuarios/login/?next=,Portal municipal HTML sem API JSON/XML estruturada.
+2911253,Gavião,BA,prefeitura_html,https://www.gaviao.ba.gov.br/transparencia,https://www.gaviao.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2911402,Glória,BA,html_portal,https://transparencia.gloria.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2911501,Gongogi,BA,html_portal,https://transparencia.gongogi.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2911808,Guaratinga,BA,html_portal,https://transparencia.guaratinga.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1022,10 +1112,14 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2912202,Ibicoara,BA,html_portal,https://transparencia.ibicoara.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2912400,Ibipeba,BA,html_portal,https://transparencia.ibipeba.ba.gov.br/e-sic,http://ibipeba.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2912608,Ibiquera,BA,html_portal,https://prefeituradeibiquera.ba.gov.br,https://prefeituradeibiquera.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2912707,Ibirapitanga,BA,prefeitura_html,https://pmibirapitanga.transparenciaoficialba.com/diariooficial/,https://pmibirapitanga.transparenciaoficialba.com,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2912806,Ibirapuã,BA,html_portal,https://www.ibirapua.ba.gov.br,https://www.ibirapua.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2912905,Ibirataia,BA,prefeitura_html,https://www.ibirataia.ba.gov.br/transparencia,https://www.ibirataia.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2913200,Ibotirama,BA,html_portal,https://transparencia.ibotirama.ba.gov.br/receita,https://www.ibotirama.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2913309,Ichu,BA,html_portal,https://transparencia.ichu.ba.gov.br/e-sic,https://www.ichu.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2913457,Igrapiúna,BA,prefeitura_html,https://www.igrapiuna.ba.gov.br/transparencia/,https://www.igrapiuna.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2913507,Iguaí,BA,html_portal,https://www.iguai.ba.gov.br,https://www.iguai.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2913705,Inhambupe,BA,prefeitura_html,https://inhambupe.ba.gov.br/transparencia,https://inhambupe.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2913804,Ipecaetá,BA,html_portal,https://pmipecaeta.transparenciaoficialba.com.br/pagina?ref=home,https://pmipecaeta.transparenciaoficialba.com.br/pagina?ref=home,Portal municipal HTML sem API JSON/XML estruturada.
 2913903,Ipiaú,BA,el_gpi_html,https://www.ipiau.ba.gov.br,https://www.ipiau.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2914000,Ipirá,BA,html_portal,https://ipira.ba.gov.br,https://ipira.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1040,6 +1134,8 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2915007,Itaeté,BA,html_portal,https://www.itaete.ba.gov.br,https://www.itaete.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2915106,Itagi,BA,html_portal,https://www.itagi.ba.gov.br,https://www.itagi.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2915205,Itagibá,BA,html_portal,https://www.itagiba.ba.gov.br,https://www.itagiba.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2915700,Itamari,BA,prefeitura_html,https://impublicacoes.org/transparencia131/chart.php?id=ba_pm_itamari,https://impublicacoes.org,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2915908,Itanagra,BA,prefeitura_html,https://radardatransparencia.atricon.org.br/,https://radardatransparencia.atricon.org.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2916005,Itanhém,BA,html_portal,https://www.itanhem.ba.gov.br,https://www.itanhem.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2916302,Itapebi,BA,html_portal,https://transparencia.itapebi.ba.gov.br/e-sic,https://www.itapebi.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2916401,Itapetinga,BA,html_portal,https://itapetinga.ba.gov.br,https://itapetinga.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1048,30 +1144,47 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2916708,Itaquara,BA,html_portal,https://transparencia.itaquara.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2916856,Itatim,BA,html_portal,https://www.itatim.ba.gov.br/site,https://www.itatim.ba.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
 2916906,Itiruçu,BA,html_portal,https://www.itirucu.ba.gov.br,https://www.itirucu.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2917003,Itiúba,BA,prefeitura_html,https://www.itiuba.ba.gov.br/transparencia,https://www.itiuba.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2917102,Itororó,BA,html_portal,https://transparencia.itororo.ba.gov.br/e-sic,https://www.itororo.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2917300,Ituberá,BA,html_portal,https://www.itubera.ba.gov.br,https://www.itubera.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2917334,Iuiú,BA,html_portal,https://www.iuiu.ba.gov.br,https://www.iuiu.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2917409,Jacaraci,BA,prefeitura_html,https://jacaraci.ba.gov.br/transparencia/,https://jacaraci.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2917508,Jacobina,BA,html_portal,https://jacobina.ba.gov.br,https://jacobina.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2917607,Jaguaquara,BA,html_portal,https://jaguaquara.ba.gov.br,https://jaguaquara.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2917706,Jaguarari,BA,prefeitura_html,https://www.jaguarari.ba.gov.br/transparencia,https://www.jaguarari.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2917805,Jaguaripe,BA,html_portal,https://transparencia.jaguaripe.ba.gov.br/e-sic,https://www.jaguaripe.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2917904,Jandaíra,BA,html_portal,https://jandaira.ba.gov.br,https://jandaira.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2918001,Jequié,BA,el_gpi_html,https://www.jequie.ba.gov.br,https://www.jequie.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2918100,Jeremoabo,BA,prefeitura_html,https://www.jeremoabo.ba.gov.br/transparencia,https://www.jeremoabo.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2918308,Jitaúna,BA,html_portal,https://diario.jitauna.ba.gov.br,https://www.jitauna.ba.gov.br/site/diariooficial,Portal municipal HTML sem API JSON/XML estruturada.
+2918357,João Dourado,BA,prefeitura_html,https://www.joaodourado.ba.gov.br/transparencia,https://www.joaodourado.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2918407,Juazeiro,BA,prefeitura_html,https://www.juazeiro.ba.gov.br/arbbrthemecategory/transparencia/,https://www.juazeiro.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2918456,Jucuruçu,BA,prefeitura_html,https://transparencia.jucurucu.ba.gov.br,https://transparencia.jucurucu.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2918555,Jussari,BA,prefeitura_html,https://www.jussari.ba.gov.br/transparencia,https://www.jussari.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2918605,Jussiape,BA,prefeitura_html,https://jussiape.ba.gov.br/,https://jussiape.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2918704,Lafaiete Coutinho,BA,html_portal,https://transparencia.lafaietecoutinho.ba.gov.br/e-sic,https://www.lafaietecoutinho.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2918803,Laje,BA,modernizacao_html,https://laje.ba.gov.br,https://laje.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2918902,Lajedão,BA,prefeitura_html,https://lajedao.ba.gov.br/transparencia/,https://lajedao.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2919009,Lajedinho,BA,html_portal,https://transparencia.lajedinho.ba.gov.br/e-sic,https://www.lajedinho.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2919108,Lamarão,BA,html_portal,http://lamarao.ba.gov.br,http://lamarao.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2919157,Lapão,BA,prefeitura_html,https://lapao.ba.gov.br/transparencia/,https://lapao.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2919207,Lauro de Freitas,BA,html_portal,https://www.laurodefreitas.ba.gov.br/site,https://laurodefreitas.ba.gov.br/2022,Portal municipal HTML sem API JSON/XML estruturada.
+2919405,Licínio de Almeida,BA,prefeitura_html,https://liciniodealmeida.ba.gov.br/transparencia/,https://liciniodealmeida.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2919504,Livramento de Nossa Senhora,BA,html_portal,https://transparencia.livramentodenossasenhora.ba.gov.br/e-sic,https://www.livramentodenossasenhora.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2919553,Luís Eduardo Magalhães,BA,html_portal,https://www.luiseduardomagalhaes.ba.gov.br,https://www.luiseduardomagalhaes.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2919801,Macaúbas,BA,prefeitura_html,https://macaubas.ba.gov.br/transparencia/,https://macaubas.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2919900,Macururé,BA,html_portal,https://transparencia.macurure.ba.gov.br/e-sic,https://www.macurure.ba.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
+2919959,Maetinga,BA,prefeitura_html,https://maetinga.ba.gov.br/transparencia/,https://maetinga.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2920007,Maiquinique,BA,html_portal,https://www.maiquinique.ba.gov.br/site,https://www.maiquinique.ba.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
+2920106,Mairi,BA,prefeitura_html,https://www.mairi.ba.gov.br/transparencia,https://www.mairi.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2920205,Malhada,BA,html_portal,https://malhada.ba.gov.br/dados-abertos,https://www.malhada.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2920403,Manoel Vitorino,BA,html_portal,https://www.manoelvitorino.ba.gov.br,https://www.manoelvitorino.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2920452,Mansidão,BA,html_portal,https://transparencia.mansidao.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2920502,Maracás,BA,betha_html,https://www.maracas.ba.gov.br,https://www.maracas.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2920601,Maragogipe,BA,prefeitura_html,https://maragogipe.ba.gov.br/,https://maragogipe.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2920700,Maraú,BA,html_portal,https://transparencia.marau.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2921005,Mata de São João,BA,html_portal,https://www.matadesaojoao.ba.gov.br,https://www.matadesaojoao.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2921054,Matina,BA,prefeitura_html,https://matina.ba.gov.br/transparencia/,https://matina.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2921104,Medeiros Neto,BA,html_portal,https://transparencia.medeirosneto.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2921203,Miguel Calmon,BA,modernizacao_html,https://miguelcalmon.ba.gov.br,https://miguelcalmon.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2921302,Milagres,BA,html_portal,https://transparencia.milagres.ba.gov.br/contratos,https://www.milagres.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1084,11 +1197,15 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2922003,Mucuri,BA,cms_wordpress_html,https://transparencia.mucuri.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2922102,Mundo Novo,BA,html_portal,https://transparencia.mundonovo.ba.gov.br/e-sic,https://www.mundonovo.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2922201,Muniz Ferreira,BA,html_portal,https://transparencia.munizferreira.ba.gov.br/e-sic,https://www.munizferreira.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2922300,Muritiba,BA,prefeitura_html,https://www.muritiba.ba.gov.br/transparencia,https://www.muritiba.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2922409,Mutuípe,BA,html_portal,https://transparencia.mutuipe.ba.gov.br/e-sic,https://www.mutuipe.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2922508,Nazaré,BA,html_portal,https://nazare.ba.gov.br,https://www.nazare.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2922607,Nilo Peçanha,BA,html_portal,https://www.nilopecanha.ba.gov.br,https://www.nilopecanha.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2922656,Nordestina,BA,html_portal,https://transparencia.nordestina.ba.gov.br/e-sic,https://www.nordestina.ba.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
 2922706,Nova Canaã,BA,html_portal,https://www.novacanaa.ba.gov.br,https://www.novacanaa.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2922730,Nova Fátima,BA,prefeitura_html,https://www.novafatima.ba.gov.br/transparencia,https://www.novafatima.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2922805,Nova Itarana,BA,prefeitura_html,https://pmnovaitarana.transparenciaoficialba.com/diariooficial/,https://pmnovaitarana.transparenciaoficialba.com,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2922854,Nova Redenção,BA,prefeitura_html,https://www.novaredencao.ba.gov.br/transparencia,https://www.novaredencao.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2922904,Nova Soure,BA,html_portal,https://transparencia.novasoure.ba.gov.br/e-sic,https://www.novasoure.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2923001,Nova Viçosa,BA,html_portal,https://transparencia.novavicosa.ba.gov.br/e-sic,https://www.novavicosa.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2923035,Novo Horizonte,BA,modernizacao_html,https://transparencia.novohorizonte.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1100,14 +1217,19 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2923407,Palmas de Monte Alto,BA,html_portal,https://www.palmasdemontealto.ba.gov.br,https://www.palmasdemontealto.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2923506,Palmeiras,BA,html_portal,https://transparencia.palmeiras.ba.gov.br/e-sic,https://www.palmeiras.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2923605,Paramirim,BA,html_portal,https://paramirim.ba.gov.br/dados-abertos,https://paramirim.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2923704,Paratinga,BA,prefeitura_html,https://www.paratinga.ba.gov.br/transparencia,https://www.paratinga.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2923902,Pau Brasil,BA,html_portal,https://transparencia.paubrasil.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2924009,Paulo Afonso,BA,html_portal,https://transparencia.pauloafonso.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2924058,Pé de Serra,BA,prefeitura_html,https://www.pedeserra.ba.gov.br/transparencia/,https://www.pedeserra.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2924108,Pedrão,BA,html_portal,https://pmpedrao.transparenciaoficialba.com.br/pagina?ref=esic,https://www.pedrao.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2924207,Pedro Alexandre,BA,prefeitura_html,https://radardatransparencia.atricon.org.br/,https://radardatransparencia.atricon.org.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2924504,Pindaí,BA,betha_html,https://pindai.ba.gov.br,https://www.pindai.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2924603,Pindobaçu,BA,cms_wordpress_html,https://pindobacu.ba.gov.br/www.transparencia.pindobacu.ba.gov.br,https://pindobacu.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2924678,Piraí do Norte,BA,prefeitura_html,https://piraidonorte.ba.gov.br/,https://piraidonorte.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2924900,Planaltino,BA,html_portal,https://transparencia.planaltino.ba.gov.br/e-sic,https://www.planaltino.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2925253,Ponto Novo,BA,html_portal,https://www.pontonovo.ba.gov.br/transparencia,https://pontonovo.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2925303,Porto Seguro,BA,html_portal,https://portoseguro.ba.gov.br,https://portoseguro.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2925402,Potiraguá,BA,prefeitura_html,https://www.potiragua.ba.gov.br/transparencia,https://www.potiragua.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2925758,Presidente Tancredo Neves,BA,html_portal,https://www.presidentetancredoneves.ba.gov.br/diario,http://www.presidentetancredoneves.ba.gov.br/diario,Portal municipal HTML sem API JSON/XML estruturada.
 2925808,Queimadas,BA,html_portal,https://queimadas.ba.gov.br,https://www.queimadas.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2925907,Quijingue,BA,html_portal,https://transparencia.quijingue.ba.gov.br/e-sic,https://www.quijingue.ba.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1116,27 +1238,38 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2926103,Retirolândia,BA,html_portal,https://retirolandia.ba.gov.br/municipio/aspectos-historicos,https://retirolandia.ba.gov.br/municipio/aspectos-historicos,Portal municipal HTML sem API JSON/XML estruturada.
 2926202,Riachão das Neves,BA,html_portal,https://riachaodasneves.ba.gov.br,https://riachaodasneves.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2926301,Riachão do Jacuípe,BA,govbr_html,https://www.riachaodojacuipe.ba.gov.br,https://www.riachaodojacuipe.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2926400,Riacho de Santana,BA,prefeitura_html,https://riachodesantana.ba.gov.br/transparencia/,https://riachodesantana.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2926657,Ribeirão do Largo,BA,html_portal,https://transparencia.ribeiraodolargo.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2926707,Rio de Contas,BA,prefeitura_html,https://riodecontas.ba.gov.br/,https://riodecontas.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2926806,Rio do Antônio,BA,html_portal,https://transparencia.riodoantonio.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2927002,Rio Real,BA,html_portal,https://rioreal.ba.gov.br/#,https://rioreal.ba.gov.br/#,Portal municipal HTML sem API JSON/XML estruturada.
 2927101,Rodelas,BA,html_portal,https://transparencia.rodelas.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2927200,Ruy Barbosa,BA,html_portal,https://transparencia.ruybarbosa.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2927309,Salinas da Margarida,BA,html_portal,https://transparencia.salinasdamargarida.ba.gov.br/e-sic,https://www.salinasdamargarida.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2927408,Salvador,BA,html_portal,https://salvador.ba.gov.br,https://salvador.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2927507,Santa Bárbara,BA,prefeitura_html,https://www.santabarbara.ba.gov.br/transparencia,https://www.santabarbara.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2927606,Santa Brígida,BA,html_portal,https://portaldatransparencia.santabrigida.ba.gov.br,http://www.santabrigida.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2928000,Santaluz,BA,html_portal,https://santaluz.ba.gov.br,https://santaluz.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2928059,Santa Luzia,BA,html_portal,https://transparencia.santaluzia.ba.gov.br/e-sic,https://www.santaluzia.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2928109,Santa Maria da Vitória,BA,prefeitura_html,https://www.santamariadavitoria.ba.gov.br/transparencia,https://www.santamariadavitoria.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2928208,Santana,BA,prefeitura_html,https://santana.ba.gov.br/transparencia/,https://santana.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2928307,Santanópolis,BA,prefeitura_html,https://www.santanopolis.ba.gov.br/transparencia,https://www.santanopolis.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2928505,Santa Teresinha,BA,html_portal,https://santateresinha.ba.gov.br/transparencia/licitacoes,https://santateresinha.ba.gov.br/home,Portal municipal HTML sem API JSON/XML estruturada.
+2928604,Santo Amaro,BA,prefeitura_html,https://pmsantoamaro.transparenciaoficialba.com/diariooficial/,https://pmsantoamaro.transparenciaoficialba.com,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2928802,Santo Estêvão,BA,html_portal,https://transparencia.santoestevao.ba.gov.br,https://transparencia.santoestevao.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2928901,São Desidério,BA,html_portal,https://saodesiderio.ba.gov.br,https://saodesiderio.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2929008,São Félix,BA,cms_wordpress_html,https://saofelix.ba.gov.br/acesso-a-informacao/dados-abertos,https://saofelix.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2929057,São Félix do Coribe,BA,prefeitura_html,https://saofelixdocoribe.ba.gov.br/transparencia/,https://saofelixdocoribe.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2929107,São Felipe,BA,prefeitura_html,https://pmsaofelipe.transparenciaoficialba.com/diariooficial/,https://pmsaofelipe.transparenciaoficialba.com,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2929206,São Francisco do Conde,BA,html_portal,https://saofranciscodoconde.ba.gov.br,https://saofranciscodoconde.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2929305,São Gonçalo dos Campos,BA,html_portal,https://saogoncalodoscampos.ba.gov.br,https://saogoncalodoscampos.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2929354,São José da Vitória,BA,html_portal,https://www.saojosedavitoria.ba.gov.br,https://www.saojosedavitoria.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2929404,São Miguel das Matas,BA,html_portal,https://www.saomigueldasmatas.ba.gov.br,https://www.saomigueldasmatas.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2929503,São Sebastião do Passé,BA,html_portal,https://saosebastiaodopasse.ba.gov.br,https://saosebastiaodopasse.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2929701,Sátiro Dias,BA,prefeitura_html,https://satirodias.ba.gov.br/transparencia/,https://satirodias.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2929750,Saubara,BA,html_portal,https://transparencia.saubara.ba.gov.br/e-sic,https://www.saubara.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2929800,Saúde,BA,html_portal,https://www.pmsaude.ba.gov.br/transparencia,https://www.pmsaude.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2930006,Sebastião Laranjeiras,BA,prefeitura_html,https://sebastiaolaranjeiras.ba.gov.br/transparencia/,https://sebastiaolaranjeiras.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2930105,Senhor do Bonfim,BA,html_portal,https://senhordobonfim.ba.gov.br,https://senhordobonfim.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2930154,Serra do Ramalho,BA,betha_html,https://serradoramalho.ba.gov.br/transparencia,https://serradoramalho.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2930204,Sento Sé,BA,html_portal,https://www.sentose.ba.gov.br,https://www.sentose.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1145,6 +1278,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2930501,Serrinha,BA,html_portal,https://www.serrinha.ba.gov.br,https://www.serrinha.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2930600,Serrolândia,BA,html_portal,https://transparencia.serrolandia.ba.gov.br/leis-atos-normativos,https://www.serrolandia.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2930709,Simões Filho,BA,html_portal,https://simoesfilho.ba.gov.br,https://simoesfilho.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2930758,Sítio do Mato,BA,prefeitura_html,https://sitiodomato.ba.gov.br/transparencia/,https://sitiodomato.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2930907,Tabocas do Brejo Velho,BA,html_portal,https://tabocasdobrejovelho.ba.gov.br,https://tabocasdobrejovelho.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2931004,Tanhaçu,BA,html_portal,https://transparencia.tanhacu.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2931053,Tanque Novo,BA,html_portal,https://portalgov.srv.br/esic/tanque-novo,https://tanquenovo.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1154,18 +1288,23 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 2931400,Teodoro Sampaio,BA,cms_wordpress_html,https://teodorosampaio.ba.gov.br/portal-da-transparencia,https://teodorosampaio.ba.gov.br/index,Portal municipal HTML sem API JSON/XML estruturada.
 2931509,Teofilândia,BA,html_portal,https://transparencia.teofilandia.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2931608,Teolândia,BA,html_portal,http://www.teolandia.ba.gov.br,http://www.teolandia.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2931707,Terra Nova,BA,prefeitura_html,https://transparencia.fatorsistemas.com.br/dados/contratoFin.php?id=pm_terranova,https://transparencia.fatorsistemas.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2931806,Tremedal,BA,html_portal,https://portalgov.srv.br/esic/tremedal,https://tremedal.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2931905,Tucano,BA,cms_wordpress_html,https://www.tucano.ba.gov.br,https://www.tucano.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2932002,Uauá,BA,html_portal,https://www.uaua.ba.gov.br/dados-abertos,https://uaua.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2932200,Ubaitaba,BA,html_portal,https://transparencia.ubaitaba.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2932309,Ubatã,BA,html_portal,https://transparencia.ubata.ba.gov.br/leis-atos-normativos,https://www.ubata.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2932408,Uibaí,BA,prefeitura_html,http://www.uibai.ba.gov.br/,http://www.uibai.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2932457,Umburanas,BA,html_portal,https://transparencia.umburanas.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2932606,Urandi,BA,html_portal,https://urandi.ba.gov.br/dados-abertos,https://urandi.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2932705,Uruçuca,BA,html_portal,https://urucuca.ba.gov.br,https://urucuca.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2932903,Valença,BA,html_portal,https://transparencia.valenca.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+2933000,Valente,BA,prefeitura_html,https://www.valente.ba.gov.br/transparencia/,https://www.valente.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2933059,Várzea da Roça,BA,html_portal,https://transparencia.varzeadaroca.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2933109,Várzea do Poço,BA,html_portal,https://transparencia.varzeadopoco.ba.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 2933158,Várzea Nova,BA,html_portal,https://transparencia.varzeanova.ba.gov.br/e-sic,https://www.varzeanova.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+2933174,Varzedo,BA,prefeitura_html,https://pmvarzedo.transparenciaoficialba.com/diariooficial/,https://pmvarzedo.transparenciaoficialba.com,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+2933257,Vereda,BA,prefeitura_html,https://vereda.ba.gov.br/site/index.php,https://vereda.ba.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 2933307,Vitória da Conquista,BA,html_portal,https://www.pmvc.ba.gov.br/#,https://www.pmvc.ba.gov.br/#,Portal municipal HTML sem API JSON/XML estruturada.
 2933406,Wagner,BA,html_portal,https://wagner.ba.gov.br,https://wagner.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 2933455,Wanderley,BA,html_portal,https://wanderley.ba.gov.br,https://wanderley.ba.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1181,6 +1320,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3102100,Alto Rio Doce,MG,html_portal,https://www.altoriodoce.mg.gov.br,https://www.altoriodoce.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3102209,Alvarenga,MG,html_portal,https://www.alvarenga.mg.gov.br,https://www.alvarenga.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3102506,Amparo do Serra,MG,siplan_html,https://amparodoserra.mg.gov.br,https://amparodoserra.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3102852,Angelândia,MG,prefeitura_html,https://www.angelandia.mg.gov.br/transparencia,https://www.angelandia.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3103108,Antônio Prado de Minas,MG,html_portal,https://www.antoniopradodeminas.mg.gov.br,https://www.antoniopradodeminas.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3103306,Aracitaba,MG,html_portal,https://aracitaba.mg.gov.br,https://aracitaba.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3103405,Araçuaí,MG,html_portal,https://www.aracuai.mg.gov.br,https://www.aracuai.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1208,10 +1348,12 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3108107,Bonfim,MG,html_portal,https://www.prefeiturabonfim.mg.gov.br,https://www.prefeiturabonfim.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3108255,Bonito de Minas,MG,html_portal,https://www.bonitodeminas.mg.gov.br,https://www.bonitodeminas.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3108602,Brasília de Minas,MG,html_portal,https://brasiliademinas.mg.gov.br/transparencia,https://brasiliademinas.mg.gov.br/transparencia,Portal municipal HTML sem API JSON/XML estruturada.
+3108701,Brás Pires,MG,prefeitura_html,https://braspires.mg.gov.br/noticias/transparencia-nas-eleicoes-para-conselho-tutelar/,https://braspires.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3108909,Brazópolis,MG,html_portal,http://www.adpmnet.com.br/index.php?option=com_contpubl&amp;submenu=1&amp;cnpj=18025890000151&amp;idreg=&amp;tpformtab=jos_coputvcb1&amp;tpformpdf=51&amp;tpform=2&amp;idorg=101&amp;dsorg=Prefeitura%20Municipal%20de%20Braz%C3%B3polis&amp;dsufe=Estado%20de%20Minas%20Gerais&amp;brasao=P310890.GIF&amp;titulo=Remunera%C3%A7%C3%A3o%20Mensal%20dos%20Servidores%20P%C3%BAblicos&amp;idtpc=0&amp;nome_mat=1&amp;nao_proventos=0&amp;nao_descontos=0,https://www.brazopolis.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3109303,Buritis,MG,html_portal,https://www.buritis.mg.gov.br/portal/dados-abertos,https://www.buritis.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3109600,Cachoeira da Prata,MG,html_portal,https://www.cachoeiradaprata.mg.gov.br,https://www.cachoeiradaprata.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3110004,Caeté,MG,html_portal,https://www.caete.mg.gov.br,https://www.caete.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3110103,Caiana,MG,prefeitura_html,https://www.caiana.mg.gov.br/,https://www.caiana.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3110202,Cajuri,MG,html_portal,https://www.cajuri.mg.gov.br/principal,https://www.cajuri.mg.gov.br/principal,Portal municipal HTML sem API JSON/XML estruturada.
 3110509,Camanducaia,MG,ecrie_html,https://camanducaia.mg.gov.br,https://camanducaia.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3111101,Campina Verde,MG,html_portal,https://campinaverde.mg.gov.br,https://campinaverde.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1228,11 +1370,14 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3114303,Carmo do Paranaíba,MG,html_portal,https://carmodoparanaiba.mg.gov.br,https://carmodoparanaiba.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3114402,Carmo do Rio Claro,MG,html_portal,https://www.carmodorioclaro.mg.gov.br/portal/dados-abertos,https://www.carmodorioclaro.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3114550,Carneirinho,MG,html_portal,https://carneirinho.mg.gov.br,https://carneirinho.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3114808,Carvalhos,MG,prefeitura_html,https://pm-carvalhos.publicacao.siplanweb.com.br/,https://pm-carvalhos.publicacao.siplanweb.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3115003,Cascalho Rico,MG,html_portal,https://www.cascalhorico.mg.gov.br,https://www.cascalhorico.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3115508,Caxambu,MG,html_portal,https://www.caxambu.mg.gov.br/pagina/40/transparencia,https://www.caxambu.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3115607,Cedro do Abaeté,MG,html_portal,https://www.cedrodoabaete.mg.gov.br,https://www.cedrodoabaete.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3116001,Chalé,MG,html_portal,https://www.chale.mg.gov.br,https://www.chale.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3116209,Chiador,MG,html_portal,https://www.chiador.mg.gov.br,https://www.chiador.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3116308,Cipotânea,MG,prefeitura_html,https://www.transparencia.mg.gov.br/,https://www.transparencia.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+3116506,Claro dos Poções,MG,prefeitura_html,http://clarodospocoes.mg.gov.br/,http://clarodospocoes.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3116704,Coimbra,MG,siplan_html,https://www.coimbra.mg.gov.br,https://www.coimbra.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3116902,Comendador Gomes,MG,govbr_html,https://comendadorgomes.mg.gov.br,https://www.comendadorgomes.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3117504,Conceição do Mato Dentro,MG,html_portal,https://www.cmd.mg.gov.br/portal/dados-abertos,https://www.cmd.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1241,13 +1386,16 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3117900,Congonhal,MG,html_portal,https://congonhal.mg.gov.br,https://congonhal.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3118403,Conselheiro Pena,MG,html_portal,https://www.conselheiropena.mg.gov.br,https://www.conselheiropena.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3118700,Coqueiral,MG,html_portal,https://www.coqueiral.mg.gov.br/portal/dados-abertos,https://www.coqueiral.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3119104,Corinto,MG,prefeitura_html,https://www.transparencia.mg.gov.br/component/transparenciamg/?view=estado_repassemunicipio,https://www.transparencia.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3119609,Coronel Pacheco,MG,siplan_html,https://www.coronelpacheco.mg.gov.br,https://www.coronelpacheco.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3120102,Couto de Magalhães de Minas,MG,prefeitura_html,https://coutodemagalhaesdeminas.mg.gov.br/,https://coutodemagalhaesdeminas.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3120201,Cristais,MG,html_portal,https://www.cristais.mg.gov.br,https://www.cristais.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3120607,Crucilândia,MG,html_portal,https://contasabertas.inf.br,https://contasabertas.inf.br/entidade/pm-crucilandia,Portal municipal HTML sem API JSON/XML estruturada.
 3120706,Cruzeiro da Fortaleza,MG,html_portal,https://cruzeirodafortaleza.mg.gov.br,https://cruzeirodafortaleza.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3120805,Cruzília,MG,siplan_html,https://cruzilia.mg.gov.br,https://cruzilia.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3120904,Curvelo,MG,html_portal,https://pmagil.curvelo.mg.gov.br/pmAgilNet/Default.aspx,https://curvelo.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3121100,Delfim Moreira,MG,siplan_html,https://www.delfimmoreira.mg.gov.br,https://www.delfimmoreira.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3121209,Delfinópolis,MG,prefeitura_html,http://pmdelfinopolis.horusdm.com.br/transparencia,http://pmdelfinopolis.horusdm.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3121902,Divinésia,MG,siplan_html,https://divinesia.mg.gov.br,https://divinesia.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3122009,Divino,MG,html_portal,https://www.divino.mg.gov.br,https://www.divino.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3122405,Divisa Nova,MG,html_portal,https://divisanova.mg.gov.br,https://divisanova.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1277,6 +1425,8 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3126752,Franciscópolis,MG,html_portal,https://www.franciscopolis.mg.gov.br,https://www.franciscopolis.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3126901,Frei Inocêncio,MG,html_portal,https://freiinocencio.mg.gov.br,https://freiinocencio.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3126950,Frei Lagonegro,MG,html_portal,https://www.freilagonegro.mg.gov.br,https://www.freilagonegro.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3127008,Fronteira,MG,prefeitura_html,https://fronteira.mg.gov.br/,https://fronteira.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+3127057,Fronteira dos Vales,MG,prefeitura_html,https://fronteiradosvales.mg.gov.br/transparencia,https://fronteiradosvales.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3127107,Frutal,MG,html_portal,https://frutal.mg.gov.br,https://frutal.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3127206,Funilândia,MG,html_portal,https://www.funilandia.mg.gov.br/principal,https://www.funilandia.mg.gov.br/principal,Portal municipal HTML sem API JSON/XML estruturada.
 3127388,Goianá,MG,siplan_html,https://www.goiana.mg.gov.br,https://www.goiana.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1292,6 +1442,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3128600,Guarda-Mor,MG,html_portal,https://www.guardamor.mg.gov.br/portal/dados-abertos,https://www.guardamor.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3128907,Guimarânia,MG,html_portal,https://guimarania.mg.gov.br/transparencia/e-sic,https://guimarania.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3129103,Gurinhatã,MG,cms_wordpress_html,https://gurinhata.mg.gov.br/transparencia,https://gurinhata.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3129657,Ibiracatu,MG,prefeitura_html,https://ibiracatu.mg.gov.br/transparencia/,https://ibiracatu.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3130101,Igarapé,MG,html_portal,https://www.igarape.mg.gov.br/principal,https://www.igarape.mg.gov.br/principal,Portal municipal HTML sem API JSON/XML estruturada.
 3130408,Ijaci,MG,html_portal,https://www.ijaci.mg.gov.br,https://www.ijaci.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3130606,Inconfidentes,MG,ecrie_html,https://inconfidentes.mg.gov.br,https://inconfidentes.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1307,22 +1458,33 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3133006,Itamonte,MG,html_portal,https://pmitamonte.geosiap.net.br/portal-transparencia/home,https://itamonte.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3133105,Itanhandu,MG,betha_html,https://itanhandu.mg.sinal.quasar.srv.br/sinal,https://www.itanhandu.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3133600,Itapeva,MG,cms_wordpress_html,https://itapeva.mg.gov.br/secretaria-municipal-de-obras/transparencia-das-obras,https://www.itapeva.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3134103,Itueta,MG,prefeitura_html,https://mgcidades.redemunicipal.com.br/15/313410301/home,https://mgcidades.redemunicipal.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3134608,Jaboticatubas,MG,html_portal,https://www.jaboticatubas.mg.gov.br/indexmc.html,https://www.jaboticatubas.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3134707,Jacinto,MG,cms_wordpress_html,https://jacinto.mg.gov.br,https://jacinto.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3134905,Jacutinga,MG,html_portal,https://www.jacutinga.mg.gov.br,https://www.jacutinga.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3135050,Jaíba,MG,html_portal,https://jaiba.mg.gov.br,https://jaiba.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3135506,Jequeri,MG,html_portal,https://www.jequeri.mg.gov.br,https://www.jequeri.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3135704,Jequitibá,MG,prefeitura_html,https://jequitiba.mg.gov.br/transparencia,https://jequitiba.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3135803,Jequitinhonha,MG,html_portal,https://jequitinhonha.mg.gov.br/noticias/publicacao-de-informacoes-do-convenio-no-980094-hospital-sao-miguel-de-jequitinhonha,https://jequitinhonha.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3135902,Jesuânia,MG,siplan_html,https://www.jesuania.mg.gov.br,https://www.jesuania.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3136306,João Pinheiro,MG,prefeitura_html,https://www.joaopinheiro.mg.gov.br/,https://www.joaopinheiro.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3136603,Nova União,MG,html_portal,https://www.novauniao.mg.gov.br,https://www.novauniao.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3136652,Juatuba,MG,html_portal,https://www.juatuba.mg.gov.br/portal/dados-abertos,https://www.juatuba.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3136801,Juramento,MG,cms_wordpress_html,https://juramento.mg.gov.br/transparencia,https://juramento.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3136959,Juvenília,MG,prefeitura_html,https://www.juvenilia.mg.gov.br/,https://www.juvenilia.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3137536,Lagoa Grande,MG,cms_wordpress_html,https://lagoagrande.mg.gov.br/manual-da-transparencia,https://lagoagrande.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3137908,Lamim,MG,prefeitura_html,https://lamim.mg.gov.br/transparencia,https://lamim.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3138005,Laranjal,MG,siplan_html,https://laranjal.mg.gov.br,https://laranjal.digital,Portal municipal HTML sem API JSON/XML estruturada.
 3138500,Liberdade,MG,siplan_html,https://liberdade.mg.gov.br,https://liberdade.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3138609,Lima Duarte,MG,siplan_html,https://limaduarte.mg.gov.br,https://limaduarte.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3138625,Limeira do Oeste,MG,cms_wordpress_html,https://www.limeiradooeste.mg.gov.br/decreto-estadual-no45-969-de-24-de-maio-de-2012,https://www.limeiradooeste.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3138658,Lontra,MG,prefeitura_html,https://lontra.mg.gov.br/transparencia,https://lontra.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+3138708,Luminárias,MG,prefeitura_html,https://luminarias.mg.gov.br/transparencia-saude/,https://luminarias.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+3139300,Manga,MG,prefeitura_html,https://www.manga.mg.gov.br/,https://www.manga.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3139904,Maria da Fé,MG,siplan_html,https://www.mariadafe.mg.gov.br,https://www.mariadafe.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3140407,Marmelópolis,MG,prefeitura_html,https://www.marmelopolis.mg.gov.br/transparencia,https://www.marmelopolis.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+3140506,Martinho Campos,MG,prefeitura_html,https://radardatransparencia.atricon.org.br/,https://radardatransparencia.atricon.org.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+3140605,Materlândia,MG,prefeitura_html,https://materlandia.mg.gov.br/transparencia.php,https://materlandia.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3140803,Matias Barbosa,MG,siplan_html,https://www.matiasbarbosa.mg.gov.br,https://www.matiasbarbosa.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3141207,Matutina,MG,html_portal,https://transparencia-hd.com.br/consulta/contratos/covid/resultado?cod_empre=33,https://matutina.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3141306,Medeiros,MG,html_portal,https://www.medeiros.mg.gov.br,https://www.medeiros.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1334,6 +1496,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3142304,Moeda,MG,html_portal,https://moeda.mg.gov.br,https://moeda.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3142502,Monjolos,MG,html_portal,https://prefeituramonjolos.mg.gov.br/transparencia/licitacoes,https://prefeituramonjolos.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3142601,Monsenhor Paulo,MG,cms_wordpress_html,https://monsenhorpaulo.mg.gov.br/prefeituramp,https://monsenhorpaulo.mg.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
+3142700,Montalvânia,MG,prefeitura_html,https://www.montalvania.mg.gov.br/otrabalhocontinua/index.php,https://www.montalvania.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3142809,Monte Alegre de Minas,MG,smarapd_html,https://www.montealegre.mg.gov.br,https://www.montealegre.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3142908,Monte Azul,MG,html_portal,https://monteazul.mg.gov.br,https://monteazul.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3143203,Monte Santo de Minas,MG,el_gpi_html,https://montesantodeminas.mg.gov.br,https://montesantodeminas.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1343,6 +1506,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3144375,Natalândia,MG,html_portal,https://ilai.memory.com.br/#/9BRRRT/1/share?resource=public/home/dadosabertos,https://www.natalandia.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3144672,Nova Belém,MG,html_portal,https://www.novabelem.mg.gov.br,https://www.novabelem.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3144805,Nova Lima,MG,html_portal,https://www.novalima.mg.gov.br/inicio/transparencia,https://www.novalima.mg.gov.br/inicio,Portal municipal HTML sem API JSON/XML estruturada.
+3144904,Nova Módica,MG,prefeitura_html,https://www.novamodica.mg.gov.br/transparencia/,https://www.novamodica.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3145000,Nova Ponte,MG,html_portal,https://www.novaponte.mg.gov.br/site,https://www.novaponte.mg.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
 3145109,Nova Resende,MG,el_gpi_html,https://www.novaresende.mg.gov.br,https://www.novaresende.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3145208,Nova Serrana,MG,html_portal,https://www.novaserrana.mg.gov.br/portal/dados-abertos,https://www.novaserrana.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1360,9 +1524,11 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3146552,Pai Pedro,MG,html_portal,https://www.paipedro.mg.gov.br,https://www.paipedro.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3146602,Paiva,MG,html_portal,https://www.paiva.mg.gov.br,https://www.paiva.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3146701,Palma,MG,html_portal,https://palma.mg.gov.br,https://palma.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3147204,Paraguaçu,MG,prefeitura_html,https://pmparaguacu-transparencia.gpecloud.com.br/,https://pmparaguacu-transparencia.gpecloud.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3147402,Paraopeba,MG,html_portal,https://www.paraopeba.mg.gov.br/principal,https://www.paraopeba.mg.gov.br/principal,Portal municipal HTML sem API JSON/XML estruturada.
 3147501,Passabém,MG,html_portal,https://www.passabem.mg.gov.br,https://www.passabem.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3147709,Passa Tempo,MG,html_portal,https://www.passatempo.mg.gov.br,https://www.passatempo.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3147808,Passa-Vinte,MG,prefeitura_html,https://pm-pvinte.publicacao.siplanweb.com.br/,https://pm-pvinte.publicacao.siplanweb.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3147907,Passos,MG,html_portal,https://www.passos.mg.gov.br,https://www.passos.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3147956,Patis,MG,html_portal,https://www.patis.mg.gov.br,https://www.patis.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3148004,Patos de Minas,MG,html_portal,https://www.patosdeminas.mg.gov.br,https://www.patosdeminas.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1371,10 +1537,13 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3148301,Paula Cândido,MG,siplan_html,https://paulacandido.mg.gov.br/portal/index.php,https://paulacandido.mg.gov.br/portal/index.php,Portal municipal HTML sem API JSON/XML estruturada.
 3148400,Paulistas,MG,html_portal,https://ilai.memory.com.br/#/public/home/convenios,https://ilai.memory.com.br/#/public/home/convenios,Portal municipal HTML sem API JSON/XML estruturada.
 3148509,Pavão,MG,html_portal,https://www.pavao.mg.gov.br,https://www.pavao.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3148905,Pedra do Indaiá,MG,prefeitura_html,https://www.pedradoindaia.mg.gov.br/transparencia,https://www.pedradoindaia.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+3149408,Pedro Teixeira,MG,prefeitura_html,https://www.pedroteixeira.mg.gov.br/transparencia/,https://www.pedroteixeira.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3149507,Pequeri,MG,html_portal,https://www.pequeri.mg.gov.br,https://www.pequeri.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3149804,Perdizes,MG,html_portal,https://www.perdizes.mg.gov.br,https://www.perdizes.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3150109,Piau,MG,siplan_html,https://www.piau.mg.gov.br,https://www.piau.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3150505,Pimenta,MG,html_portal,http://pimenta.mg.gov.br/prefeitura,http://pimenta.mg.gov.br/prefeitura,Portal municipal HTML sem API JSON/XML estruturada.
+3150570,Pintópolis,MG,prefeitura_html,https://pintopolis.mg.gov.br/transparencia/,https://pintopolis.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3150604,Piracema,MG,html_portal,https://www.piracema.mg.gov.br/licitacao/detalhe/51650/pstrongregistro-de-precos-destinado-a-aquisicao-eventual-e-parcelada-de-medalhas-e-trofeus-justifica-se-pela-necessidade-de-atender-as-demandas-da-secretaria-municipal-de-esporte-visando-ao-fortalecimento-incentivo-e-adequada-execucao-das-atividades-esportivas-desenvolvidas-no-municipio-,https://www.piracema.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3150802,Piranga,MG,siplan_html,https://www.piranga.mg.gov.br,https://www.piranga.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3151107,Pirapetinga,MG,siplan_html,https://pirapetinga.mg.gov.br,https://pirapetinga.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1385,17 +1554,23 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3152204,Porteirinha,MG,html_portal,https://porteirinha.mg.gov.br,https://porteirinha.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3152303,Porto Firme,MG,govbr_html,https://pm-portofirme.publicacao.siplanweb.com.br,https://pm-portofirme.publicacao.siplanweb.com.br,Portal municipal HTML sem API JSON/XML estruturada.
 3152600,Pouso Alto,MG,html_portal,https://transparencia.pousoalto.mg.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
+3153004,Pratinha,MG,prefeitura_html,https://www.pratinha.mg.gov.br/,https://www.pratinha.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3153301,Presidente Kubitschek,MG,nucleogov_html,https://www.nucleogov.com.br,https://pk.mg.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
 3153707,Quartel Geral,MG,html_portal,https://www.quartelgeral.mg.gov.br,https://www.quartelgeral.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3153806,Queluzito,MG,html_portal,https://queluzito.mg.gov.br,https://queluzito.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3154309,Resplendor,MG,html_portal,https://www.resplendor.mg.gov.br,https://www.resplendor.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3154408,Ressaquinha,MG,html_portal,https://www.ressaquinha.mg.gov.br/transparencia/ouvidoria,https://www.ressaquinha.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3154457,Riachinho,MG,prefeitura_html,https://portaldatransparencia.gov.br/,https://portaldatransparencia.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+3154507,Riacho dos Machados,MG,prefeitura_html,https://riachodosmachados.mg.gov.br/transparencia/,https://riachodosmachados.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3154705,Ribeirão Vermelho,MG,cms_wordpress_html,https://ribeiraovermelho.mg.gov.br/transparencia,https://ribeiraovermelho.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3154903,Rio Casca,MG,prefeitura_html,https://www.riocasca.mg.gov.br/,https://www.riocasca.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3155108,Rio do Prado,MG,html_portal,https://www.riodoprado.mg.gov.br,https://www.riodoprado.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3155207,Rio Espera,MG,html_portal,https://rioespera.mg.gov.br,https://rioespera.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3155405,Rio Novo,MG,prefeitura_html,https://pm-rionovo.publicacao.siplanweb.com.br/,https://pm-rionovo.publicacao.siplanweb.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3155504,Rio Paranaíba,MG,html_portal,https://rioparanaiba.mg.gov.br,https://rioparanaiba.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3155801,Rio Pomba,MG,html_portal,https://www.riopomba.mg.gov.br,https://www.riopomba.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3155900,Rio Preto,MG,siplan_html,https://www.riopreto.mg.gov.br,https://www.riopreto.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3156007,Rio Vermelho,MG,prefeitura_html,https://riovermelho.mg.gov.br/transparencia-v2/,https://riovermelho.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3156403,Romaria,MG,html_portal,https://romaria.mg.gov.br,https://romaria.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3156452,Rosário da Limeira,MG,siplan_html,https://www.rosariodalimeira.mg.gov.br/site,https://www.rosariodalimeira.mg.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
 3156601,Rubim,MG,cms_wordpress_html,https://rubim.mg.gov.br,https://rubim.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1403,6 +1578,8 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3157005,Salinas,MG,html_portal,https://www.salinas.mg.gov.br,https://www.salinas.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3157278,Santa Bárbara do Monte Verde,MG,siplan_html,https://www.santabarbaradomonteverde.mg.gov.br,https://www.santabarbaradomonteverde.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3157401,Santa Cruz do Escalvado,MG,siplan_html,https://www.santacruzdoescalvado.mg.gov.br,https://www.santacruzdoescalvado.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3157658,Santa Helena de Minas,MG,prefeitura_html,https://radardatransparencia.atricon.org.br,https://radardatransparencia.atricon.org.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+3157708,Santa Juliana,MG,prefeitura_html,https://pmsj.sonner.com.br/portalcidadao/,https://pmsj.sonner.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3157807,Santa Luzia,MG,cms_wordpress_html,https://www.santaluzia.mg.gov.br/transparencia,https://www.santaluzia.mg.gov.br/v2,Portal municipal HTML sem API JSON/XML estruturada.
 3157906,Santa Margarida,MG,html_portal,https://www.santamargarida.mg.gov.br,https://www.santamargarida.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3158409,Santana de Cataguases,MG,html_portal,https://www.santanadecataguases.mg.gov.br/principal,https://www.santanadecataguases.mg.gov.br/principal,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1411,8 +1588,10 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3158904,Santana do Manhuaçu,MG,html_portal,https://www.santanadomanhuacu.mg.gov.br/transparencia/portal-transparencia,https://www.santanadomanhuacu.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3159209,Santa Rita de Caldas,MG,html_portal,https://www.prefeiturasrc.mg.gov.br,https://www.prefeiturasrc.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3159407,Santa Rita de Ibitipoca,MG,siplan_html,https://santaritadeibitipoca.mg.gov.br,https://santaritadeibitipoca.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3159506,Santa Rita do Itueto,MG,prefeitura_html,https://santaritadoitueto.mg.gov.br/transparencia/,https://santaritadoitueto.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3159902,Santo Antônio do Amparo,MG,html_portal,https://santoantoniodoamparo.mg.gov.br,https://santoantoniodoamparo.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3160207,Santo Antônio do Itambé,MG,html_portal,https://www.santoantoniodoitambe.mg.gov.br,https://www.santoantoniodoitambe.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3160454,Santo Antônio do Retiro,MG,prefeitura_html,https://santoantoniodoretiro.mg.gov.br/,https://santoantoniodoretiro.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3160603,Santo Hipólito,MG,html_portal,https://santohipolito.mg.gov.br/transparencia,https://santohipolito.mg.gov.br/Default14.aspx,Portal municipal HTML sem API JSON/XML estruturada.
 3160900,São Brás do Suaçuí,MG,cms_wordpress_html,https://saobrasdosuacui.mg.gov.br/portal-da-transparencia,https://www.saobrasdosuacui.mg.gov.br/index.php,Portal municipal HTML sem API JSON/XML estruturada.
 3160959,São Domingos das Dores,MG,html_portal,https://www.saodomingosdasdores.mg.gov.br/principal,https://www.saodomingosdasdores.mg.gov.br/principal,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1421,6 +1600,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3161809,São Gonçalo do Pará,MG,html_portal,https://www.saogoncalodopara.mg.gov.br/principal,https://www.saogoncalodopara.mg.gov.br/principal,Portal municipal HTML sem API JSON/XML estruturada.
 3162005,São Gonçalo do Sapucaí,MG,ipm_html,https://saogoncalodosapucai.atende.net/cidadao,https://saogoncalodosapucai.atende.net/cidadao,Portal municipal HTML sem API JSON/XML estruturada.
 3162252,São João da Lagoa,MG,html_portal,https://saojoaodalagoa.mg.gov.br/portal-da-transparencia,https://saojoaodalagoa.mg.gov.br/portal-da-transparencia,Portal municipal HTML sem API JSON/XML estruturada.
+3162302,São João da Mata,MG,prefeitura_html,https://www.saojoaodamata.mg.gov.br/,https://www.saojoaodamata.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3162401,São João da Ponte,MG,html_portal,https://www.saojoaodaponte.mg.gov.br,https://www.saojoaodaponte.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3162450,São João das Missões,MG,html_portal,https://saojoaodasmissoes.mg.gov.br,https://saojoaodasmissoes.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3162906,São João Nepomuceno,MG,html_portal,https://www.sjnepomuceno.mg.gov.br,https://www.sjnepomuceno.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1429,6 +1609,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3163201,São José do Alegre,MG,siplan_html,https://www.saojosedoalegre.mg.gov.br,https://www.saojosedoalegre.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3163508,São José do Jacuri,MG,html_portal,https://saojosedojacuri.mg.gov.br/cgi-sys/suspendedpage.cgi,https://saojosedojacuri.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3163706,São Lourenço,MG,siplan_html,https://www.saolourenco.mg.gov.br,https://www.saolourenco.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3164209,São Romão,MG,prefeitura_html,https://saoromao.mg.gov.br/transparencia/,https://saoromao.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3164308,São Roque de Minas,MG,el_gpi_html,https://saoroquedeminas.mg.gov.br,https://saoroquedeminas.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3164704,São Sebastião do Paraíso,MG,el_gpi_html,https://www.ssparaiso.mg.gov.br,https://www.ssparaiso.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3164803,São Sebastião do Rio Preto,MG,html_portal,https://www.saosebastiaodoriopreto.mg.gov.br,https://www.saosebastiaodoriopreto.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1438,9 +1619,11 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3166006,Senhora de Oliveira,MG,siplan_html,https://www.senhoradeoliveira.mg.gov.br,https://www.senhoradeoliveira.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3166105,Senhora do Porto,MG,cms_wordpress_html,https://senhoradoporto.mg.gov.br/?cat=-1,https://senhoradoporto.mg.gov.br/?cat=-1,Portal municipal HTML sem API JSON/XML estruturada.
 3166402,Seritinga,MG,html_portal,https://seritinga.mg.gov.br,https://seritinga.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3166600,Serra da Saudade,MG,prefeitura_html,http://serradasaudade.com/,http://serradasaudade.com,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3167004,Serranos,MG,siplan_html,http://serranos.mg.gov.br/transparencia,https://serranos.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3167202,Sete Lagoas,MG,html_portal,https://www.setelagoas.mg.gov.br,https://www.setelagoas.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3167301,Silveirânia,MG,siplan_html,https://silveirania.mg.gov.br,https://silveirania.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3167400,Silvianópolis,MG,prefeitura_html,https://www.silvianopolis.mg.gov.br/,https://www.silvianopolis.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3167509,Simão Pereira,MG,siplan_html,https://www.simaopereira.mg.gov.br,https://www.simaopereira.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3167806,Soledade de Minas,MG,html_portal,https://www.soledadedeminas.mg.gov.br/v1,https://www.soledadedeminas.mg.gov.br/v1,Portal municipal HTML sem API JSON/XML estruturada.
 3168200,Tapiraí,MG,html_portal,https://www.tapirai.mg.gov.br,https://www.tapirai.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1457,10 +1640,12 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3169703,Turmalina,MG,html_portal,https://turmalina.mg.gov.br,https://turmalina.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3170008,Ubaí,MG,cms_wordpress_html,https://ubai.mg.gov.br/category/transparencia/processos-seletivos,https://ubai.mg.gov.br/#,Portal municipal HTML sem API JSON/XML estruturada.
 3170404,Unaí,MG,html_portal,https://www.prefeituraunai.mg.gov.br/pmu2/index.php/secretarias/noticias/46-saude/2559-programa-miguilim-garante-consultas-oftalmologicas-e-oculos-gratuitos-para-estudantes-da-rede-publica.html,https://www.prefeituraunai.mg.gov.br/pmu2/index.php,Portal municipal HTML sem API JSON/XML estruturada.
+3170479,Uruana de Minas,MG,prefeitura_html,https://uruanademinas.mg.gov.br/,https://uruanademinas.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3170503,Urucânia,MG,html_portal,https://www.urucania.mg.gov.br/transparencia/licitacoes,https://www.urucania.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3170651,Vargem Grande do Rio Pardo,MG,html_portal,https://vargemgrandedoriopardo.mg.gov.br,https://vargemgrandedoriopardo.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3171006,Vazante,MG,html_portal,https://www.vazante.mg.gov.br/portal/dados-abertos,https://www.vazante.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3171030,Verdelândia,MG,ecrie_html,https://verdelandia.mg.gov.br,https://verdelandia.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3171071,Veredinha,MG,prefeitura_html,https://veredinha.mg.gov.br/portal-da-transparencia/,https://veredinha.mg.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3171204,Vespasiano,MG,html_portal,https://www.vespasiano.mg.gov.br,https://www.vespasiano.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3171709,Virgínia,MG,siplan_html,https://www.virginia.mg.gov.br,https://www.virginia.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3172103,Volta Grande,MG,siplan_html,https://portal.voltagrande.mg.gov.br/transparencia_ant,https://portal.voltagrande.mg.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1660,6 +1845,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3513405,Cruzeiro,SP,html_portal,https://www.cruzeiro.sp.gov.br,https://www.cruzeiro.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3513801,Diadema,SP,html_portal,https://portal.diadema.sp.gov.br,https://portal.diadema.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3513850,Dirce Reis,SP,html_portal,https://www.dircereis.sp.gov.br,https://www.dircereis.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3514502,Duartina,SP,prefeitura_html,https://www.duartina.sp.gov.br/transparencia,https://www.duartina.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3514601,Dumont,SP,html_portal,https://dumont.sp.gov.br,https://dumont.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3515004,Embu das Artes,SP,cms_wordpress_html,https://cidadeembudasartes.sp.gov.br/atividades-esportivas-incentivam-inclusao-em-embu-das-artes,https://cidadeembudasartes.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3515103,Embu-Guaçu,SP,html_portal,https://transparencia.embuguacu.sp.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1670,12 +1856,15 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3515400,Fartura,SP,html_portal,https://www.fartura.sp.gov.br,https://www.fartura.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3515657,Fernão,SP,html_portal,https://www.fernao.sp.gov.br,https://www.fernao.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3515707,Ferraz de Vasconcelos,SP,html_portal,https://ferrazdevasconcelos.sp.gov.br/web,https://ferrazdevasconcelos.sp.gov.br/web,Portal municipal HTML sem API JSON/XML estruturada.
+3515806,Flora Rica,SP,prefeitura_html,https://www.florarica.sp.gov.br/transparencia,https://www.florarica.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3515905,Floreal,SP,html_portal,https://www.floreal.sp.gov.br/portal/dados-abertos,https://www.floreal.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3516002,Flórida Paulista,SP,html_portal,https://www.floridapaulista.sp.gov.br,https://www.floridapaulista.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3516200,Franca,SP,html_portal,https://www3.franca.sp.gov.br,https://www3.franca.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3516507,Gabriel Monteiro,SP,html_portal,https://www.gabrielmonteiro.sp.gov.br,https://www.gabrielmonteiro.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3517109,Glicério,SP,html_portal,https://s166.asp.srv.br/issonline,https://www.glicerio.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3517406,Guaíra,SP,html_portal,https://www.guaira.sp.gov.br,https://www.guaira.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3517505,Guapiaçu,SP,prefeitura_html,https://www.guapiacu.sp.gov.br/transparencia,https://www.guapiacu.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+3517703,Guará,SP,prefeitura_html,https://servicos.guara.sp.gov.br/Transparencia/Default.aspx?AcessoIndividual=lnkEquipeGoverno,https://servicos.guara.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3518008,Guarani d'Oeste,SP,html_portal,https://guaranidoeste.sp.gov.br,https://guaranidoeste.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3518206,Guararapes,SP,html_portal,https://www.guararapes.sp.gov.br,https://www.guararapes.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3518503,Guareí,SP,govbr_html,https://www.guarei.sp.gov.br,https://www.guarei.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1689,6 +1878,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3519501,Ibirarema,SP,html_portal,https://ibirarema.sp.gov.br,https://ibirarema.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3519709,Ibiúna,SP,html_portal,https://ibiuna.sp.gov.br,https://ibiuna.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3520103,Igarapava,SP,html_portal,https://igarapava.sp.gov.br/site,https://igarapava.sp.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
+3520202,Igaratá,SP,prefeitura_html,https://transparencia.igarata.sp.gov.br/default.htm,https://transparencia.igarata.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3520301,Iguape,SP,html_portal,https://www.iguape.sp.gov.br,https://www.iguape.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3520400,Ilhabela,SP,html_portal,https://www.ilhabela.sp.gov.br,https://www.ilhabela.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3520509,Indaiatuba,SP,html_portal,https://www.indaiatuba.sp.gov.br/transparencia,https://www.indaiatuba.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1699,6 +1889,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3521150,Ipiguá,SP,html_portal,https://www.ipigua.sp.gov.br/portal/dados-abertos,https://www.ipigua.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3521200,Iporanga,SP,html_portal,https://transparencia.iporanga.sp.gov.br/default.htm,,Portal municipal HTML sem API JSON/XML estruturada.
 3521309,Ipuã,SP,fiorilli_html,https://www.ipua.sp.gov.br,https://www.ipua.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3521507,Irapuã,SP,prefeitura_html,https://irapua.sp.gov.br/publicacoes/lei-aldir-blanc-1634908519,https://irapua.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3521606,Irapuru,SP,html_portal,https://www.irapuru.sp.gov.br/portal/dados-abertos,https://www.irapuru.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3521804,Itaí,SP,fiorilli_html,https://www.itai.sp.gov.br,https://www.itai.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3522000,Itaju,SP,html_portal,https://www.itaju.sp.gov.br,https://www.itaju.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1716,6 +1907,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3523909,Itu,SP,html_portal,https://transparencia.itu.sp.gov.br,,Portal municipal HTML sem API JSON/XML estruturada.
 3524204,Jaborandi,SP,fiorilli_html,https://jaborandi.sp.gov.br,https://jaborandi.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3524402,Jacareí,SP,html_portal,https://siap.jacarei.sp.gov.br/portal-transparencia/publicacoes,https://www.jacarei.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3524600,Jacupiranga,SP,prefeitura_html,https://www.jacupiranga.sp.gov.br/transparencia,https://www.jacupiranga.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3525003,Jandira,SP,html_portal,https://portal.jandira.sp.gov.br,https://jandira.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3525300,Jaú,SP,html_portal,https://www.jau.sp.gov.br,https://www.jau.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3525409,Jeriquara,SP,fiorilli_html,https://www.jeriquara.sp.gov.br,https://www.jeriquara.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1725,6 +1917,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3525854,Jumirim,SP,html_portal,https://www.jumirim.sp.gov.br/portal-da-transparencia,https://www.jumirim.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3525904,Jundiaí,SP,cms_wordpress_html,https://transparencia.jundiai.sp.gov.br,https://jundiai.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3526001,Junqueirópolis,SP,html_portal,https://www.junqueiropolis.sp.gov.br/portal/dados-abertos,https://www.junqueiropolis.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3526100,Juquiá,SP,prefeitura_html,https://www.juquia.sp.gov.br/,https://www.juquia.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3526209,Juquitiba,SP,cms_wordpress_html,https://juquitiba.sp.gov.br,https://juquitiba.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3526506,Lavínia,SP,html_portal,http://s2.asp.srv.br/etransparencia.pm.lavinia.sp/servlet/portal,https://www.lavinia.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3526704,Leme,SP,fiorilli_html,https://www.leme.sp.gov.br,https://www.leme.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1780,6 +1973,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3536109,Pardinho,SP,govbr_html,https://pardinho.sp.gov.br/transparencia,https://pardinho.sp.gov.br/portal,Portal municipal HTML sem API JSON/XML estruturada.
 3536208,Pariquera-Açu,SP,cms_wordpress_html,https://www.pariqueraacu.sp.gov.br/site/2021/transparencia,https://www.pariqueraacu.sp.gov.br/site/2021,Portal municipal HTML sem API JSON/XML estruturada.
 3536257,Parisi,SP,fiorilli_html,https://www.parisi.sp.gov.br,https://www.parisi.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3536406,Paulicéia,SP,prefeitura_html,https://www.pauliceia.sp.gov.br/,https://www.pauliceia.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3536505,Paulínia,SP,smarapd_html,https://www.paulinia.sp.gov.br,https://www.paulinia.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3536570,Paulistânia,SP,html_portal,https://www.paulistania.sp.gov.br,https://www.paulistania.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3536802,Pedra Bela,SP,govbr_html,https://pedrabela.sp.gov.br,https://pedrabela.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1795,6 +1989,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3538501,Piquete,SP,html_portal,https://www.piquete.sp.gov.br,https://www.piquete.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3538709,Piracicaba,SP,html_portal,https://piracicaba.sp.gov.br,https://piracicaba.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3539004,Pirangi,SP,html_portal,https://www.pirangi.sp.gov.br,https://www.pirangi.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3539202,Pirapozinho,SP,prefeitura_html,https://www.pirapozinho.sp.gov.br/,https://www.pirapozinho.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3539301,Pirassununga,SP,html_portal,https://www.pirassununga.sp.gov.br,https://www.pirassununga.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3539400,Piratininga,SP,html_portal,https://www.piratininga.sp.gov.br,https://www.piratininga.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3539509,Pitangueiras,SP,html_portal,https://pitangueiras.sp.gov.br,https://pitangueiras.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1818,6 +2013,8 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3541703,Quatá,SP,fiorilli_html,https://www.quata.sp.gov.br,https://www.quata.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3541802,Queiroz,SP,html_portal,https://www.queiroz.sp.gov.br,https://www.queiroz.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3542008,Quintana,SP,html_portal,https://www.quintana.sp.gov.br,https://www.quintana.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3542107,Rafard,SP,prefeitura_html,https://rafard.sp.gov.br/transparencia/Transparencia.html,https://rafard.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
+3542206,Rancharia,SP,prefeitura_html,https://www.rancharia.sp.gov.br/,https://www.rancharia.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3542305,Redenção da Serra,SP,html_portal,https://www.redencaodaserra.sp.gov.br,https://www.redencaodaserra.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3542404,Regente Feijó,SP,html_portal,https://www.regentefeijo.sp.gov.br,https://www.regentefeijo.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3542602,Registro,SP,html_portal,https://registro.sp.gov.br,https://registro.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1825,6 +2022,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3542800,Ribeira,SP,html_portal,https://institucionalribeira.sp.gov.br,https://institucionalribeira.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3543006,Ribeirão Branco,SP,html_portal,https://www.ribeiraobranco.sp.gov.br,https://www.ribeiraobranco.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3543204,Ribeirão do Sul,SP,html_portal,https://www.ribeiraodosul.sp.gov.br,https://www.ribeiraodosul.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3543253,Ribeirão Grande,SP,prefeitura_html,https://transparenciaprefeitura.ribeiraogrande.sp.gov.br/,https://transparenciaprefeitura.ribeiraogrande.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3543501,Riversul,SP,html_portal,https://www.riversul.sp.gov.br/portal/dados-abertos,https://www.riversul.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3543600,Rifaina,SP,html_portal,http://www.rifaina.sp.gov.br,http://www.rifaina.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3543808,Rinópolis,SP,html_portal,https://www.rinopolis.sp.gov.br,https://www.rinopolis.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -1871,6 +2069,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 3551405,Serra Azul,SP,html_portal,https://serraazul.sp.gov.br,https://serraazul.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3552007,Silveiras,SP,cms_wordpress_html,https://silveiras.sp.gov.br/site,https://silveiras.sp.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
 3552205,Sorocaba,SP,html_portal,https://transparencia.sorocaba.sp.gov.br,https://www.sorocaba.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+3552601,Tabapuã,SP,prefeitura_html,https://www.tabapua.sp.gov.br/transparencia,https://www.tabapua.sp.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 3553203,Taiúva,SP,html_portal,https://www.taiuva.sp.gov.br,https://www.taiuva.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 3553302,Tambaú,SP,html_portal,https://s4.asp.srv.br/einformacoes.pm.tambau.sp/einformacoes,https://www.tambau.sp.gov.br/site,Portal municipal HTML sem API JSON/XML estruturada.
 3553401,Tanabi,SP,html_portal,https://tanabi.sp.gov.br,https://tanabi.sp.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -2324,6 +2523,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 5000609,Amambai,MS,html_portal,https://amambai.ms.gov.br,https://amambai.ms.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 5000807,Anaurilândia,MS,html_portal,https://www.anaurilandia.ms.gov.br/anaurilandia,https://www.anaurilandia.ms.gov.br/anaurilandia,Portal municipal HTML sem API JSON/XML estruturada.
 5000906,Antônio João,MS,html_portal,https://www.antoniojoao.ms.gov.br,https://www.antoniojoao.ms.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+5001243,Aral Moreira,MS,prefeitura_html,https://aralmoreira.ms.gov.br/,https://aralmoreira.ms.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 5001904,Bataguassu,MS,cms_wordpress_html,https://www.bataguassu.ms.gov.br,https://www.bataguassu.ms.gov.br/#,Portal municipal HTML sem API JSON/XML estruturada.
 5002209,Bonito,MS,html_portal,https://www.bonito.ms.gov.br,https://www.bonito.ms.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 5002605,Camapuã,MS,html_portal,https://web.qualitysistemas.com.br/portal/municipio_de_camapua,https://camapua.ms.gov.br/a-prefeitura#,Portal municipal HTML sem API JSON/XML estruturada.
@@ -2344,8 +2544,10 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 5006275,Paraíso das Águas,MS,govbr_html,https://paraisodasaguas.ms.gov.br/site,https://paraisodasaguas.ms.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 5006309,Paranaíba,MS,fiorilli_html,https://www.paranaiba.ms.gov.br/portal,https://www.paranaiba.ms.gov.br/portal,Portal municipal HTML sem API JSON/XML estruturada.
 5006358,Paranhos,MS,html_portal,http://www.paranhos.ms.gov.br,http://www.paranhos.ms.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+5006408,Pedro Gomes,MS,prefeitura_html,https://pedrogomes.ms.gov.br/transparencia-2,https://pedrogomes.ms.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 5006606,Ponta Porã,MS,html_portal,https://www.pontapora.ms.gov.br/v2,https://www.pontapora.ms.gov.br/v2,Portal municipal HTML sem API JSON/XML estruturada.
 5007307,Rio Negro,MS,html_portal,https://web.qualitysistemas.com.br/portal/transparencia_publica/prefeitura_municipal_de_rio_negro,https://www.rionegro.ms.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+5007505,Rochedo,MS,prefeitura_html,https://web.qualitysistemas.com.br/portal/transparencia_publica/prefeitura_municipal_de_rochedo,https://web.qualitysistemas.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 5007554,Santa Rita do Pardo,MS,el_gpi_html,https://www.santaritadopardo.ms.gov.br,https://www.santaritadopardo.ms.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 5007802,Selvíria,MS,html_portal,https://www.selviria.ms.gov.br,https://www.selviria.ms.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 5007901,Sidrolândia,MS,el_gpi_html,https://www.sidrolandia.ms.gov.br,https://www.sidrolandia.ms.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
@@ -2384,6 +2586,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 5107198,Ribeirãozinho,MT,fiorilli_html,https://www.ribeiraozinho.mt.gov.br,https://www.ribeiraozinho.mt.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 5107305,São José do Rio Claro,MT,html_portal,https://www.saojosedorioclaro.mt.gov.br/home,https://www.saojosedorioclaro.mt.gov.br/home,Portal municipal HTML sem API JSON/XML estruturada.
 5107404,São Pedro da Cipa,MT,html_portal,https://www.saopedrodacipa.mt.gov.br,https://www.saopedrodacipa.mt.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+5107578,Rondolândia,MT,prefeitura_html,https://www.rondolandia.mt.gov.br/transparencia,https://www.rondolandia.mt.gov.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 5107602,Rondonópolis,MT,html_portal,https://transparencia.rondonopolis.mt.gov.br/rondonopolis,https://www.rondonopolis.mt.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 5107883,Serra Nova Dourada,MT,html_portal,https://serranovadourada.mt.gov.br,https://serranovadourada.mt.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 5107941,Tabaporã,MT,html_portal,https://www.tabapora.mt.gov.br/home,https://www.tabapora.mt.gov.br/home,Portal municipal HTML sem API JSON/XML estruturada.
@@ -2399,6 +2602,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 5212501,Luziânia,GO,html_portal,https://www.luziania.go.gov.br,https://www.luziania.go.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 5212956,Matrinchã,GO,html_portal,https://www.matrincha.go.gov.br,https://matrincha.go.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 5213103,Mineiros,GO,html_portal,https://mineiros.go.gov.br,https://mineiros.go.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+5215900,Palminópolis,GO,prefeitura_html,http://prefeituradepalminopolis.sigepnet.com.br/index.php?portal=1,http://prefeituradepalminopolis.sigepnet.com.br,Portal municipal HTML descoberto via sondagem direta (sem API JSON/XML estruturada).
 5216908,Pilar de Goiás,GO,html_portal,https://pilar.go.gov.br/home,https://pilar.go.gov.br/home,Portal municipal HTML sem API JSON/XML estruturada.
 5219605,Santa Tereza de Goiás,GO,centi_html,https://santatereza.go.gov.br,https://santatereza.go.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 5221858,Valparaíso de Goiás,GO,nucleogov_html,https://www.nucleogov.com.br,https://valparaisodegoias.go.gov.br,Portal municipal HTML sem API JSON/XML estruturada.

@@ -337,7 +337,10 @@ func scoreHTMLLink(link htmlLink, baseHost string, keywords []string) int {
 		}
 	}
 	if score == 0 {
-		if strings.Contains(haystack, "transparencia") || strings.Contains(haystack, "portal-da-transparencia") {
+		if strings.Contains(haystack, "transparencia") ||
+			strings.Contains(haystack, "portal-da-transparencia") ||
+			strings.Contains(haystack, "acessoainformacao") ||
+			strings.Contains(haystack, "acesso-a-informacao") {
 			score += 5
 		}
 	}
