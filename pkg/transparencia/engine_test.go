@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gibavargas/mcp-brasil/pkg/transparencia"
+	"github.com/Mcp-Brasil/mcp-brasil/pkg/transparencia"
 )
 
 func TestLoadAllMunicipiosAndEstados(t *testing.T) {

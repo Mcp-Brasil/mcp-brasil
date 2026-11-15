@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gibavargas/mcp-brasil/pkg/transparencia"
+	"github.com/Mcp-Brasil/mcp-brasil/pkg/transparencia"
 )
 
 func utf8ToLatin1(s string) []byte {

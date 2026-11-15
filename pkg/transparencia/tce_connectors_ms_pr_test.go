@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gibavargas/mcp-brasil/pkg/transparencia"
+	"github.com/Mcp-Brasil/mcp-brasil/pkg/transparencia"
 )
 
 func TestTCEPRConnector(t *testing.T) {

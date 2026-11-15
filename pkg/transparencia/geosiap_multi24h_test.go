@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gibavargas/mcp-brasil/pkg/transparencia"
+	"github.com/Mcp-Brasil/mcp-brasil/pkg/transparencia"
 )
 
 func TestNormalizeGeoSiapAPIBase(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gibavargas/mcp-brasil/pkg/transparencia"
+	"github.com/Mcp-Brasil/mcp-brasil/pkg/transparencia"
 )
 
 const testPublicsoftHash = "0123456789abcdef0123456789abcdef01234567"
