@@ -400,7 +400,11 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		FonteDescoberta: source,
 	}
 
-	// 0) URLs SaaS dedicadas com padrão inequívoco (Betha Cloud, Memory ILAI, Fácil Transparência, TomeConta)
+	// 0) Probes de plataformas estruturadas (com orçamento limitado de 2.5s para preservar tempo para o fallback HTML no passo 3)
+	saasCtx, saasCancel := context.WithTimeout(ctx, 2500*time.Millisecond)
+	defer saasCancel()
+
+	// URLs SaaS dedicadas com padrão inequívoco (Betha Cloud, Memory ILAI, Fácil Transparência, TomeConta)
 	if mHash := bethaHashRegex.FindStringSubmatch(base); len(mHash) >= 2 {
 		det.URLResolvida = "https://transparencia.betha.cloud/#/" + mHash[1]
 		det.Plataforma = "betha_cloud"
@@ -409,7 +413,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		det.Observacoes = "Portal Betha Cloud com API JSON pública anônima."
 		return det, true
 	}
-	if t, ent := ExtractMemoryTenant(base); t != "" && ProbeMemory(ctx, client, t, ent) {
+	if t, ent := ExtractMemoryTenant(base); t != "" && ProbeMemory(saasCtx, client, t, ent) {
 		det.Plataforma = "memory_openknowledge"
 		if ent != "" {
 			det.TenantID = t + "/" + ent
@@ -420,14 +424,14 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		det.Observacoes = "Portal Memory OpenKnowledge com API REST pública."
 		return det, true
 	}
-	if dbID := ExtractFacilDatabaseID(base); dbID != "" && ProbeFacil(ctx, client, base, dbID) {
+	if dbID := ExtractFacilDatabaseID(base); dbID != "" && ProbeFacil(saasCtx, client, base, dbID) {
 		det.Plataforma = "facil_transparencia"
 		det.TenantID = dbID
 		det.ServidoresSuportado = true
 		det.Observacoes = "Portal Fácil Transparência com API JSON pública."
 		return det, true
 	}
-	if tcID := ExtractTomeContaID(base); tcID != "" && ProbeTomeConta(ctx, client, base, tcID) {
+	if tcID := ExtractTomeContaID(base); tcID != "" && ProbeTomeConta(saasCtx, client, base, tcID) {
 		det.Plataforma = "tomeconta_appbr"
 		det.TenantID = tcID
 		det.ServidoresSuportado = false
@@ -436,11 +440,11 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	}
 
 	// 1) Checa assinatura Quasar /publico/versao
-	if ver, ok := probeQuasarVersao(ctx, client, base); ok {
+	if ver, ok := probeQuasarVersao(saasCtx, client, base); ok {
 		det.Plataforma = "quasar_publico"
 		det.Versao = ver
 		det.ServidoresSuportado = true
-		if ents := fetchQuasarEntidades(ctx, client, base); len(ents) > 0 {
+		if ents := fetchQuasarEntidades(saasCtx, client, base); len(ents) > 0 {
 			det.CodAdministracao = ents[0].CodAdministracao
 			det.EntidadeNome = ents[0].DesAdministracao
 			// Prefere prefeitura caso haja múltiplas entidades (prefeitura + câmara + previdência)
@@ -458,7 +462,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 
 	// 2) Checa assinatura Fiorilli SCPI (/versaoJson/DadosAbertos/ ou /VersaoJson/DadosAbertos/)
 	for _, path := range []string{"/versaoJson/DadosAbertos/", "/VersaoJson/DadosAbertos/", "/Transparencia/VersaoJson/DadosAbertos/"} {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+path, nil)
+		req, err := http.NewRequestWithContext(saasCtx, http.MethodGet, base+path, nil)
 		if err != nil {
 			continue
 		}
@@ -477,7 +481,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	}
 
 	// 2b) Checa assinatura Megasoft (/api/configuracao/carregamento-inicial)
-	if cfg, err := FetchMegasoftConfig(ctx, client, base, false); err == nil && cfg != nil && cfg.TokenPortal != "" {
+	if cfg, err := FetchMegasoftConfig(saasCtx, client, base, false); err == nil && cfg != nil && cfg.TokenPortal != "" {
 		det.Plataforma = "megasoft"
 		det.ServidoresSuportado = true
 		det.CodAdministracao = cfg.CodigoDoOrgao
@@ -497,7 +501,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		elotechCandidates = dedupeStrings(append(elotechCandidates, rootAPI))
 	}
 	for _, eloBase := range elotechCandidates {
-		if ProbeElotech(ctx, client, eloBase) {
+		if ProbeElotech(saasCtx, client, eloBase) {
 			det.URLResolvida = eloBase
 			det.Plataforma = "elotech_oxy"
 			det.ServidoresSuportado = true
@@ -507,7 +511,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	}
 
 	// 2e) Checa assinatura IPM / Atende.Net (/api/WCPDadosAbertos e /api/transparencia-pessoal-funcionarios)
-	if ProbeIPM(ctx, client, base) {
+	if ProbeIPM(saasCtx, client, base) {
 		det.Plataforma = "ipm_atende"
 		det.ServidoresSuportado = true
 		det.Observacoes = "Portal IPM / Atende.Net com API REST pública de Dados Abertos."
@@ -515,7 +519,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	}
 
 	// 2f) Checa assinatura E&L PortalTP (/api/transparencia.asmx)
-	if ProbePortalTP(ctx, client, base) {
+	if ProbePortalTP(saasCtx, client, base) {
 		det.Plataforma = "el_portaltp"
 		det.ServidoresSuportado = true
 		det.Observacoes = "Portal E&L PortalTP com WebService ASMX JSON público."
@@ -523,7 +527,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	}
 
 	// 2g) Checa assinatura Sonner GRP (/GRP/pic/api/config/contexto)
-	if ent, ok := ProbeSonner(ctx, client, base); ok {
+	if ent, ok := ProbeSonner(saasCtx, client, base); ok {
 		det.Plataforma = "sonner_grp"
 		det.EntidadeNome = ent
 		det.ServidoresSuportado = true
@@ -532,7 +536,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	}
 
 	// 2h) Checa assinatura e-Pública (/rest/{alias}/public/user/attr/exercicios)
-	if alias, ent, ok := ProbeEPublicaURL(ctx, client, base); ok {
+	if alias, ent, ok := ProbeEPublicaURL(saasCtx, client, base); ok {
 		det.Plataforma = "epublica_portal"
 		det.TenantID = alias
 		det.EntidadeNome = ent
@@ -550,7 +554,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		}
 	}
 	for _, gc := range govCands {
-		if ent, ok := ProbeGovBRCidade360(ctx, client, gc); ok {
+		if ent, ok := ProbeGovBRCidade360(saasCtx, client, gc); ok {
 			det.URLResolvida = gc
 			det.Plataforma = "govbr_cidade360"
 			det.TenantID = ent
@@ -572,7 +576,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		}
 	}
 	for _, cc := range coplanCands {
-		if ugID, ugDesc, ok := ProbeCoplan(ctx, client, cc); ok {
+		if ugID, ugDesc, ok := ProbeCoplan(saasCtx, client, cc); ok {
 			det.URLResolvida = cc
 			det.Plataforma = "coplan_gp"
 			det.CodAdministracao = ugID
@@ -583,7 +587,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	}
 
 	// 2k) Checa assinatura Thema API Gateway (/infra/apigw/transparencia/service/...)
-	if adminCode, adminName, ok := ProbeThemaAPIGW(ctx, client, base); ok {
+	if adminCode, adminName, ok := ProbeThemaAPIGW(saasCtx, client, base); ok {
 		det.Plataforma = "thema_apigw"
 		det.CodAdministracao = adminCode
 		det.EntidadeNome = adminName
@@ -594,7 +598,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	isOverride := source == "override"
 	// 2l) Conectores especializados por domínio ou OverrideURL
 	if isOverride || strings.Contains(lowBase, "publicsoft") || publicsoftLegadoRegex.MatchString(base) {
-		if hid, entName, ok := ProbePublicsoft(ctx, client, base, "", ""); ok {
+		if hid, entName, ok := ProbePublicsoft(saasCtx, client, base, "", ""); ok {
 			det.Plataforma = "publicsoft_api"
 			det.TenantID = hid
 			det.EntidadeNome = entName
@@ -604,7 +608,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		}
 	}
 	if isOverride || strings.Contains(lowBase, "topsolutions") {
-		if apiBase, ok := ProbeTopSolutions(ctx, client, base); ok {
+		if apiBase, ok := ProbeTopSolutions(saasCtx, client, base); ok {
 			det.URLResolvida = apiBase
 			det.Plataforma = "topsolutions_rn"
 			det.ServidoresSuportado = true
@@ -613,7 +617,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		}
 	}
 	if isOverride || strings.Contains(lowBase, "cittaweb") {
-		if apiBase, ugID, entName, ok := ProbeCittaWeb(ctx, client, base); ok {
+		if apiBase, ugID, entName, ok := ProbeCittaWeb(saasCtx, client, base); ok {
 			det.URLResolvida = apiBase
 			det.Plataforma = "cittaweb_api"
 			det.CodAdministracao = ugID
@@ -624,7 +628,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		}
 	}
 	if isOverride || strings.Contains(lowBase, "geosiap") {
-		if apiBase, eid, entName, ok := ProbeGeoSiap(ctx, client, base); ok {
+		if apiBase, eid, entName, ok := ProbeGeoSiap(saasCtx, client, base); ok {
 			det.URLResolvida = apiBase
 			det.Plataforma = "geosiap_api"
 			det.CodAdministracao = eid
@@ -635,7 +639,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		}
 	}
 	if isOverride || strings.Contains(lowBase, "multi24") {
-		if wsBase, ok := ProbeMulti24h(ctx, client, base); ok {
+		if wsBase, ok := ProbeMulti24h(saasCtx, client, base); ok {
 			det.URLResolvida = wsBase
 			det.Plataforma = "multi24h_xml"
 			det.ServidoresSuportado = false
@@ -645,46 +649,46 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	}
 
 	// 2m) Demais conectores municipais com endpoints estruturados padronizados
-	if ProbeNucleoGov(ctx, client, base) {
+	if ProbeNucleoGov(saasCtx, client, base) {
 		det.Plataforma = "nucleogov"
 		det.ServidoresSuportado = true
 		det.Observacoes = "Portal NúcleoGov com API REST pública."
 		return det, true
 	}
-	if clienteSlug, ok := ProbeDiretorioDigital(ctx, client, base); ok {
+	if clienteSlug, ok := ProbeDiretorioDigital(saasCtx, client, base); ok {
 		det.Plataforma = "diretoriodigital_sistp"
 		det.TenantID = clienteSlug
 		det.ServidoresSuportado = true
 		det.Observacoes = "Portal Diretório Digital (SisTP) com API pública."
 		return det, true
 	}
-	if portalBase, ok := ProbeInfBr(ctx, client, base); ok {
+	if portalBase, ok := ProbeInfBr(saasCtx, client, base); ok {
 		det.URLResolvida = portalBase
 		det.Plataforma = "infbr_netuse"
 		det.ServidoresSuportado = true
 		det.Observacoes = "Portal InfBr / Netuse com endpoint JSON público."
 		return det, true
 	}
-	if ProbeAssesi(ctx, client, base) {
+	if ProbeAssesi(saasCtx, client, base) {
 		det.Plataforma = "assesi_portal"
 		det.ServidoresSuportado = true
 		det.Observacoes = "Portal Assesi Transparência com API pública."
 		return det, true
 	}
-	if entityCode, ok := ProbeAspec(ctx, client, base, ExtractAspecEntityCode(base)); ok {
+	if entityCode, ok := ProbeAspec(saasCtx, client, base, ExtractAspecEntityCode(base)); ok {
 		det.Plataforma = "aspec_gt"
 		det.TenantID = entityCode
 		det.ServidoresSuportado = false
 		det.Observacoes = "Portal Aspec Governo Transparente com API JSON pública."
 		return det, true
 	}
-	if ProbeSmarapd(ctx, client, base) {
+	if ProbeSmarapd(saasCtx, client, base) {
 		det.Plataforma = "smarapd_pai"
 		det.ServidoresSuportado = true
 		det.Observacoes = "Portal SMARAPD (PAI) com API REST pública."
 		return det, true
 	}
-	if tid, ok := ProbeFatorSistemas(ctx, client, base); ok {
+	if tid, ok := ProbeFatorSistemas(saasCtx, client, base); ok {
 		det.Plataforma = "fator_sistemas"
 		det.TenantID = tid
 		det.ServidoresSuportado = true
@@ -696,7 +700,7 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 			parts := strings.Split(strings.ToLower(pu.Hostname()), ".")
 			// acessoainformacao.<slug>.<uf>.gov.br
 			if len(parts) >= 4 && parts[0] == "acessoainformacao" && len(parts[2]) == 2 {
-				if resolved, ok := ProbeCenti(ctx, client, strings.ToUpper(parts[2]), parts[1]); ok {
+				if resolved, ok := ProbeCenti(saasCtx, client, strings.ToUpper(parts[2]), parts[1]); ok {
 					det.Plataforma = "centi_api"
 					det.TenantID = resolved
 					det.ServidoresSuportado = true
@@ -790,6 +794,9 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 		case strings.Contains(bodyLow, "atende.net") || strings.Contains(bodyLow, "ipm"):
 			det.Plataforma = "ipm_atende"
 			det.Observacoes = "Portal IPM/Atende.Net detectado (sem endpoints abertos de Dados Abertos neste endereço)."
+		case strings.Contains(bodyLow, "elmartecnologia.com.br"):
+			det.Plataforma = "elmar_html"
+			det.Observacoes = "Portal Elmar Tecnologia detectado; consulta via extração HTML/iframe."
 		case strings.Contains(bodyLow, "betha"):
 			det.Plataforma = "betha"
 			det.Observacoes = "Portal Betha Sistemas detectado."
@@ -985,6 +992,7 @@ func scrapeTransparencyLinks(ctx context.Context, client *http.Client, siteURLs 
 					!strings.Contains(low, "cittaweb.com.br") &&
 					!strings.Contains(low, "geosiap.net.br") &&
 					!strings.Contains(low, "publicsoft.com.br") &&
+					!strings.Contains(low, "elmartecnologia.com.br") &&
 					!strings.Contains(low, "topsolutionsrn.com.br") &&
 					!strings.Contains(low, "gp.srv.br") &&
 					!strings.Contains(low, "cidade360.cloud") &&

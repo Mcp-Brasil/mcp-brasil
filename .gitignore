@@ -32,3 +32,7 @@ AGENTS.md
 bin/
 *.exe
 
+# Local DuckDB databases
+*.duckdb
+*.duckdb.wal
+

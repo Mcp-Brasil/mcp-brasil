@@ -11,6 +11,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 )
 
 // ---------------------------------------------------------------------------
@@ -43,7 +45,7 @@ func IsHTMLPortalPlatform(plat string) bool {
 		return true
 	}
 	switch p {
-	case "fiorilli_web", "el_transparencia", "betha", "sonner":
+	case "fiorilli_web", "el_transparencia", "betha", "sonner", "elmartecnologia", "sagres_tce_pb":
 		return true
 	}
 	return false
@@ -249,7 +251,20 @@ func extractHTMLTables(baseURL, htmlBody string) []htmlTable {
 	return tables
 }
 
-func fetchHTMLPage(ctx context.Context, client *http.Client, targetURL string) (finalURL string, body string, err error) {
+type htmlPageCacheEntry struct {
+	done      chan struct{}
+	finalURL  string
+	body      string
+	err       error
+	expiresAt time.Time
+}
+
+var (
+	htmlPageCacheMu sync.Mutex
+	htmlPageCache   = make(map[string]*htmlPageCacheEntry)
+)
+
+func fetchHTMLPageUncached(ctx context.Context, client *http.Client, targetURL string) (finalURL string, body string, err error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
 	if err != nil {
 		return "", "", err
@@ -289,6 +304,46 @@ func fetchHTMLPage(ctx context.Context, client *http.Client, targetURL string) (
 	return finalURL, bodyStr, nil
 }
 
+func fetchHTMLPage(ctx context.Context, client *http.Client, targetURL string) (finalURL string, body string, err error) {
+	if strings.Contains(targetURL, "127.0.0.1") || strings.Contains(targetURL, "localhost") {
+		return fetchHTMLPageUncached(ctx, client, targetURL)
+	}
+
+	now := time.Now()
+	htmlPageCacheMu.Lock()
+	if ent, ok := htmlPageCache[targetURL]; ok {
+		if now.Before(ent.expiresAt) {
+			done := ent.done
+			htmlPageCacheMu.Unlock()
+			select {
+			case <-done:
+				return ent.finalURL, ent.body, ent.err
+			case <-ctx.Done():
+				return "", "", ctx.Err()
+			}
+		}
+		delete(htmlPageCache, targetURL)
+	}
+	ent := &htmlPageCacheEntry{
+		done:      make(chan struct{}),
+		expiresAt: now.Add(12 * time.Second),
+	}
+	htmlPageCache[targetURL] = ent
+	htmlPageCacheMu.Unlock()
+
+	fURL, bStr, fErr := fetchHTMLPageUncached(ctx, client, targetURL)
+	ent.finalURL = fURL
+	ent.body = bStr
+	ent.err = fErr
+	if fErr != nil {
+		htmlPageCacheMu.Lock()
+		delete(htmlPageCache, targetURL)
+		htmlPageCacheMu.Unlock()
+	}
+	close(ent.done)
+	return fURL, bStr, fErr
+}
+
 func htmlDomainKeywords(domain string) []string {
 	switch domain {
 	case "servidores":
@@ -298,11 +353,19 @@ func htmlDomainKeywords(domain string) []string {
 	case "receitas":
 		return []string{"receita", "arrecadacao", "tributo", "imposto", "repasses"}
 	case "licitacoes":
-		return []string{"licitac", "pregao", "edital", "dispensa", "inexigibilidade", "chamamento", "tomada de preco"}
+		return []string{"licita", "pregao", "edital", "dispensa", "inexigibilidade", "chamamento", "tomada de preco"}
 	case "contratos":
 		return []string{"contrat", "aditivo", "ata de registro", "termo"}
 	case "diarias":
 		return []string{"diaria", "passagem", "viagem", "adiantamento"}
+	case "obras":
+		return []string{"obra", "engenharia", "empreendimento", "execucao de obra", "reforma", "pavimentacao"}
+	case "convenios":
+		return []string{"convenio", "transferencia", "parceria", "acordo", "termo de fomento", "termo de colaboracao"}
+	case "legislacao":
+		return []string{"legislacao", "leis", "decreto", "portaria", "normativo", "ato oficial", "lei municipal"}
+	case "concursos":
+		return []string{"concurso", "processo seletivo", "edital de selecao", "aprovado", "convocacao"}
 	default:
 		return []string{"transparencia", "dados abertos"}
 	}
@@ -321,6 +384,19 @@ func isBinaryDocumentURL(rawURL string) bool {
 	return false
 }
 
+var allModuleStemKeywords = []string{
+	"servidor", "folha", "remuneracao",
+	"despesa", "empenho",
+	"receita", "arrecadacao",
+	"licita", "pregao",
+	"contrat",
+	"diaria", "passagem",
+	"obra",
+	"convenio",
+	"legislacao", "decreto", "portaria",
+	"concurso", "seletivo",
+}
+
 func scoreHTMLLink(link htmlLink, baseHost string, keywords []string) int {
 	if isBinaryDocumentURL(link.URL) {
 		return 0
@@ -334,6 +410,22 @@ func scoreHTMLLink(link htmlLink, baseHost string, keywords []string) int {
 	for i, kw := range keywords {
 		if strings.Contains(haystack, kw) {
 			score += (len(keywords) - i) * 10
+		}
+	}
+	if link.Label == "iframe" {
+		if score > 0 {
+			score += 25
+		} else {
+			conflictsOtherModule := false
+			for _, stem := range allModuleStemKeywords {
+				if strings.Contains(haystack, stem) {
+					conflictsOtherModule = true
+					break
+				}
+			}
+			if !conflictsOtherModule {
+				score += 25
+			}
 		}
 	}
 	if score == 0 {
@@ -378,6 +470,14 @@ func tableDomainHeaderKeywords(domain string) []string {
 		return []string{"contrato", "fornecedor", "contratado", "objeto", "vigencia", "assinatura", "valor", "situacao"}
 	case "diarias":
 		return []string{"beneficiario", "servidor", "nome", "destino", "motivo", "objetivo", "valor", "data", "periodo"}
+	case "obras":
+		return []string{"obra", "titulo", "objeto", "descricao", "local", "endereco", "bairro", "situacao", "percentual", "andamento", "valor", "contratada"}
+	case "convenios":
+		return []string{"convenio", "numero", "concedente", "convenente", "objeto", "descricao", "situacao", "vigencia", "valor"}
+	case "legislacao":
+		return []string{"tipo", "numero", "ano", "lei", "decreto", "portaria", "ementa", "descricao", "data", "publicacao"}
+	case "concursos":
+		return []string{"concurso", "edital", "cargo", "nome", "candidato", "inscricao", "classificacao", "situacao", "cpf"}
 	default:
 		return nil
 	}
@@ -429,17 +529,25 @@ func fetchHTMLDomainTablesWithParams(ctx context.Context, client *http.Client, p
 
 	cands := scorePageLinks(finalURL, body, domain)
 	topLinkSeen := make(map[string]struct{})
-	addTopLink := func(u string) {
-		if len(topLinks) >= 5 {
+	addTopLink := func(u string, priority bool) {
+		if u == "" {
 			return
 		}
-		if _, ok := topLinkSeen[u]; !ok {
-			topLinkSeen[u] = struct{}{}
+		if _, ok := topLinkSeen[u]; ok {
+			return
+		}
+		if !priority && len(topLinks) >= 8 {
+			return
+		}
+		topLinkSeen[u] = struct{}{}
+		if priority {
+			topLinks = append([]string{u}, topLinks...)
+		} else {
 			topLinks = append(topLinks, u)
 		}
 	}
-	for i := 0; i < len(cands) && i < 5; i++ {
-		addTopLink(cands[i].link.URL)
+	for i := 0; i < len(cands) && i < 4; i++ {
+		addTopLink(cands[i].link.URL, strings.HasPrefix(strings.ToLower(cands[i].link.Label), "iframe") || publicsoftLegadoRegex.MatchString(cands[i].link.URL))
 	}
 
 	if len(rootMatched) > 0 {
@@ -473,6 +581,9 @@ func fetchHTMLDomainTablesWithParams(ctx context.Context, client *http.Client, p
 			continue
 		}
 		visited[subFinal] = struct{}{}
+		if fetchedL1 == 1 {
+			usedURL = subFinal
+		}
 
 		subUsedURL, subMatched, subFallback := extractPageAllTables(ctx, sessClient, subFinal, subBody, domain, headerKWs, p)
 		if len(subMatched) > 0 {
@@ -485,10 +596,14 @@ func fetchHTMLDomainTablesWithParams(ctx context.Context, client *http.Client, p
 
 		subLinks := scorePageLinks(subFinal, subBody, domain)
 		for i, sl := range subLinks {
-			if i < 3 {
-				addTopLink(sl.link.URL)
+			isPrio := strings.HasPrefix(strings.ToLower(sl.link.Label), "iframe") || publicsoftLegadoRegex.MatchString(sl.link.URL)
+			if i < 3 || isPrio {
+				addTopLink(sl.link.URL, isPrio)
 			}
-			// Apenas segue no salto 2 links que casam palavras-chave do domínio (score > 20),
+			if publicsoftLegadoRegex.MatchString(sl.link.URL) {
+				continue
+			}
+			// Apenas segue no salto 2 links que casam palavras-chave do domínio ou iframes (score > 20),
 			// evitando loops em links genéricos "transparência" (+5/+15).
 			if sl.score > 20 {
 				if _, seen := visited[sl.link.URL]; !seen {
@@ -498,7 +613,7 @@ func fetchHTMLDomainTablesWithParams(ctx context.Context, client *http.Client, p
 		}
 	}
 
-	// Salto 2: Home -> Hub Transparência -> Página específica do módulo
+	// Salto 2: Home -> Hub Transparência -> Página específica do módulo / iframe
 	sort.SliceStable(level2Cands, func(i, j int) bool {
 		return level2Cands[i].score > level2Cands[j].score
 	})
@@ -517,6 +632,7 @@ func fetchHTMLDomainTablesWithParams(ctx context.Context, client *http.Client, p
 		if l2Err != nil {
 			continue
 		}
+		usedURL = l2Final
 		l2UsedURL, l2Matched, l2Fallback := extractPageAllTables(ctx, sessClient, l2Final, l2Body, domain, headerKWs, p)
 		if len(l2Matched) > 0 {
 			return l2UsedURL, topLinks, l2Matched, nil
@@ -534,6 +650,18 @@ func fetchHTMLDomainTablesWithParams(ctx context.Context, client *http.Client, p
 		return rootUsedURL, topLinks, rootFallback, nil
 	}
 	return usedURL, topLinks, nil, nil
+}
+
+func findEmbeddedPublicsoftURL(usedURL string, topLinks []string) string {
+	if publicsoftLegadoRegex.MatchString(usedURL) {
+		return usedURL
+	}
+	for _, lk := range topLinks {
+		if publicsoftLegadoRegex.MatchString(lk) {
+			return lk
+		}
+	}
+	return ""
 }
 
 func findColIdx(normHeaders []string, candidates ...string) int {
@@ -609,19 +737,23 @@ func QueryHTMLPortalServidores(ctx context.Context, client *http.Client, m *Muni
 		if idxNome < 0 && idxCargo < 0 {
 			continue
 		}
-		idxMat := findColIdx(nh, "matricula", "registro", "codigo")
+		idxMat := findColIdx(nh, "matricula", "registro")
 		idxCPF := findColIdx(nh, "cpf", "documento")
 		idxFuncao := findColIdx(nh, "funcao")
 		idxLot := findColIdx(nh, "lotacao", "secretaria", "departamento", "setor", "unidade", "orgao")
 		idxVinc := findColIdx(nh, "vinculo", "regime", "natureza", "tipo")
 		idxSit := findColIdx(nh, "situacao", "status")
 		idxBase := findColIdx(nh, "salario base", "vencimento base", "base")
-		idxBruto := findColIdx(nh, "bruto", "proventos", "remuneracao", "total bruto", "salario")
+		idxBruto := findColIdx(nh, "bruto", "proventos", "remuneracao", "total bruto", "salario", "vencimento")
 		idxDesc := findColIdx(nh, "desconto")
 		idxLiq := findColIdx(nh, "liquido", "valor liquido")
 		idxComp := findColIdx(nh, "competencia", "mes/ano", "referencia", "periodo")
 		idxCarga := findColIdx(nh, "carga horaria", "horas")
 		idxAdm := findColIdx(nh, "admissao", "data admissao")
+		idxServExplicit := findColIdx(nh, "servidor", "funcionario", "empregado")
+		if idxCargo < 0 && idxBruto < 0 && idxLiq < 0 && idxBase < 0 && idxCPF < 0 && idxMat < 0 && idxServExplicit < 0 {
+			continue
+		}
 
 		for _, row := range tb.Rows {
 			nome := cellAt(row, idxNome)
@@ -662,6 +794,14 @@ func QueryHTMLPortalServidores(ctx context.Context, client *http.Client, m *Muni
 	}
 
 	if len(items) == 0 {
+		if psURL := findEmbeddedPublicsoftURL(usedURL, topLinks); psURL != "" {
+			psParams := p
+			psParams.BaseURL = psURL
+			psParams.TenantID = ""
+			if psRes, psErr := QueryPublicsoftServidores(ctx, client, m, psParams); psErr == nil && psRes != nil && psRes.Disponivel {
+				return psRes, nil
+			}
+		}
 		return &ServidoresResult{
 			Municipio:  m,
 			Fonte:      fonte,
@@ -750,6 +890,14 @@ func QueryHTMLPortalDespesas(ctx context.Context, client *http.Client, m *Munici
 	}
 
 	if len(items) == 0 {
+		if psURL := findEmbeddedPublicsoftURL(usedURL, topLinks); psURL != "" {
+			psParams := p
+			psParams.BaseURL = psURL
+			psParams.TenantID = ""
+			if psRes, psErr := QueryPublicsoftDespesas(ctx, client, m, psParams); psErr == nil && psRes != nil && psRes.Disponivel {
+				return psRes, nil
+			}
+		}
 		return &DespesasResult{
 			Municipio:  m,
 			Fonte:      fonte,
@@ -824,6 +972,14 @@ func QueryHTMLPortalReceitas(ctx context.Context, client *http.Client, m *Munici
 	}
 
 	if len(items) == 0 {
+		if psURL := findEmbeddedPublicsoftURL(usedURL, topLinks); psURL != "" {
+			psParams := p
+			psParams.BaseURL = psURL
+			psParams.TenantID = ""
+			if psRes, psErr := QueryPublicsoftReceitas(ctx, client, m, psParams); psErr == nil && psRes != nil && psRes.Disponivel {
+				return psRes, nil
+			}
+		}
 		return &ReceitasResult{
 			Municipio:  m,
 			Fonte:      fonte,
@@ -912,6 +1068,14 @@ func QueryHTMLPortalLicitacoes(ctx context.Context, client *http.Client, m *Muni
 	}
 
 	if len(items) == 0 {
+		if psURL := findEmbeddedPublicsoftURL(usedURL, topLinks); psURL != "" {
+			psParams := p
+			psParams.BaseURL = psURL
+			psParams.TenantID = ""
+			if psRes, psErr := QueryPublicsoftLicitacoes(ctx, client, m, psParams); psErr == nil && psRes != nil && psRes.Disponivel {
+				return psRes, nil
+			}
+		}
 		return &LicitacoesResult{
 			Municipio:  m,
 			Fonte:      fonte,
@@ -936,7 +1100,7 @@ func QueryHTMLPortalLicitacoes(ctx context.Context, client *http.Client, m *Muni
 
 // QueryHTMLPortalContratos consulta contratos a partir de tabelas HTML em portais sem API estruturada.
 func QueryHTMLPortalContratos(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams, plataforma string) (*ContratosResult, error) {
-	usedURL, topLinks, tables, err := fetchHTMLDomainTables(ctx, client, p.BaseURL, "contratos")
+	usedURL, topLinks, tables, err := fetchHTMLDomainTablesWithParams(ctx, client, p, "contratos")
 	if err != nil {
 		return nil, err
 	}
@@ -994,6 +1158,14 @@ func QueryHTMLPortalContratos(ctx context.Context, client *http.Client, m *Munic
 	}
 
 	if len(items) == 0 {
+		if psURL := findEmbeddedPublicsoftURL(usedURL, topLinks); psURL != "" {
+			psParams := p
+			psParams.BaseURL = psURL
+			psParams.TenantID = ""
+			if psRes, psErr := QueryPublicsoftContratos(ctx, client, m, psParams); psErr == nil && psRes != nil && psRes.Disponivel {
+				return psRes, nil
+			}
+		}
 		return &ContratosResult{
 			Municipio:  m,
 			Fonte:      fonte,
@@ -1069,6 +1241,14 @@ func QueryHTMLPortalDiarias(ctx context.Context, client *http.Client, m *Municip
 	}
 
 	if len(items) == 0 {
+		if psURL := findEmbeddedPublicsoftURL(usedURL, topLinks); psURL != "" {
+			psParams := p
+			psParams.BaseURL = psURL
+			psParams.TenantID = ""
+			if psRes, psErr := QueryPublicsoftDiarias(ctx, client, m, psParams); psErr == nil && psRes != nil && psRes.Disponivel {
+				return psRes, nil
+			}
+		}
 		return &DiariasResult{
 			Municipio:  m,
 			Fonte:      fonte,
@@ -1087,6 +1267,359 @@ func QueryHTMLPortalDiarias(ctx context.Context, client *http.Client, m *Municip
 		PortalURL:      usedURL,
 		TotalRegistros: len(items),
 		Diarias:        items,
+		Disponivel:     true,
+	}, nil
+}
+
+// QueryHTMLPortalObras consulta obras públicas a partir de tabelas HTML em portais sem API estruturada.
+func QueryHTMLPortalObras(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams, plataforma string) (*ObrasResult, error) {
+	usedURL, topLinks, tables, err := fetchHTMLDomainTablesWithParams(ctx, client, p, "obras")
+	if err != nil {
+		return nil, err
+	}
+
+	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
+	var items []ObraItem
+
+	for _, tb := range tables {
+		nh := normalizeHTMLTableHeaders(tb.Headers)
+		idxTit := findColIdx(nh, "titulo", "obra", "empreendimento", "nome")
+		idxObj := findColIdx(nh, "objeto", "descricao", "especificacao")
+		idxCod := findColIdx(nh, "codigo", "numero", "processo", "contrato")
+		if idxTit < 0 && idxObj < 0 && idxCod < 0 {
+			continue
+		}
+		idxOrg := findColIdx(nh, "orgao", "secretaria", "unidade")
+		idxEnd := findColIdx(nh, "endereco", "local", "localizacao", "logradouro")
+		idxBairro := findColIdx(nh, "bairro", "distrito", "regiao")
+		idxIni := findColIdx(nh, "inicio", "data inicial", "ordem de servico")
+		idxFim := findColIdx(nh, "final", "fim", "conclusao", "termino", "prazo")
+		idxSit := findColIdx(nh, "situacao", "status", "andamento", "estagio")
+		idxVal := findColIdx(nh, "valor", "orcado", "contratado", "total", "investimento")
+
+		for _, row := range tb.Rows {
+			tit := cellAt(row, idxTit)
+			obj := cellAt(row, idxObj)
+			cod := cellAt(row, idxCod)
+			if tit == "" {
+				tit = obj
+			}
+			if obj == "" {
+				obj = tit
+			}
+			if tit == "" && obj == "" && cod == "" {
+				continue
+			}
+			if filtro != "" && !strings.Contains(strings.ToLower(tit+" "+obj+" "+cod), filtro) {
+				continue
+			}
+			items = append(items, ObraItem{
+				Codigo:      cod,
+				Titulo:      tit,
+				Objeto:      obj,
+				Orgao:       cellAt(row, idxOrg),
+				Endereco:    cellAt(row, idxEnd),
+				Bairro:      cellAt(row, idxBairro),
+				DataInicial: cellAt(row, idxIni),
+				DataFinal:   cellAt(row, idxFim),
+				Situacao:    cellAt(row, idxSit),
+				Valor:       parseHTMLBRFloat(cellAt(row, idxVal)),
+				Fonte:       fonte,
+			})
+			if len(items) >= limit {
+				break
+			}
+		}
+		if len(items) >= limit {
+			break
+		}
+	}
+
+	if len(items) == 0 {
+		if psURL := findEmbeddedPublicsoftURL(usedURL, topLinks); psURL != "" {
+			psParams := p
+			psParams.BaseURL = psURL
+			psParams.TenantID = ""
+			if psRes, psErr := QueryPublicsoftObras(ctx, client, m, psParams); psErr == nil && psRes != nil && psRes.Disponivel {
+				return psRes, nil
+			}
+		}
+		return &ObrasResult{
+			Municipio:  m,
+			Fonte:      fonte,
+			Plataforma: plataforma,
+			PortalURL:  usedURL,
+			Obras:      []ObraItem{},
+			Disponivel: false,
+			Mensagem:   htmlNoRowsMessage(plataforma, usedURL, topLinks),
+		}, errHTMLNoTableRows
+	}
+
+	return &ObrasResult{
+		Municipio:      m,
+		Fonte:          fonte,
+		Plataforma:     plataforma,
+		PortalURL:      usedURL,
+		TotalRegistros: len(items),
+		Obras:          items,
+		Disponivel:     true,
+	}, nil
+}
+
+// QueryHTMLPortalConvenios consulta convênios e transferências a partir de tabelas HTML em portais sem API estruturada.
+func QueryHTMLPortalConvenios(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams, plataforma string) (*ConveniosResult, error) {
+	usedURL, topLinks, tables, err := fetchHTMLDomainTablesWithParams(ctx, client, p, "convenios")
+	if err != nil {
+		return nil, err
+	}
+
+	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
+	var items []ConvenioItem
+
+	for _, tb := range tables {
+		nh := normalizeHTMLTableHeaders(tb.Headers)
+		idxNum := findColIdx(nh, "convenio", "numero", "termo", "codigo")
+		idxConc := findColIdx(nh, "concedente", "orgao concedente", "origem")
+		idxConv := findColIdx(nh, "convenente", "beneficiario", "entidade", "parceiro")
+		idxDesc := findColIdx(nh, "objeto", "descricao", "finalidade")
+		if idxNum < 0 && idxConc < 0 && idxConv < 0 && idxDesc < 0 {
+			continue
+		}
+		idxCat := findColIdx(nh, "categoria", "modalidade")
+		idxTipo := findColIdx(nh, "tipo", "instrumento")
+		idxSit := findColIdx(nh, "situacao", "status")
+		idxData := findColIdx(nh, "data", "assinatura", "celebracao")
+		idxVig := findColIdx(nh, "vigencia", "vencimento", "fim")
+		idxVal := findColIdx(nh, "valor", "global", "total", "pactuado")
+		idxLib := findColIdx(nh, "liberado", "repassado", "pago")
+
+		for _, row := range tb.Rows {
+			num := cellAt(row, idxNum)
+			conc := cellAt(row, idxConc)
+			conv := cellAt(row, idxConv)
+			desc := cellAt(row, idxDesc)
+			if num == "" && conc == "" && conv == "" && desc == "" {
+				continue
+			}
+			if filtro != "" && !strings.Contains(strings.ToLower(num+" "+conc+" "+conv+" "+desc), filtro) {
+				continue
+			}
+			items = append(items, ConvenioItem{
+				Numero:        num,
+				Concedente:    conc,
+				Convenente:    conv,
+				Categoria:     cellAt(row, idxCat),
+				Tipo:          cellAt(row, idxTipo),
+				Situacao:      cellAt(row, idxSit),
+				Data:          cellAt(row, idxData),
+				Vigencia:      cellAt(row, idxVig),
+				Descricao:     desc,
+				Valor:         parseHTMLBRFloat(cellAt(row, idxVal)),
+				ValorLiberado: parseHTMLBRFloat(cellAt(row, idxLib)),
+				Fonte:         fonte,
+			})
+			if len(items) >= limit {
+				break
+			}
+		}
+		if len(items) >= limit {
+			break
+		}
+	}
+
+	if len(items) == 0 {
+		if psURL := findEmbeddedPublicsoftURL(usedURL, topLinks); psURL != "" {
+			psParams := p
+			psParams.BaseURL = psURL
+			psParams.TenantID = ""
+			if psRes, psErr := QueryPublicsoftConvenios(ctx, client, m, psParams); psErr == nil && psRes != nil && psRes.Disponivel {
+				return psRes, nil
+			}
+		}
+		return &ConveniosResult{
+			Municipio:  m,
+			Fonte:      fonte,
+			Plataforma: plataforma,
+			PortalURL:  usedURL,
+			Convenios:  []ConvenioItem{},
+			Disponivel: false,
+			Mensagem:   htmlNoRowsMessage(plataforma, usedURL, topLinks),
+		}, errHTMLNoTableRows
+	}
+
+	return &ConveniosResult{
+		Municipio:      m,
+		Fonte:          fonte,
+		Plataforma:     plataforma,
+		PortalURL:      usedURL,
+		TotalRegistros: len(items),
+		Convenios:      items,
+		Disponivel:     true,
+	}, nil
+}
+
+// QueryHTMLPortalLegislacao consulta legislação e atos normativos a partir de tabelas HTML em portais sem API estruturada.
+func QueryHTMLPortalLegislacao(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams, plataforma string) (*LegislacaoResult, error) {
+	usedURL, topLinks, tables, err := fetchHTMLDomainTablesWithParams(ctx, client, p, "legislacao")
+	if err != nil {
+		return nil, err
+	}
+
+	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
+	var items []LegislacaoItem
+
+	for _, tb := range tables {
+		nh := normalizeHTMLTableHeaders(tb.Headers)
+		idxTipo := findColIdx(nh, "tipo", "especie")
+		idxNum := findColIdx(nh, "numero", "ato", "lei", "decreto", "portaria")
+		idxEmenta := findColIdx(nh, "ementa", "assunto", "resumo")
+		if idxTipo < 0 && idxNum < 0 && idxEmenta < 0 {
+			continue
+		}
+		idxDesc := findColIdx(nh, "ementa", "descricao", "assunto", "objeto", "resumo")
+		idxNome := findColIdx(nh, "nome", "titulo")
+		idxCod := findColIdx(nh, "codigo", "id")
+		idxData := findColIdx(nh, "publicacao", "data")
+		idxSit := findColIdx(nh, "situacao", "status", "vigencia")
+
+		for _, row := range tb.Rows {
+			tipo := cellAt(row, idxTipo)
+			num := cellAt(row, idxNum)
+			desc := cellAt(row, idxDesc)
+			nome := cellAt(row, idxNome)
+			if nome == "" && tipo != "" && num != "" {
+				nome = tipo + " " + num
+			}
+			if tipo == "" && num == "" && desc == "" && nome == "" {
+				continue
+			}
+			if filtro != "" && !strings.Contains(strings.ToLower(tipo+" "+num+" "+desc+" "+nome), filtro) {
+				continue
+			}
+			items = append(items, LegislacaoItem{
+				Codigo:         cellAt(row, idxCod),
+				TipoDocumento:  tipo,
+				Numero:         num,
+				Ano:            p.Ano,
+				DataPublicacao: cellAt(row, idxData),
+				Situacao:       cellAt(row, idxSit),
+				Nome:           nome,
+				Descricao:      desc,
+				Fonte:          fonte,
+			})
+			if len(items) >= limit {
+				break
+			}
+		}
+		if len(items) >= limit {
+			break
+		}
+	}
+
+	if len(items) == 0 {
+		return &LegislacaoResult{
+			Municipio:  m,
+			Fonte:      fonte,
+			Plataforma: plataforma,
+			PortalURL:  usedURL,
+			Atos:       []LegislacaoItem{},
+			Disponivel: false,
+			Mensagem:   htmlNoRowsMessage(plataforma, usedURL, topLinks),
+		}, errHTMLNoTableRows
+	}
+
+	return &LegislacaoResult{
+		Municipio:      m,
+		Fonte:          fonte,
+		Plataforma:     plataforma,
+		PortalURL:      usedURL,
+		TotalRegistros: len(items),
+		Atos:           items,
+		Disponivel:     true,
+	}, nil
+}
+
+// QueryHTMLPortalConcursos consulta aprovados e editais de concursos/processos seletivos a partir de tabelas HTML.
+func QueryHTMLPortalConcursos(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams, plataforma string) (*ConcursosResult, error) {
+	usedURL, topLinks, tables, err := fetchHTMLDomainTablesWithParams(ctx, client, p, "concursos")
+	if err != nil {
+		return nil, err
+	}
+
+	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
+	var items []ConcursoItem
+
+	for _, tb := range tables {
+		nh := normalizeHTMLTableHeaders(tb.Headers)
+		idxNome := findColIdx(nh, "nome", "candidato", "aprovado")
+		idxEdital := findColIdx(nh, "edital", "concurso", "processo seletivo")
+		idxCargo := findColIdx(nh, "cargo", "funcao", "vaga")
+		idxInsc := findColIdx(nh, "inscricao", "matricula")
+		idxClass := findColIdx(nh, "classificacao", "posicao", "colocacao")
+		idxCandExplicit := findColIdx(nh, "candidato", "aprovado")
+		if idxEdital < 0 && idxCargo < 0 && idxInsc < 0 && idxClass < 0 && idxCandExplicit < 0 {
+			continue
+		}
+		idxData := findColIdx(nh, "publicacao", "data")
+		idxSit := findColIdx(nh, "situacao", "status", "resultado")
+
+		for _, row := range tb.Rows {
+			nome := cellAt(row, idxNome)
+			edital := cellAt(row, idxEdital)
+			cargo := cellAt(row, idxCargo)
+			if nome == "" && edital == "" && cargo == "" {
+				continue
+			}
+			if filtro != "" && !strings.Contains(strings.ToLower(nome+" "+edital+" "+cargo), filtro) {
+				continue
+			}
+			classif := int(parseHTMLBRFloat(cellAt(row, idxClass)))
+			items = append(items, ConcursoItem{
+				Edital:         edital,
+				DataPublicacao: cellAt(row, idxData),
+				Nome:           nome,
+				Cargo:          cargo,
+				Inscricao:      cellAt(row, idxInsc),
+				Classificacao:  classif,
+				Situacao:       cellAt(row, idxSit),
+				Fonte:          fonte,
+			})
+			if len(items) >= limit {
+				break
+			}
+		}
+		if len(items) >= limit {
+			break
+		}
+	}
+
+	if len(items) == 0 {
+		return &ConcursosResult{
+			Municipio:  m,
+			Fonte:      fonte,
+			Plataforma: plataforma,
+			PortalURL:  usedURL,
+			Aprovados:  []ConcursoItem{},
+			Disponivel: false,
+			Mensagem:   htmlNoRowsMessage(plataforma, usedURL, topLinks),
+		}, errHTMLNoTableRows
+	}
+
+	return &ConcursosResult{
+		Municipio:      m,
+		Fonte:          fonte,
+		Plataforma:     plataforma,
+		PortalURL:      usedURL,
+		TotalRegistros: len(items),
+		Aprovados:      items,
 		Disponivel:     true,
 	}, nil
 }

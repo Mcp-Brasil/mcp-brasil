@@ -1012,6 +1012,21 @@ func QueryPublicsoftServidores(ctx context.Context, client *http.Client, m *Muni
 			modo := mapGetStr(cfgObj, "modo")
 			extURL := mapGetStr(cfgObj, "url", "url_externa", "link")
 			cfgMsg := mapGetStr(cfgObj, "mensagem", "message")
+			extractLinksExternos := func(m map[string]any) string {
+				if arr, ok := m["links_externos"].([]any); ok {
+					for _, el := range arr {
+						if item, ok := el.(map[string]any); ok {
+							if u := mapGetStr(item, "url", "link", "href"); u != "" {
+								return u
+							}
+						}
+					}
+				}
+				return ""
+			}
+			if extURL == "" {
+				extURL = extractLinksExternos(cfgObj)
+			}
 			if dataMap, ok := cfgObj["data"].(map[string]any); ok && dataMap != nil {
 				if modo == "" {
 					modo = mapGetStr(dataMap, "modo")
@@ -1019,24 +1034,30 @@ func QueryPublicsoftServidores(ctx context.Context, client *http.Client, m *Muni
 				if extURL == "" {
 					extURL = mapGetStr(dataMap, "url", "url_externa", "link")
 				}
+				if extURL == "" {
+					extURL = extractLinksExternos(dataMap)
+				}
 				if cfgMsg == "" {
 					cfgMsg = mapGetStr(dataMap, "mensagem", "message")
 				}
 			}
 
-			if strings.EqualFold(modo, "nao_integrado") || strings.Contains(strings.ToLower(modo), "nao_integrado") {
-				msg := "Folha de pagamento não integrada à API Publicsoft (folha-config modo=nao_integrado)."
+			lowModo := strings.ToLower(strings.TrimSpace(modo))
+			if strings.Contains(lowModo, "nao_integrado") || strings.Contains(lowModo, "link_externo") {
+				msg := fmt.Sprintf("Folha de pagamento não integrada à API Publicsoft (folha-config modo=%s).", modo)
 				if cfgMsg != "" {
 					msg = cfgMsg
 				}
+				portalOut := base
 				if extURL != "" {
 					msg += " Portal externo: " + extURL
+					portalOut = extURL
 				}
 				return &ServidoresResult{
 					Municipio:  m,
 					Fonte:      "Portal Municipal (Publicsoft)",
 					Plataforma: "publicsoft_api",
-					PortalURL:  base,
+					PortalURL:  portalOut,
 					Servidores: []ServidorItem{},
 					Disponivel: false,
 					Mensagem:   msg,
@@ -1142,6 +1163,231 @@ func QueryPublicsoftServidores(ctx context.Context, client *http.Client, m *Muni
 		PortalURL:      base,
 		TotalRegistros: total,
 		Servidores:     items,
+		Disponivel:     true,
+		Mensagem:       msg,
+	}, nil
+}
+
+// QueryPublicsoftDiarias consulta diárias e passagens na API Publicsoft (/api/v1/diarias).
+func QueryPublicsoftDiarias(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*DiariasResult, error) {
+	base, hashID, err := resolvePublicsoftTarget(ctx, client, m, p)
+	if err != nil {
+		return nil, err
+	}
+
+	ano := resolvePublicsoftYear(p)
+	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+	pageSize := normalizePageSize(scanLimit, 200)
+	target := fmt.Sprintf("%s/api/v1/diarias?exercicio=%d&per_page=%d", base, ano, pageSize)
+
+	rows, total, status, err := fetchPublicsoftPaginatedList(ctx, client, target, hashID, pageSize, scanLimit, "diarias", "itens")
+	if err != nil {
+		if status == http.StatusOK {
+			return nil, fmt.Errorf("erro ao decodificar Publicsoft diarias: %w", err)
+		}
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("Publicsoft /api/v1/diarias retornou HTTP %d", status)
+	}
+
+	items := make([]DiariaItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
+	for _, r := range rows {
+		ben := mapGetStr(r, "servidor", "beneficiario", "nome", "favorecido")
+		dest := mapGetStr(r, "destino", "local", "cidade")
+		mot := mapGetStr(r, "motivo", "objetivo", "finalidade", "historico", "descricao")
+		if filtro != "" && !strings.Contains(strings.ToLower(ben+" "+dest+" "+mot), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
+			continue
+		}
+		dataStr := mapGetStr(r, "dataEmpenho", "data_empenho", "dataInicio", "data_inicio", "data")
+		items = append(items, DiariaItem{
+			Beneficiario: ben,
+			Cargo:        mapGetStr(r, "cargo", "funcao", "unidade"),
+			Destino:      dest,
+			Motivo:       mot,
+			Data:         dataStr,
+			Valor:        mapGetFloat(r, "valor", "valor_total", "total"),
+			Fonte:        "Portal Municipal (Publicsoft)",
+		})
+	}
+
+	if filtro != "" || total == 0 {
+		total = matchedTotal
+	}
+	msg := ""
+	if len(items) == 0 {
+		msg = "Nenhuma diária encontrada para o período informado."
+	}
+
+	return &DiariasResult{
+		Municipio:      m,
+		Fonte:          "Portal Municipal (Publicsoft)",
+		Plataforma:     "publicsoft_api",
+		PortalURL:      base,
+		TotalRegistros: total,
+		Diarias:        items,
+		Disponivel:     true,
+		Mensagem:       msg,
+	}, nil
+}
+
+// QueryPublicsoftObras consulta obras públicas na API Publicsoft (/api/v1/obras).
+func QueryPublicsoftObras(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*ObrasResult, error) {
+	base, hashID, err := resolvePublicsoftTarget(ctx, client, m, p)
+	if err != nil {
+		return nil, err
+	}
+
+	ano := resolvePublicsoftYear(p)
+	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+	pageSize := normalizePageSize(scanLimit, 200)
+	target := fmt.Sprintf("%s/api/v1/obras?exercicio=%d&per_page=%d", base, ano, pageSize)
+
+	rows, total, status, err := fetchPublicsoftPaginatedList(ctx, client, target, hashID, pageSize, scanLimit, "itens", "obras")
+	if err != nil {
+		if status == http.StatusOK {
+			return nil, fmt.Errorf("erro ao decodificar Publicsoft obras: %w", err)
+		}
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("Publicsoft /api/v1/obras retornou HTTP %d", status)
+	}
+
+	items := make([]ObraItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
+	for _, r := range rows {
+		desc := mapGetStr(r, "descricao", "objeto", "titulo")
+		cod := mapGetStr(r, "numero", "codigo", "numContrato", "id")
+		loc := mapGetStr(r, "localizacao", "endereco")
+		if filtro != "" && !strings.Contains(strings.ToLower(desc+" "+cod+" "+loc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
+			continue
+		}
+		fim := mapGetStr(r, "dataConclusao", "dataPrevisaoConclusao", "data_final", "dataFim")
+		items = append(items, ObraItem{
+			Codigo:      cod,
+			Titulo:      desc,
+			Objeto:      desc,
+			Orgao:       mapGetStr(r, "instituicao", "orgao"),
+			Endereco:    loc,
+			DataInicial: mapGetStr(r, "dataInicio", "data_inicio"),
+			DataFinal:   fim,
+			Situacao:    mapGetStr(r, "situacao", "status"),
+			Valor:       mapGetFloat(r, "valorContrato", "valor", "valor_obra"),
+			Fonte:       "Portal Municipal (Publicsoft)",
+		})
+	}
+
+	if filtro != "" || total == 0 {
+		total = matchedTotal
+	}
+	msg := ""
+	if len(items) == 0 {
+		msg = "Nenhuma obra encontrada para o período informado."
+	}
+
+	return &ObrasResult{
+		Municipio:      m,
+		Fonte:          "Portal Municipal (Publicsoft)",
+		Plataforma:     "publicsoft_api",
+		PortalURL:      base,
+		TotalRegistros: total,
+		Obras:          items,
+		Disponivel:     true,
+		Mensagem:       msg,
+	}, nil
+}
+
+// QueryPublicsoftConvenios consulta convênios na API Publicsoft (/api/v1/convenios).
+func QueryPublicsoftConvenios(ctx context.Context, client *http.Client, m *Municipio, p PortalQueryParams) (*ConveniosResult, error) {
+	base, hashID, err := resolvePublicsoftTarget(ctx, client, m, p)
+	if err != nil {
+		return nil, err
+	}
+
+	ano := resolvePublicsoftYear(p)
+	limit := normalizeLimit(p.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
+	scanLimit := limit
+	if filtro != "" && scanLimit < 500 {
+		scanLimit = 500
+	}
+	pageSize := normalizePageSize(scanLimit, 200)
+	target := fmt.Sprintf("%s/api/v1/convenios?exercicio=%d&per_page=%d", base, ano, pageSize)
+
+	rows, total, status, err := fetchPublicsoftPaginatedList(ctx, client, target, hashID, pageSize, scanLimit, "convenios", "itens")
+	if err != nil {
+		if status == http.StatusOK {
+			return nil, fmt.Errorf("erro ao decodificar Publicsoft convenios: %w", err)
+		}
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("Publicsoft /api/v1/convenios retornou HTTP %d", status)
+	}
+
+	items := make([]ConvenioItem, 0, minInt(limit, len(rows)))
+	matchedTotal := 0
+	for _, r := range rows {
+		num := mapGetStr(r, "numero", "numeroTce", "id")
+		conc := mapGetStr(r, "concedente", "orgao_concedente")
+		conv := mapGetStr(r, "convenente", "beneficiario")
+		desc := mapGetStr(r, "objeto", "descricao")
+		if filtro != "" && !strings.Contains(strings.ToLower(num+" "+conc+" "+conv+" "+desc), filtro) {
+			continue
+		}
+		matchedTotal++
+		if len(items) >= limit {
+			continue
+		}
+		dataStr := mapGetStr(r, "dataCelebracao", "dataPublicacao", "dataInicio", "data")
+		items = append(items, ConvenioItem{
+			Numero:     num,
+			Concedente: conc,
+			Convenente: conv,
+			Situacao:   mapGetStr(r, "situacao", "status"),
+			Data:       dataStr,
+			Vigencia:   mapGetStr(r, "dataFim", "vigencia"),
+			Descricao:  desc,
+			Valor:      mapGetFloat(r, "valorPactuado", "valor", "valor_total"),
+			Fonte:      "Portal Municipal (Publicsoft)",
+		})
+	}
+
+	if filtro != "" || total == 0 {
+		total = matchedTotal
+	}
+	msg := ""
+	if len(items) == 0 {
+		msg = "Nenhum convênio encontrado para o período informado."
+	}
+
+	return &ConveniosResult{
+		Municipio:      m,
+		Fonte:          "Portal Municipal (Publicsoft)",
+		Plataforma:     "publicsoft_api",
+		PortalURL:      base,
+		TotalRegistros: total,
+		Convenios:      items,
 		Disponivel:     true,
 		Mensagem:       msg,
 	}, nil

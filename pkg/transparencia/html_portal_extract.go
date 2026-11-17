@@ -163,9 +163,18 @@ func jsonObjectsToHTMLTable(objs []map[string]any) (htmlTable, bool) {
 	if len(objs) == 0 {
 		return htmlTable{}, false
 	}
+	if _, hasType := objs[0]["@type"]; hasType {
+		return htmlTable{}, false
+	}
+	if _, hasCtx := objs[0]["@context"]; hasCtx {
+		return htmlTable{}, false
+	}
 	keySet := make(map[string]struct{})
 	for i := 0; i < len(objs) && i < 25; i++ {
 		for k, v := range objs[i] {
+			if strings.HasPrefix(k, "@") {
+				continue
+			}
 			switch v.(type) {
 			case map[string]any, []any:
 				continue
@@ -315,8 +324,14 @@ func collectTablesFromJSONValue(v any, headersHint [][]string, depth int, out *[
 			}
 		}
 	case map[string]any:
+		if _, hasCtx := val["@context"]; hasCtx {
+			return
+		}
+		if _, hasType := val["@type"]; hasType {
+			return
+		}
 		// Chaves comuns primeiro para priorizar os arrays principais de dados
-		preferred := []string{"data", "aaData", "rows", "records", "items", "content", "resultado", "resultados", "lista", "dados", "servidores", "despesas", "receitas", "licitacoes", "contratos", "diarias"}
+		preferred := []string{"data", "aaData", "rows", "records", "items", "content", "resultado", "resultados", "lista", "dados", "servidores", "despesas", "receitas", "licitacoes", "contratos", "diarias", "obras", "convenios", "legislacao", "atos", "concursos", "aprovados"}
 		seen := make(map[string]struct{})
 		for _, k := range preferred {
 			if child, exists := val[k]; exists {
@@ -492,6 +507,9 @@ func extractEmbeddedScriptTables(body string, headersHint [][]string) []htmlTabl
 			continue
 		}
 		attrs := strings.ToLower(sm[1])
+		if strings.Contains(attrs, "ld+json") {
+			continue
+		}
 		scriptBody := strings.TrimSpace(sm[2])
 		if scriptBody == "" {
 			continue

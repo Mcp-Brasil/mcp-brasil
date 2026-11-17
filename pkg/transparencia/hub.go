@@ -99,6 +99,71 @@ func (h *Hub) QueryServidores(ctx context.Context, query string, opts QueryOptio
 
 const rankingFetchLimit = 1000
 
+// htmlFallbackTargets retorna URLs candidatas de portal HTML municipal quando o conector estruturado
+// falha, não suporta o módulo consultado ou aponta para um portal externo sem API JSON aberta.
+func (h *Hub) htmlFallbackTargets(ctx context.Context, m *Municipio, disc *PortalDiscoveryResult, extraURL string) []string {
+	isMockTest := strings.Contains(disc.URLResolvida, "127.0.0.1") ||
+		strings.Contains(disc.URLResolvida, "localhost") ||
+		hasActiveSaaSTestOverride() ||
+		(h.TCE != nil && strings.Contains(h.TCE.tcePIBaseURL, "127.0.0.1"))
+
+	var targets []string
+	seen := make(map[string]bool)
+	add := func(u string) {
+		u = strings.TrimSpace(u)
+		if u == "" || seen[u] {
+			return
+		}
+		if isMockTest && !strings.Contains(u, "127.0.0.1") && !strings.Contains(u, "localhost") {
+			return
+		}
+		seen[u] = true
+		targets = append(targets, u)
+	}
+	if extraURL != "" && extraURL != disc.URLResolvida {
+		add(extraURL)
+	}
+	if htmlRec, ok := LookupPortalHTMLByIBGE(m.CodigoIBGE); ok && htmlRec.PortalURL != disc.URLResolvida {
+		add(htmlRec.PortalURL)
+	}
+	if disc.SitePrefeitura != "" && disc.SitePrefeitura != disc.URLResolvida {
+		add(disc.SitePrefeitura)
+	}
+	if !isMockTest && len(targets) < 2 {
+		cands := CandidatePrefeituraURLs(m)
+		if len(cands) > 2 {
+			cands = cands[:2]
+		}
+		subCtx, cancel := context.WithTimeout(ctx, 4*time.Second)
+		for _, l := range scrapeTransparencyLinks(subCtx, h.HTTPClient, cands) {
+			if l == disc.URLResolvida {
+				continue
+			}
+			lowL := strings.ToLower(l)
+			for _, hubPrefix := range []string{"/portal-da-transparencia/", "/portal_da_transparencia/", "/transparencia/"} {
+				if idx := strings.Index(lowL, hubPrefix); idx > 0 {
+					add(l[:idx+len(hubPrefix)-1])
+				}
+			}
+			add(l)
+			if len(targets) >= 3 {
+				break
+			}
+		}
+		for _, cand := range cands {
+			add(cand)
+			if len(targets) >= 3 {
+				break
+			}
+		}
+		cancel()
+	}
+	if !isMockTest && len(targets) == 0 && disc.URLResolvida != "" && !IsHTMLPortalPlatform(disc.Plataforma) {
+		add(disc.URLResolvida)
+	}
+	return targets
+}
+
 func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, disc *PortalDiscoveryResult, opts QueryOptions) (*ServidoresResult, error) {
 	fetchLimit := opts.Limit
 	if opts.OrdemSalarioDesc && fetchLimit < rankingFetchLimit {
@@ -118,133 +183,112 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 		OrdemValorDesc:   opts.OrdemValorDesc,
 	}
 
+	var unavailableRes *ServidoresResult
+	acceptServidores := func(res *ServidoresResult, err error) bool {
+		if err != nil || res == nil {
+			return false
+		}
+		if res.Disponivel {
+			h.applyServidoresPostProcess(res, opts)
+			return true
+		}
+		unavailableRes = res
+		return false
+	}
+
 	// 1. Conector direto do portal municipal
 	if disc.URLResolvida != "" {
 		switch disc.Plataforma {
 		case "megasoft":
-			res, err := QueryMegasoftServidores(ctx, h.HTTPClient, m, p)
-			if err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryMegasoftServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "quasar_publico":
-			res, err := QueryQuasarServidores(ctx, h.HTTPClient, m, p)
-			if err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryQuasarServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "fiorilli_scpi":
-			res, err := QueryFiorilliServidores(ctx, h.HTTPClient, m, p)
-			if err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryFiorilliServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "elotech_oxy":
-			res, err := QueryElotechServidores(ctx, h.HTTPClient, m, p)
-			if err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryElotechServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "betha_cloud":
-			res, err := QueryBethaServidores(ctx, h.HTTPClient, m, p)
-			if err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryBethaServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "agili_blue":
-			res, err := QueryAgiliServidores(ctx, h.HTTPClient, m, p)
-			if err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryAgiliServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "ipm_atende":
-			res, err := QueryIPMServidores(ctx, h.HTTPClient, m, p)
-			if err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryIPMServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "el_portaltp":
-			res, err := QueryPortalTPServidores(ctx, h.HTTPClient, m, p)
-			if err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryPortalTPServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "sonner_grp":
-			res, err := QuerySonnerServidores(ctx, h.HTTPClient, m, p)
-			if err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QuerySonnerServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "epublica_portal":
-			res, err := QueryEPublicaServidores(ctx, h.HTTPClient, m, p)
-			if err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryEPublicaServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "govbr_cidade360":
-			res, err := QueryGovBRServidores(ctx, h.HTTPClient, m, p, disc.TenantID)
-			if err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryGovBRServidores(ctx, h.HTTPClient, m, p, disc.TenantID); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "nucleogov":
-			if res, err := QueryNucleoGovServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryNucleoGovServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "diretoriodigital_sistp":
-			if res, err := QueryDiretorioDigitalServidores(ctx, h.HTTPClient, m, p, disc.TenantID); err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryDiretorioDigitalServidores(ctx, h.HTTPClient, m, p, disc.TenantID); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "infbr_netuse":
-			if res, err := QueryInfBrServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryInfBrServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "assesi_portal":
-			if res, err := QueryAssesiServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryAssesiServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "centi_api":
-			if res, err := QueryCentiServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryCentiServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "fator_sistemas":
-			if res, err := QueryFatorServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryFatorServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "smarapd_pai":
-			if res, err := QuerySmarapdServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QuerySmarapdServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "memory_openknowledge":
-			if res, err := QueryMemoryServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryMemoryServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "facil_transparencia":
-			if res, err := QueryFacilServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryFacilServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "publicsoft_api":
-			if res, err := QueryPublicsoftServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryPublicsoftServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "cittaweb_api":
-			if res, err := QueryCittaWebServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryCittaWebServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		case "topsolutions_rn":
-			if res, err := QueryTopSolutionsServidores(ctx, h.HTTPClient, m, p); err == nil && res != nil {
-				h.applyServidoresPostProcess(res, opts)
+			if res, err := QueryTopSolutionsServidores(ctx, h.HTTPClient, m, p); acceptServidores(res, err) {
 				return res, nil
 			}
 		default:
@@ -257,6 +301,24 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 					if res.Mensagem != "" {
 						disc.Observacoes = res.Mensagem
 					}
+				}
+			}
+		}
+
+		// 1b. Fallback HTML universal quando conector estruturado falhou ou indicou folha externa
+		if !IsHTMLPortalPlatform(disc.Plataforma) {
+			extraURL := ""
+			if unavailableRes != nil {
+				extraURL = unavailableRes.PortalURL
+			}
+			for _, targetURL := range h.htmlFallbackTargets(ctx, m, disc, extraURL) {
+				fp := p
+				fp.BaseURL = targetURL
+				if res, err := QueryHTMLPortalServidores(ctx, h.HTTPClient, m, fp, "html_portal"); err == nil && res != nil && res.Disponivel {
+					h.applyServidoresPostProcess(res, opts)
+					return res, nil
+				} else if res != nil && res.Mensagem != "" && unavailableRes != nil && !strings.Contains(unavailableRes.Mensagem, res.Mensagem) {
+					unavailableRes.Mensagem = strings.TrimSpace(unavailableRes.Mensagem + " " + res.Mensagem)
 				}
 			}
 		}
@@ -274,6 +336,10 @@ func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, di
 			h.applyServidoresPostProcess(res, opts)
 			return res, nil
 		}
+	}
+
+	if unavailableRes != nil {
+		return unavailableRes, nil
 	}
 
 	// 3. Caso portal não tenha API JSON aberta de folha, informa claramente o que foi descoberto
@@ -470,6 +536,17 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 		default:
 			if IsHTMLPortalPlatform(disc.Plataforma) {
 				if res, err := QueryHTMLPortalDespesas(ctx, h.HTTPClient, m, p, disc.Plataforma); err == nil && res != nil {
+					h.applyDespesasPostProcess(res, opts)
+					return res, nil
+				}
+			}
+		}
+
+		if !IsHTMLPortalPlatform(disc.Plataforma) {
+			for _, targetURL := range h.htmlFallbackTargets(ctx, m, disc, "") {
+				fp := p
+				fp.BaseURL = targetURL
+				if res, err := QueryHTMLPortalDespesas(ctx, h.HTTPClient, m, fp, "html_portal"); err == nil && res != nil && res.Disponivel {
 					h.applyDespesasPostProcess(res, opts)
 					return res, nil
 				}
@@ -743,6 +820,16 @@ func (h *Hub) queryReceitasWithDiscovery(ctx context.Context, m *Municipio, disc
 				}
 			}
 		}
+
+		if !IsHTMLPortalPlatform(disc.Plataforma) {
+			for _, targetURL := range h.htmlFallbackTargets(ctx, m, disc, "") {
+				fp := p
+				fp.BaseURL = targetURL
+				if res, err := QueryHTMLPortalReceitas(ctx, h.HTTPClient, m, fp, "html_portal"); err == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			}
+		}
 	}
 
 	switch m.UF {
@@ -898,6 +985,16 @@ func (h *Hub) queryLicitacoesWithDiscovery(ctx context.Context, m *Municipio, di
 				}
 			}
 		}
+
+		if !IsHTMLPortalPlatform(disc.Plataforma) {
+			for _, targetURL := range h.htmlFallbackTargets(ctx, m, disc, "") {
+				fp := p
+				fp.BaseURL = targetURL
+				if res, err := QueryHTMLPortalLicitacoes(ctx, h.HTTPClient, m, fp, "html_portal"); err == nil && res != nil && len(res.Licitacoes) > 0 {
+					return res, nil
+				}
+			}
+		}
 	}
 
 	switch m.UF {
@@ -1038,6 +1135,16 @@ func (h *Hub) queryContratosWithDiscovery(ctx context.Context, m *Municipio, dis
 				}
 			}
 		}
+
+		if !IsHTMLPortalPlatform(disc.Plataforma) {
+			for _, targetURL := range h.htmlFallbackTargets(ctx, m, disc, "") {
+				fp := p
+				fp.BaseURL = targetURL
+				if res, err := QueryHTMLPortalContratos(ctx, h.HTTPClient, m, fp, "html_portal"); err == nil && res != nil && len(res.Contratos) > 0 {
+					return res, nil
+				}
+			}
+		}
 	}
 
 	switch m.UF {
@@ -1085,15 +1192,19 @@ func (h *Hub) queryDiariasWithDiscovery(ctx context.Context, m *Municipio, disc 
 		}
 		switch disc.Plataforma {
 		case "megasoft":
-			if res, err := QueryMegasoftDiarias(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryMegasoftDiarias(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
 				return res, nil
 			}
 		case "betha_cloud":
-			if res, err := QueryBethaDiarias(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryBethaDiarias(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
 				return res, nil
 			}
 		case "el_portaltp":
-			if res, err := QueryPortalTPDiarias(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryPortalTPDiarias(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
+				return res, nil
+			}
+		case "publicsoft_api":
+			if res, err := QueryPublicsoftDiarias(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
 				return res, nil
 			}
 		default:
@@ -1105,6 +1216,16 @@ func (h *Hub) queryDiariasWithDiscovery(ctx context.Context, m *Municipio, disc 
 				}
 			}
 		}
+
+		if !IsHTMLPortalPlatform(disc.Plataforma) {
+			for _, targetURL := range h.htmlFallbackTargets(ctx, m, disc, "") {
+				fp := p
+				fp.BaseURL = targetURL
+				if res, err := QueryHTMLPortalDiarias(ctx, h.HTTPClient, m, fp, "html_portal"); err == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			}
+		}
 	}
 	return &DiariasResult{
 		Municipio:  m,
@@ -1113,7 +1234,7 @@ func (h *Hub) queryDiariasWithDiscovery(ctx context.Context, m *Municipio, disc 
 		PortalURL:  disc.URLResolvida,
 		Diarias:    []DiariaItem{},
 		Disponivel: false,
-		Mensagem:   fmt.Sprintf("Consulta direta de diárias via API está disponível para portais Megasoft, Betha Cloud e E&L PortalTP; plataforma detectada: %s.", disc.Plataforma),
+		Mensagem:   fmt.Sprintf("Consulta direta de diárias via API está disponível para portais Megasoft, Betha Cloud, E&L PortalTP, Publicsoft e HTML Portal; plataforma detectada: %s.", disc.Plataforma),
 	}, nil
 }
 
@@ -1144,24 +1265,46 @@ func (h *Hub) queryObrasWithDiscovery(ctx context.Context, m *Municipio, disc *P
 		}
 		switch disc.Plataforma {
 		case "megasoft":
-			if res, err := QueryMegasoftObras(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryMegasoftObras(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
 				return res, nil
 			}
 		case "agili_blue":
-			if res, err := QueryAgiliObras(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryAgiliObras(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
 				return res, nil
 			}
 		case "equiplano_cloud":
-			if res, err := QueryEquiplanoObras(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryEquiplanoObras(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
 				return res, nil
 			}
 		case "el_portaltp":
-			if res, err := QueryPortalTPObras(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryPortalTPObras(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
 				return res, nil
 			}
 		case "sonner_grp":
-			if res, err := QuerySonnerObras(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QuerySonnerObras(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
 				return res, nil
+			}
+		case "publicsoft_api":
+			if res, err := QueryPublicsoftObras(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
+				return res, nil
+			}
+		default:
+			if IsHTMLPortalPlatform(disc.Plataforma) {
+				if res, err := QueryHTMLPortalObras(ctx, h.HTTPClient, m, p, disc.Plataforma); err == nil && res != nil {
+					return res, nil
+				} else if res != nil && res.PortalURL != "" {
+					disc.URLResolvida = res.PortalURL
+				}
+			}
+		}
+
+		if !IsHTMLPortalPlatform(disc.Plataforma) {
+			for _, targetURL := range h.htmlFallbackTargets(ctx, m, disc, "") {
+				fp := p
+				fp.BaseURL = targetURL
+				if res, err := QueryHTMLPortalObras(ctx, h.HTTPClient, m, fp, "html_portal"); err == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
 			}
 		}
 	}
@@ -1177,7 +1320,7 @@ func (h *Hub) queryObrasWithDiscovery(ctx context.Context, m *Municipio, disc *P
 		PortalURL:  disc.URLResolvida,
 		Obras:      []ObraItem{},
 		Disponivel: false,
-		Mensagem:   fmt.Sprintf("Consulta direta de obras via API está disponível para portais Megasoft, Ágili, Equiplano, PortalTP, Sonner e TCE-RJ; plataforma detectada: %s.", disc.Plataforma),
+		Mensagem:   fmt.Sprintf("Consulta direta de obras via API está disponível para portais Megasoft, Ágili, Equiplano, PortalTP, Sonner, Publicsoft, HTML Portal e TCE-RJ; plataforma detectada: %s.", disc.Plataforma),
 	}, nil
 }
 
@@ -1207,12 +1350,34 @@ func (h *Hub) queryConveniosWithDiscovery(ctx context.Context, m *Municipio, dis
 		}
 		switch disc.Plataforma {
 		case "megasoft":
-			if res, err := QueryMegasoftConvenios(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QueryMegasoftConvenios(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
 				return res, nil
 			}
 		case "sonner_grp":
-			if res, err := QuerySonnerConvenios(ctx, h.HTTPClient, m, p); err == nil {
+			if res, err := QuerySonnerConvenios(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
 				return res, nil
+			}
+		case "publicsoft_api":
+			if res, err := QueryPublicsoftConvenios(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
+				return res, nil
+			}
+		default:
+			if IsHTMLPortalPlatform(disc.Plataforma) {
+				if res, err := QueryHTMLPortalConvenios(ctx, h.HTTPClient, m, p, disc.Plataforma); err == nil && res != nil {
+					return res, nil
+				} else if res != nil && res.PortalURL != "" {
+					disc.URLResolvida = res.PortalURL
+				}
+			}
+		}
+
+		if !IsHTMLPortalPlatform(disc.Plataforma) {
+			for _, targetURL := range h.htmlFallbackTargets(ctx, m, disc, "") {
+				fp := p
+				fp.BaseURL = targetURL
+				if res, err := QueryHTMLPortalConvenios(ctx, h.HTTPClient, m, fp, "html_portal"); err == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
 			}
 		}
 	}
@@ -1223,11 +1388,11 @@ func (h *Hub) queryConveniosWithDiscovery(ctx context.Context, m *Municipio, dis
 		PortalURL:  disc.URLResolvida,
 		Convenios:  []ConvenioItem{},
 		Disponivel: false,
-		Mensagem:   fmt.Sprintf("Consulta direta de convênios via API está disponível para portais Megasoft e Sonner; plataforma detectada: %s.", disc.Plataforma),
+		Mensagem:   fmt.Sprintf("Consulta direta de convênios via API está disponível para portais Megasoft, Sonner, Publicsoft e HTML Portal; plataforma detectada: %s.", disc.Plataforma),
 	}, nil
 }
 
-// QueryLegislacao consulta legislação e atos normativos municipais (portais Megasoft).
+// QueryLegislacao consulta legislação e atos normativos municipais.
 func (h *Hub) QueryLegislacao(ctx context.Context, query string, opts QueryOptions) (*LegislacaoResult, error) {
 	m, _, err := h.resolveMunicipio(query, opts.UF)
 	if err != nil {
@@ -1243,14 +1408,36 @@ func (h *Hub) QueryLegislacao(ctx context.Context, query string, opts QueryOptio
 }
 
 func (h *Hub) queryLegislacaoWithDiscovery(ctx context.Context, m *Municipio, disc *PortalDiscoveryResult, opts QueryOptions) (*LegislacaoResult, error) {
-	if disc.URLResolvida != "" && disc.Plataforma == "megasoft" {
-		if res, err := QueryMegasoftLegislacao(ctx, h.HTTPClient, m, PortalQueryParams{
+	if disc.URLResolvida != "" {
+		p := PortalQueryParams{
 			BaseURL:    disc.URLResolvida,
 			NomeFiltro: opts.NomeFiltro,
 			Ano:        opts.Ano,
 			Limit:      opts.Limit,
-		}); err == nil {
-			return res, nil
+		}
+		switch disc.Plataforma {
+		case "megasoft":
+			if res, err := QueryMegasoftLegislacao(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
+				return res, nil
+			}
+		default:
+			if IsHTMLPortalPlatform(disc.Plataforma) {
+				if res, err := QueryHTMLPortalLegislacao(ctx, h.HTTPClient, m, p, disc.Plataforma); err == nil && res != nil {
+					return res, nil
+				} else if res != nil && res.PortalURL != "" {
+					disc.URLResolvida = res.PortalURL
+				}
+			}
+		}
+
+		if !IsHTMLPortalPlatform(disc.Plataforma) {
+			for _, targetURL := range h.htmlFallbackTargets(ctx, m, disc, "") {
+				fp := p
+				fp.BaseURL = targetURL
+				if res, err := QueryHTMLPortalLegislacao(ctx, h.HTTPClient, m, fp, "html_portal"); err == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			}
 		}
 	}
 	return &LegislacaoResult{
@@ -1260,11 +1447,11 @@ func (h *Hub) queryLegislacaoWithDiscovery(ctx context.Context, m *Municipio, di
 		PortalURL:  disc.URLResolvida,
 		Atos:       []LegislacaoItem{},
 		Disponivel: false,
-		Mensagem:   fmt.Sprintf("Consulta direta de legislação municipal via API está disponível para portais Megasoft; plataforma detectada: %s.", disc.Plataforma),
+		Mensagem:   fmt.Sprintf("Consulta direta de legislação municipal está disponível para portais Megasoft e HTML Portal; plataforma detectada: %s.", disc.Plataforma),
 	}, nil
 }
 
-// QueryConcursos consulta lista de aprovados em concursos e processos seletivos (portais Megasoft).
+// QueryConcursos consulta lista de aprovados em concursos e processos seletivos.
 func (h *Hub) QueryConcursos(ctx context.Context, query string, opts QueryOptions) (*ConcursosResult, error) {
 	m, _, err := h.resolveMunicipio(query, opts.UF)
 	if err != nil {
@@ -1280,13 +1467,35 @@ func (h *Hub) QueryConcursos(ctx context.Context, query string, opts QueryOption
 }
 
 func (h *Hub) queryConcursosWithDiscovery(ctx context.Context, m *Municipio, disc *PortalDiscoveryResult, opts QueryOptions) (*ConcursosResult, error) {
-	if disc.URLResolvida != "" && disc.Plataforma == "megasoft" {
-		if res, err := QueryMegasoftConcursos(ctx, h.HTTPClient, m, PortalQueryParams{
+	if disc.URLResolvida != "" {
+		p := PortalQueryParams{
 			BaseURL:    disc.URLResolvida,
 			NomeFiltro: opts.NomeFiltro,
 			Limit:      opts.Limit,
-		}); err == nil {
-			return res, nil
+		}
+		switch disc.Plataforma {
+		case "megasoft":
+			if res, err := QueryMegasoftConcursos(ctx, h.HTTPClient, m, p); err == nil && res != nil && res.Disponivel {
+				return res, nil
+			}
+		default:
+			if IsHTMLPortalPlatform(disc.Plataforma) {
+				if res, err := QueryHTMLPortalConcursos(ctx, h.HTTPClient, m, p, disc.Plataforma); err == nil && res != nil {
+					return res, nil
+				} else if res != nil && res.PortalURL != "" {
+					disc.URLResolvida = res.PortalURL
+				}
+			}
+		}
+
+		if !IsHTMLPortalPlatform(disc.Plataforma) {
+			for _, targetURL := range h.htmlFallbackTargets(ctx, m, disc, "") {
+				fp := p
+				fp.BaseURL = targetURL
+				if res, err := QueryHTMLPortalConcursos(ctx, h.HTTPClient, m, fp, "html_portal"); err == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			}
 		}
 	}
 	return &ConcursosResult{
@@ -1296,7 +1505,7 @@ func (h *Hub) queryConcursosWithDiscovery(ctx context.Context, m *Municipio, dis
 		PortalURL:  disc.URLResolvida,
 		Aprovados:  []ConcursoItem{},
 		Disponivel: false,
-		Mensagem:   fmt.Sprintf("Consulta direta de concursos via API está disponível para portais Megasoft; plataforma detectada: %s.", disc.Plataforma),
+		Mensagem:   fmt.Sprintf("Consulta direta de concursos está disponível para portais Megasoft e HTML Portal; plataforma detectada: %s.", disc.Plataforma),
 	}, nil
 }
 
@@ -1444,8 +1653,8 @@ func (h *Hub) QueryTransparenciaCompleta(ctx context.Context, query string, opts
 		}
 	}()
 
-	// 5b. Módulos adicionais Megasoft (Diárias, Obras, Convênios, Legislação, Concursos)
-	if disc.Plataforma == "megasoft" && disc.URLResolvida != "" {
+	// 5b. Módulos adicionais do portal (Diárias, Obras, Convênios, Legislação, Concursos)
+	if disc.URLResolvida != "" {
 		wg.Add(5)
 		go func() {
 			defer wg.Done()

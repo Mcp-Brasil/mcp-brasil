@@ -408,3 +408,113 @@ func TestHTMLPortalFormSubmissionAndSafetyMock(t *testing.T) {
 		t.Fatalf("formulário com campo password NÃO deveria ter sido submetido")
 	}
 }
+
+func TestHTMLPortalObrasConveniosLegislacaoConcursosAndIframeMock(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client := &http.Client{Timeout: 3 * time.Second}
+	m := &transparencia.Municipio{CodigoIBGE: "2512101", Nome: "Pombal", UF: "PB"}
+
+	var srvURL string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		switch r.URL.Path {
+		case "/portal":
+			// Inclui JSON-LD Yoast SEO BreadcrumbList que deve ser ignorado pelo extrator
+			_, _ = w.Write([]byte(`<!doctype html><html><head>
+				<script type="application/ld+json" class="yoast-schema-graph">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início"},{"@type":"ListItem","position":2,"name":"Portal da Transparência"}]}]}</script>
+			</head><body>
+				<a href="/portal/folha-de-pessoal">Folha de Pessoal</a>
+				<a href="/portal/obras-publicas">Obras Públicas</a>
+				<a href="/portal/convenios">Convênios e Transferências</a>
+				<a href="/portal/legislacao">Legislação Municipal e Leis</a>
+				<a href="/portal/concursos">Concursos e Processos Seletivos</a>
+			</body></html>`))
+		case "/portal/folha-de-pessoal":
+			_, _ = w.Write([]byte(`<html><head>
+				<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Folha"}]}</script>
+			</head><body>
+				<iframe src="` + srvURL + `/iframe/folha"></iframe>
+			</body></html>`))
+		case "/iframe/folha":
+			_, _ = w.Write([]byte(`<html><body><table>
+				<tr><th>Nome</th><th>CPF</th><th>Cargo</th><th>Lotação</th><th>Salário Bruto</th><th>Salário Líquido</th><th>Competência</th></tr>
+				<tr><td>JOSE SERVIDOR IFRAME</td><td>123.456.789-00</td><td>Médico</td><td>Saúde</td><td>R$ 18.500,00</td><td>R$ 14.200,00</td><td>03/2025</td></tr>
+			</table></body></html>`))
+		case "/portal/obras-publicas":
+			_, _ = w.Write([]byte(`<html><body><table>
+				<tr><th>Descrição da Obra</th><th>Local</th><th>Contratada</th><th>Situação</th><th>Percentual</th><th>Valor</th></tr>
+				<tr><td>Pavimentação de vias</td><td>Centro</td><td>ENGENHARIA PB LTDA</td><td>Em andamento</td><td>65,5%</td><td>R$ 890.000,00</td></tr>
+			</table></body></html>`))
+		case "/portal/convenios":
+			_, _ = w.Write([]byte(`<html><body><table>
+				<tr><th>Número</th><th>Concedente</th><th>Objeto</th><th>Situação</th><th>Vigência</th><th>Valor</th></tr>
+				<tr><td>CV-10/2025</td><td>Ministério da Saúde</td><td>Reforma de UBS</td><td>Vigente</td><td>31/12/2025</td><td>R$ 450.000,00</td></tr>
+			</table></body></html>`))
+		case "/portal/legislacao":
+			_, _ = w.Write([]byte(`<html><body><table>
+				<tr><th>Tipo</th><th>Número</th><th>Ano</th><th>Data</th><th>Ementa</th></tr>
+				<tr><td><a href="/leis/lei_2100.pdf">Lei Ordinária</a></td><td>2.100</td><td>2025</td><td>15/02/2025</td><td>Dispõe sobre o plano de cargos municipal</td></tr>
+			</table></body></html>`))
+		case "/portal/concursos":
+			_, _ = w.Write([]byte(`<html><body><table>
+				<tr><th>Concurso</th><th>Cargo</th><th>Candidato</th><th>CPF</th><th>Classificação</th><th>Situação</th></tr>
+				<tr><td>Edital 01/2025</td><td>Enfermeiro</td><td>MARIA CONCURSADA</td><td>987.654.321-99</td><td>1º Lugar</td><td>Convocado</td></tr>
+			</table></body></html>`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+	srvURL = srv.URL
+
+	p := transparencia.PortalQueryParams{BaseURL: srv.URL + "/portal", Ano: 2025, Limit: 10}
+
+	// 1. 2-hop subpage -> iframe ignorando Yoast BreadcrumbList JSON-LD
+	serv, err := transparencia.QueryHTMLPortalServidores(ctx, client, m, p, "cms_wordpress_html")
+	if err != nil || !serv.Disponivel || len(serv.Servidores) != 1 || serv.Servidores[0].Nome != "JOSE SERVIDOR IFRAME" || serv.Servidores[0].CPFParcial != "***.456.789-**" {
+		t.Fatalf("Servidores 2-hop iframe inesperado: err=%v res=%+v", err, serv)
+	}
+
+	// 2. Obras, Convênios, Legislação e Concursos
+	obras, err := transparencia.QueryHTMLPortalObras(ctx, client, m, p, "html_portal")
+	if err != nil || !obras.Disponivel || len(obras.Obras) != 1 || obras.Obras[0].Valor != 890000.00 || obras.Obras[0].Situacao != "Em andamento" {
+		t.Fatalf("QueryHTMLPortalObras inesperado: err=%v res=%+v", err, obras)
+	}
+
+	conv, err := transparencia.QueryHTMLPortalConvenios(ctx, client, m, p, "html_portal")
+	if err != nil || !conv.Disponivel || len(conv.Convenios) != 1 || conv.Convenios[0].Valor != 450000.00 {
+		t.Fatalf("QueryHTMLPortalConvenios inesperado: err=%v res=%+v", err, conv)
+	}
+
+	leg, err := transparencia.QueryHTMLPortalLegislacao(ctx, client, m, p, "html_portal")
+	if err != nil || !leg.Disponivel || len(leg.Atos) != 1 || leg.Atos[0].Numero != "2.100" {
+		t.Fatalf("QueryHTMLPortalLegislacao inesperado: err=%v res=%+v", err, leg)
+	}
+
+	conc, err := transparencia.QueryHTMLPortalConcursos(ctx, client, m, p, "html_portal")
+	if err != nil || !conc.Disponivel || len(conc.Aprovados) != 1 || conc.Aprovados[0].Nome != "MARIA CONCURSADA" {
+		t.Fatalf("QueryHTMLPortalConcursos inesperado: err=%v res=%+v", err, conc)
+	}
+
+	// 3. Roteamento via Hub para os novos módulos
+	eng, err := transparencia.NewEngine()
+	if err != nil {
+		t.Fatalf("NewEngine erro: %v", err)
+	}
+	hub := newTestHub(eng, srv.Client())
+	opts := transparencia.QueryOptions{UF: "PB", OverrideURL: srv.URL + "/portal", Ano: 2025, Limit: 5}
+
+	if res, err := hub.QueryObras(ctx, "Pombal", opts); err != nil || !res.Disponivel || len(res.Obras) != 1 {
+		t.Fatalf("Hub.QueryObras HTML inesperado: err=%v res=%+v", err, res)
+	}
+	if res, err := hub.QueryConvenios(ctx, "Pombal", opts); err != nil || !res.Disponivel || len(res.Convenios) != 1 {
+		t.Fatalf("Hub.QueryConvenios HTML inesperado: err=%v res=%+v", err, res)
+	}
+	if res, err := hub.QueryLegislacao(ctx, "Pombal", opts); err != nil || !res.Disponivel || len(res.Atos) != 1 {
+		t.Fatalf("Hub.QueryLegislacao HTML inesperado: err=%v res=%+v", err, res)
+	}
+	if res, err := hub.QueryConcursos(ctx, "Pombal", opts); err != nil || !res.Disponivel || len(res.Aprovados) != 1 {
+		t.Fatalf("Hub.QueryConcursos HTML inesperado: err=%v res=%+v", err, res)
+	}
+}
