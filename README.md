@@ -9,7 +9,7 @@
 
 [![License: MIT (code)](https://img.shields.io/badge/code-MIT-yellow.svg)](LICENSE) [![Sources: see SOURCES.md](https://img.shields.io/badge/data-see%20SOURCES.md-blue)](SOURCES.md) [![AUP](https://img.shields.io/badge/use-ACCEPTABLE__USE.md-orange)](ACCEPTABLE_USE.md)
 
-533 tools · 131 resources · 102 prompts · 70 features · 15 áreas temáticas
+557 tools · 132 resources · 102 prompts · 71 features · 15 áreas temáticas
 
 Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil — economia, legislação, transparência, judiciário, eleições, meio ambiente, saúde, educação, segurança pública, fiscal subnacional, aviação e mais.
 
@@ -27,11 +27,11 @@ Conecte AI agents (Claude, GPT, Copilot, etc.) a dados governamentais do Brasil 
 
 ## Features
 
-- **533 tools** em 70 features cobrindo 15 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, educação, segurança pública, compras públicas, fiscal subnacional, aviação, energia e mais
+- **557 tools** em 71 features cobrindo 15 áreas — economia, legislativo, transparência, judiciário, eleitoral, ambiental, saúde, educação, segurança pública, compras públicas, fiscal subnacional, aviação, energia e mais
 - **Datasets grandes com cache local** — SIAPA (~813k imóveis), TSE 2014-2024 (candidatos, bens, votação, redes sociais, FEFC), ANP preços de combustíveis, INEP Censo Escolar e ENEM, ISP-RJ segurança pública, ANAC aeronaves e voos regulares — SQL via DuckDB embedded, opt-in via env
 - **Cross-referencing** com `planejar_consulta` — cria planos de execução combinando múltiplas APIs (ex: gastos de um deputado + votações + proposições)
 - **Execução em lote** com `executar_lote` — dispara consultas em paralelo numa única chamada
-- **Smart discovery** — BM25 search transform filtra 533 tools para só mostrar as relevantes ao contexto
+- **Smart discovery** — BM25 search transform filtra 557 tools para só mostrar as relevantes ao contexto
 - **Auto-registry** — adicionar uma feature é criar uma pasta; zero configuração manual
 - **Async everywhere** — httpx async + Pydantic v2 + rate limiting com backoff
 
@@ -183,7 +183,9 @@ Conecte o server e faça perguntas em linguagem natural:
 | `spu_geo` | SPU GeoPortal — terrenos de marinha, acrescidos, marginais, ilhas federais, praias, manguezais e localização de imóveis da União | 4 |
 | `spu_imoveis` | Imóveis da União (Raio-X APF / Gov360) — busca por órgão, UF, município, regime e agregações institucionais | 4 |
 | `siconfi` | SICONFI/Tesouro Nacional — RREO, RGF, DCA e MSC de municípios/estados (LRF, LC 101) | 7 |
+| `transparencia_municipios` | Transparência e Servidores de todos os 5.570 Municípios e 27 UFs — catálogo nacional com **2.183 portais via API aberta (`39,19%`)** + **2.606 portais HTML sem API estruturada (`46,78%`)** (**4.789 portais municipais consultáveis / `85,96%`**) com descoberta dinâmica em **30 conectores + extrator genérico de tabelas/links HTML** (**Betha Cloud, Elotech, Megasoft, IPM/Atende.Net, Assesi, Aspec, GovBR/Cidade360, Fácil Transparência, Ágili, TopSolutions RN, E&L PortalTP, Publicsoft, Fator Sistemas, Memory/OpenKnowledge, NúcleoGov, Fiorilli, CittaWeb, Centi, Quasar, SMARAPD PAI, TomeConta, Equiplano Cloud, Sonner GRP, Coplan, GeoSiap, InfBr/Netuse, Multi24h XML, Thema, Diretório Digital/SisTP, e-Pública e Portais HTML**) + fallback universal TCEs/TCMs, SICONFI e PNCP (Go Engine) | 24 |
 | `mj` | MJSP (CKAN) — SINESP, INFOPEN, PROCONs/Sindec, armas, sistema prisional | 4 |
+
 
 ### Judiciário
 

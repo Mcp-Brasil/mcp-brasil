@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from typing import Any
 
 import httpx
@@ -26,6 +27,12 @@ from mcp_brasil.exceptions import HttpClientError
 from mcp_brasil.settings import HTTP_BACKOFF_BASE, HTTP_MAX_RETRIES, HTTP_TIMEOUT, USER_AGENT
 
 logger = logging.getLogger(__name__)
+
+for _var in ("NO_PROXY", "no_proxy"):
+    _val = os.environ.get(_var)
+    if _val and "[::1]" in _val:
+        os.environ[_var] = _val.replace("[::1]", "::1")
+
 
 # Status codes that trigger a retry
 _RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})

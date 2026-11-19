@@ -1,0 +1,269 @@
+codigo_ibge,nome,uf,portal_url,portal_camara,codigo_orgao,site_prefeitura
+1200302,Feijó,AC,https://camarafeijo.megasofttransparencia.com.br,https://camarafeijo.megasofttransparencia.com.br,0,
+1200336,Mâncio Lima,AC,https://camaramanciolima.megasofttransparencia.com.br,https://camaramanciolima.megasofttransparencia.com.br,0,
+1200385,Plácido de Castro,AC,https://placidodecastro.megasofttransparencia.com.br,https://camaraplacidodecastro.megasofttransparencia.com.br,1,https://placidodecastro.megasoftservicos.com.br/
+1200435,Santa Rosa do Purus,AC,https://santarosadopurus.megasofttransparencia.com.br,https://camarasantarosadopurus.megasofttransparencia.com.br,1,
+5200050,Abadia de Goiás,GO,https://abadiadegoias.megasofttransparencia.com.br,https://camaraabadiadegoias.megasofttransparencia.com.br,3,
+5200100,Abadiânia,GO,https://abadiania.megasofttransparencia.com.br,https://camaraabadiania.megasofttransparencia.com.br,2,
+5200159,Adelândia,GO,https://adelandia.megasofttransparencia.com.br,https://camaraadelandia.megasofttransparencia.com.br,2,https://adelandia.go.gov.br
+5200308,Alexânia,GO,https://camaraalexania.megasofttransparencia.com.br,https://camaraalexania.megasofttransparencia.com.br,0,
+5200506,Aloândia,GO,https://aloandia.megasofttransparencia.com.br,https://camaraaloandia.megasofttransparencia.com.br,2,
+5200555,Alto Horizonte,GO,https://transparencia.altohorizonte.go.gov.br,https://camaraaltohorizonte.megasofttransparencia.com.br,3,http://www.altohorizonte.go.gov.br/
+5200605,Alto Paraíso de Goiás,GO,https://altoparaisodegoias.megasofttransparencia.com.br,https://camaraaltoparaisodegoias.megasofttransparencia.com.br,2,https://altoparaisodegoias.megasofttransparencia.com.br
+5200803,Alvorada do Norte,GO,https://alvoradadonorte.megasofttransparencia.com.br,https://camaraalvoradadonorte.megasofttransparencia.com.br,10,
+5200829,Amaralina,GO,https://transparencia.amaralina.go.gov.br,https://camaraamaralina.megasofttransparencia.com.br,3,
+5200902,Amorinópolis,GO,https://amorinopolis.megasofttransparencia.com.br,https://camaraamorinopolis.megasofttransparencia.com.br,10,https://amorinopolis.go.gov.br/
+5201207,Anhanguera,GO,https://anhanguera.megasofttransparencia.com.br,https://camaraanhanguera.megasofttransparencia.com.br,22,https://anhanguera.go.gov.br/
+5201306,Anicuns,GO,https://anicuns.megasofttransparencia.com.br,https://camaraanicuns.megasofttransparencia.com.br,3,https://anicuns.megasofttransparencia.com.br
+5201702,Aragarças,GO,https://aragarcas.megasofttransparencia.com.br,https://camaraaragarcas.megasofttransparencia.com.br,3,https://www.aragarcas.go.gov.br/
+5201801,Aragoiânia,GO,https://aragoiania.megasofttransparencia.com.br,https://camaraaragoiania.megasofttransparencia.com.br,10,
+5201603,Araçu,GO,https://aracu.megasofttransparencia.com.br,https://camaraaracu.megasofttransparencia.com.br,1,
+5202353,Arenópolis,GO,https://camaraarenopolis.megasofttransparencia.com.br,https://camaraarenopolis.megasofttransparencia.com.br,0,
+5202502,Aruanã,GO,https://aruana.megasofttransparencia.com.br,https://camaraaruana.megasofttransparencia.com.br,3,https://www.aruana.go.gov.br
+5202809,Avelinópolis,GO,https://avelinopolis.megasofttransparencia.com.br,https://camaraavelinopolis.megasofttransparencia.com.br,1,
+5203104,Baliza,GO,https://baliza.megasofttransparencia.com.br,https://camarabaliza.megasofttransparencia.com.br,22,
+5203203,Barro Alto,GO,https://camarabarroalto.megasofttransparencia.com.br,https://camarabarroalto.megasofttransparencia.com.br,0,
+5203302,Bela Vista de Goiás,GO,https://belavistadegoias.megasofttransparencia.com.br,https://camarabelavista.megasofttransparencia.com.br,2,https://belavista.go.gov.br/
+5203401,Bom Jardim de Goiás,GO,https://bomjardimdegoias.megasofttransparencia.com.br,https://camarabomjardimdegoias.megasofttransparencia.com.br,10,
+5203559,Bonfinópolis,GO,https://bonfinopolis.megasofttransparencia.com.br,https://camarabonfinopolis.megasofttransparencia.com.br,22,
+5203575,Bonópolis,GO,https://bonopolis.megasofttransparencia.com.br,https://camarabonopolis.megasofttransparencia.com.br,10,
+5203807,Britânia,GO,https://britania.megasofttransparencia.com.br,https://camarabritania.megasofttransparencia.com.br,3,
+5203906,Buriti Alegre,GO,https://buritialegre.megasofttransparencia.com.br,,3,
+5203939,Buriti de Goiás,GO,https://buritidegoias.megasofttransparencia.com.br,https://camaraburitidegoias.megasofttransparencia.com.br,3,https://buritidegoias.go.gov.br/
+5203962,Buritinópolis,GO,https://buritinopolis.megasofttransparencia.com.br,,10,https://www.buritinopolis.go.gov.br/
+5204003,Cabeceiras,GO,https://cabeceiras.megasofttransparencia.com.br,https://camaracabeceiras.megasofttransparencia.com.br,40,
+5204201,Cachoeira de Goiás,GO,https://cachoeiradegoias.megasofttransparencia.com.br,https://camaracachoeiradegoias.megasofttransparencia.com.br,2,
+5204409,Caiapônia,GO,https://caiaponia.megasofttransparencia.com.br,https://camaracaiaponia.megasofttransparencia.com.br,2,
+5204557,Caldazinha,GO,https://caldazinha.megasofttransparencia.com.br,https://camaracaldazinha.megasofttransparencia.com.br,22,
+5204607,Campestre de Goiás,GO,https://campestredegoias.megasofttransparencia.com.br,,22,https://www.campestre.go.gov.br
+5204706,Campinorte,GO,https://transparencia.campinorte.go.gov.br,https://camaracampinorte.megasofttransparencia.com.br,3,https://www.campinorte.go.gov.br
+5204805,Campo Alegre de Goiás,GO,https://campoalegredegoias.megasofttransparencia.com.br,https://camaracampoalegredegoias.megasofttransparencia.com.br,1,https://campoalegre.go.gov.br/
+5204904,Campos Belos,GO,https://camposbelos.megasofttransparencia.com.br,https://camaracamposbelos.megasofttransparencia.com.br,10,https://camposbelos.go.gov.br/2021/
+5205109,Catalão,GO,https://camaracatalao.megasofttransparencia.com.br,https://camaracatalao.megasofttransparencia.com.br,0,
+5205307,Cavalcante,GO,https://cavalcante.megasofttransparencia.com.br,https://camaracavalcante.megasofttransparencia.com.br,3,https://cavalcante.go.gov.br/
+5205455,Cezarina,GO,https://cezarina.megasofttransparencia.com.br,https://camaracezarina.megasofttransparencia.com.br,3,https://cezarina.megasofttransparencia.com.br/
+5205513,Cocalzinho de Goiás,GO,https://cocalzinhodegoias.megasofttransparencia.com.br,https://camaracocalzinho.megasofttransparencia.com.br,3,
+5205521,Colinas do Sul,GO,https://colinasdosul.megasofttransparencia.com.br,https://camaracolinasdosul.megasofttransparencia.com.br,40,http://acessoainformacao.colinasdosul.go.gov.br
+5205901,Corumbaíba,GO,https://corumbaiba.megasofttransparencia.com.br,https://camaracorumbaiba.megasofttransparencia.com.br,3,
+5205802,Corumbá de Goiás,GO,https://corumbadegoias.megasofttransparencia.com.br,https://camaracorumbadegoias.megasofttransparencia.com.br,1,http://corumbadegoias.go.gov.br/
+5206206,Cristalina,GO,https://camaracristalina.megasofttransparencia.com.br,https://camaracristalina.megasofttransparencia.com.br,0,
+5206305,Cristianópolis,GO,https://cristianopolis.megasofttransparencia.com.br,https://camaracristianopolis.megasofttransparencia.com.br,10,https://cristianopolis.go.gov.br/
+5206404,Crixás,GO,https://crixas.megasofttransparencia.com.br,https://camaracrixas.megasofttransparencia.com.br,2,https://www.crixas.go.gov.br
+5206503,Cromínia,GO,https://crominia.megasofttransparencia.com.br,https://camaracrominia.megasofttransparencia.com.br,3,
+5206602,Cumari,GO,https://cumari.megasofttransparencia.com.br,,22,
+5205703,Córrego do Ouro,GO,https://corregodoouro.megasofttransparencia.com.br,https://camaracorregodoouro.megasofttransparencia.com.br,2,https://corregodoouro.go.gov.br/
+5206701,Damianópolis,GO,https://damianopolis.megasofttransparencia.com.br,https://camaradamianopolis.megasofttransparencia.com.br,2,https://damianopolis.go.gov.br/
+5206909,Davinópolis,GO,https://davinopolis.megasofttransparencia.com.br,https://camaradavinopolis.megasofttransparencia.com.br,3,https://davinopolis.go.gov.br
+5207105,Diorama,GO,https://diorama.megasofttransparencia.com.br,https://camaradiorama.megasofttransparencia.com.br,2,https://www.diorama.go.gov.br
+5208301,Divinópolis de Goiás,GO,https://divinopolisdegoias.megasofttransparencia.com.br,https://camaradivinopolisdegoias.megasofttransparencia.com.br,2,
+5207253,Doverlândia,GO,https://doverlandia.megasofttransparencia.com.br,https://camaradoverlandia.megasofttransparencia.com.br,2,
+5207352,Edealina,GO,https://edealina.megasofttransparencia.com.br,https://camaraedealina.megasofttransparencia.com.br,3,
+5207501,Estrela do Norte,GO,https://estreladonorte.megasofttransparencia.com.br,https://camaraestreladonorte.megasofttransparencia.com.br,22,https://www.estrela.go.gov.br
+5207808,Firminópolis,GO,https://firminopolis.megasofttransparencia.com.br,https://camarafirminopolis.megasofttransparencia.com.br,2,"https://www,firminopolis.go.gov.br/"
+5207907,Flores de Goiás,GO,https://floresdegoias.megasofttransparencia.com.br,https://camarafloresdegoias.megasofttransparencia.com.br,10,https://portal.floresdegoias.go.gov.br/
+5208103,Formoso,GO,https://formoso.megasofttransparencia.com.br,https://camaraformoso.megasofttransparencia.com.br,10,https://www.formoso.go.gov.br
+5208152,Gameleira de Goiás,GO,https://gameleiradegoias.megasofttransparencia.com.br,https://camaragameleiradegoias.megasofttransparencia.com.br,22,
+5208509,Goiandira,GO,https://goiandira.megasofttransparencia.com.br,https://camaragoiandira.megasofttransparencia.com.br,1,
+5208806,Goianira,GO,https://camaragoianira.megasofttransparencia.com.br,https://camaragoianira.megasofttransparencia.com.br,0,
+5208400,Goianápolis,GO,https://goianapolis.megasofttransparencia.com.br,https://camaragoianapolis.megasofttransparencia.com.br,2,https://www.goianapolis.go.gov.br
+5208905,Goiás,GO,https://goias.megasofttransparencia.com.br,https://camaragoias.megasofttransparencia.com.br,5,https://goias.go.gov.br
+5209408,Guarani de Goiás,GO,https://camaraguarani.megasofttransparencia.com.br,https://camaraguarani.megasofttransparencia.com.br,0,
+5209457,Guarinos,GO,https://guarinos.megasofttransparencia.com.br,https://camaraguarinos.megasofttransparencia.com.br,3,https://guarinos.go.gov.br
+5209804,Hidrolina,GO,https://hidrolina.megasofttransparencia.com.br,https://camarahidrolina.megasofttransparencia.com.br,3,
+5210158,Ipiranga de Goiás,GO,https://ipirangadegoias.megasofttransparencia.com.br,https://camaraipirangadegoias.megasofttransparencia.com.br,3,
+5210208,Iporá,GO,https://camaraipora.megasofttransparencia.com.br,https://camaraipora.megasofttransparencia.com.br,0,
+5210307,Israelândia,GO,https://israelandia.megasofttransparencia.com.br,https://camaraisraelandia.megasofttransparencia.com.br,2,https://israelandia.go.gov.br
+5210562,Itaguari,GO,https://itaguari.megasofttransparencia.com.br,https://camaraitaguari.megasofttransparencia.com.br,2,
+5210604,Itaguaru,GO,https://itaguaru.megasofttransparencia.com.br,https://camaraitaguaru.megasofttransparencia.com.br,3,
+5210901,Itapaci,GO,https://itapaci.megasofttransparencia.com.br,https://camaraitapaci.megasofttransparencia.com.br,3,https://itapaci.megasoftservicos.com.br/
+5211404,Itauçu,GO,https://itaucu.megasofttransparencia.com.br,https://camaraitaucu.megasofttransparencia.com.br,3,https://www.itaucu.go.gov.br
+5211602,Ivolândia,GO,https://ivolandia.megasofttransparencia.com.br,,3,https://ivolandia.go.gov.br/
+5211701,Jandaia,GO,https://camarajandaia.megasofttransparencia.com.br,https://camarajandaia.megasofttransparencia.com.br,0,
+5211800,Jaraguá,GO,https://jaragua.megasofttransparencia.com.br,https://camarajaragua.megasofttransparencia.com.br,3,https://jaragua.go.gov.br/
+5212006,Jaupaci,GO,https://jaupaci.megasofttransparencia.com.br,https://camarajaupaci.megasofttransparencia.com.br,2,https://jaupaci.megasofttransparencia.com.br
+5212055,Jesúpolis,GO,https://jesupolis.megasofttransparencia.com.br,https://camarajesupolis.megasofttransparencia.com.br,1,https://jesupolis.go.gov.br/
+5212204,Jussara,GO,https://jussara.megasofttransparencia.com.br,https://camarajussara.megasofttransparencia.com.br,10,https://jussara.go.gov.br
+5212303,Leopoldo de Bulhões,GO,https://leopoldodebulhoes.megasofttransparencia.com.br,https://camaraleopoldodebulhoes.megasofttransparencia.com.br,22,https://acessoainformacao.leopoldodebulhoes.go.gov.br/cidadao/informacao/licitacoes
+5212600,Mairipotaba,GO,https://mairipotaba.megasofttransparencia.com.br,https://camaramairipotaba.megasofttransparencia.com.br,3,https://mairipotaba.megasofttransparencia.com.br
+5212709,Mambaí,GO,https://mambai.megasofttransparencia.com.br,,10,https://www.mambai.go.gov.br/
+5212808,Mara Rosa,GO,https://mararosa.megasofttransparencia.com.br,https://camaramararosa.megasofttransparencia.com.br,3,
+5212907,Marzagão,GO,https://marzagao.megasofttransparencia.com.br,https://camaramarzagao.megasofttransparencia.com.br,3,
+5213004,Maurilândia,GO,https://maurilandia.megasofttransparencia.com.br,https://camaramaurilandia.megasofttransparencia.com.br,2,https://maurilandia.go.gov.br/
+5213053,Mimoso de Goiás,GO,https://mimosodegoias.megasofttransparencia.com.br,https://camaramimosodegoias.megasofttransparencia.com.br,1,
+5213400,Moiporá,GO,https://camaramoipora.megasofttransparencia.com.br,https://camaramoipora.megasofttransparencia.com.br,0,
+5213707,Montes Claros de Goiás,GO,https://montesclarosdegoias.megasofttransparencia.com.br,https://camaramontesclarosdegoias.megasofttransparencia.com.br,3,
+5213772,Montividiu do Norte,GO,https://montividiudonorte.megasofttransparencia.com.br,https://camaramontividiudonorte.megasofttransparencia.com.br,10,
+5213806,Morrinhos,GO,https://camaramorrinhos.megasofttransparencia.com.br,https://camaramorrinhos.megasofttransparencia.com.br,0,
+5213855,Morro Agudo de Goiás,GO,https://morroagudodegoias.megasofttransparencia.com.br,https://camaramorroagudodegoias.megasofttransparencia.com.br,10,
+5213905,Mossâmedes,GO,https://transparencia.mossamedes.go.gov.br,https://camaramossamedes.megasofttransparencia.com.br,2,
+5214101,Mutunópolis,GO,https://mutunopolis.megasofttransparencia.com.br,https://camaramutunopolis.megasofttransparencia.com.br,3,
+5214408,Nazário,GO,https://nazario.megasofttransparencia.com.br,https://camaranazario.megasofttransparencia.com.br,1,
+5214507,Nerópolis,GO,https://neropolis.megasofttransparencia.com.br,https://camaraneropolis.megasofttransparencia.com.br,10,https://www.neropolis.go.gov.br/
+5214606,Niquelândia,GO,https://camaraniquelandia.megasofttransparencia.com.br,https://camaraniquelandia.megasofttransparencia.com.br,0,
+5214705,Nova América,GO,https://novaamerica.megasofttransparencia.com.br,https://camaranovaamerica.megasofttransparencia.com.br,3,
+5214804,Nova Aurora,GO,https://novaaurora.megasofttransparencia.com.br,https://camaranovaaurora.megasofttransparencia.com.br,3,
+5214861,Nova Glória,GO,https://novagloria.megasofttransparencia.com.br,https://camaranovagloria.megasofttransparencia.com.br,3,https://novagloria.go.gov.br/
+5214879,Nova Iguaçu de Goiás,GO,https://novaiguacudegoias.megasofttransparencia.com.br,https://camaranovaiguacudegoias.megasofttransparencia.com.br,3,
+5214903,Nova Roma,GO,https://novaroma.megasofttransparencia.com.br,https://camaranovaroma.megasofttransparencia.com.br,10,
+5215009,Nova Veneza,GO,https://novaveneza.megasofttransparencia.com.br,https://camaranovaveneza.megasofttransparencia.com.br,3,
+5215207,Novo Brasil,GO,https://novobrasil.megasofttransparencia.com.br,https://camaranovobrasil.megasofttransparencia.com.br,4,
+5215231,Novo Gama,GO,https://novogama.megasofttransparencia.com.br,https://camaranovogama.megasofttransparencia.com.br,2,https://novogama.go.gov.br
+5215256,Novo Planalto,GO,https://novoplanalto.megasofttransparencia.com.br,https://camaranovoplanalto.megasofttransparencia.com.br,10,
+5215405,Ouro Verde de Goiás,GO,https://ouroverdedegoias.megasofttransparencia.com.br,https://camaraouroverde.megasofttransparencia.com.br,2,https://ouroverdegoias.go.gov.br/
+5215504,Ouvidor,GO,https://ouvidor.megasofttransparencia.com.br,https://camaraouvidor.megasofttransparencia.com.br,1,http://ouvidor.megasofttransparencia.com.br
+5215603,Padre Bernardo,GO,https://padrebernardo.megasofttransparencia.com.br,,3,https://www.padrebernardo.go.gov.br/portal
+5215652,Palestina de Goiás,GO,https://palestinadegoias.megasofttransparencia.com.br,https://camarapalestinadegoias.megasofttransparencia.com.br,2,
+5215702,Palmeiras de Goiás,GO,https://camarapalmeiras.megasofttransparencia.com.br,https://camarapalmeiras.megasofttransparencia.com.br,0,
+5215801,Palmelo,GO,https://palmelo.megasofttransparencia.com.br,https://camarapalmelo.megasofttransparencia.com.br,4,
+5216403,Paraúna,GO,https://parauna.megasofttransparencia.com.br,https://camaraparauna.megasofttransparencia.com.br,5,
+5216809,Petrolina de Goiás,GO,https://petrolinadegoias.megasofttransparencia.com.br,https://camarapetrolinadegoias.megasofttransparencia.com.br,1,
+5217203,Piranhas,GO,https://camarapiranhas.megasofttransparencia.com.br,https://camarapiranhas.megasofttransparencia.com.br,0,
+5217708,Pontalina,GO,https://pontalina.megasofttransparencia.com.br,https://camarapontalina.megasofttransparencia.com.br,1,https://pontalina.go.gov.br
+5218003,Porangatu,GO,https://porangatu.megasofttransparencia.com.br,,10,https://porangatu.go.gov.br/
+5218052,Porteirão,GO,https://camaraporteirao.megasofttransparencia.com.br,https://camaraporteirao.megasofttransparencia.com.br,0,
+5218391,Professor Jamil,GO,https://professorjamil.megasofttransparencia.com.br,https://camaraprofessorjamil.megasofttransparencia.com.br,3,http://professorjamil.go.gov.br
+5218607,Rialma,GO,https://rialma.megasofttransparencia.com.br,https://camararialma.megasofttransparencia.com.br,10,
+5218706,Rianápolis,GO,https://rianapolis.megasofttransparencia.com.br,https://camararianapolis.megasofttransparencia.com.br,3,
+5218789,Rio Quente,GO,https://rioquente.megasofttransparencia.com.br,https://camararioquente.megasofttransparencia.com.br,3,https://rioquente.go.gov.br/
+5218904,Rubiataba,GO,https://rubiataba.megasofttransparencia.com.br,https://camararubiataba.megasofttransparencia.com.br,10,
+5219209,Santa Cruz de Goiás,GO,https://santacruzdegoias.megasofttransparencia.com.br,https://camarasantacruz.megasofttransparencia.com.br,10,https://santacruzdegoias.go.gov.br/
+5219258,Santa Fé de Goiás,GO,https://santafedegoias.megasofttransparencia.com.br,,1,https://santafedegoias.go.gov.br/
+5219357,Santa Isabel,GO,https://santaisabel.megasofttransparencia.com.br,https://camarasantaisabel.megasofttransparencia.com.br,3,
+5219407,Santa Rita do Araguaia,GO,https://santaritadoaraguaia.megasofttransparencia.com.br,https://camarasantaritadoaraguaia.megasofttransparencia.com.br,3,https://santaritadoaraguaia.go.gov.br/
+5219456,Santa Rita do Novo Destino,GO,https://santaritadonovodestino.megasofttransparencia.com.br,https://camarasantaritadonovodestino.megasofttransparencia.com.br,10,https://acessoainformacao.santaritadonovodestino.go.gov.br/
+5219712,Santo Antônio da Barra,GO,https://santoantoniodabarra.megasofttransparencia.com.br,https://camarasantoantoniodabarra.megasofttransparencia.com.br,2,
+5219738,Santo Antônio de Goiás,GO,https://santoantoniodegoias.megasofttransparencia.com.br,https://camarasantoantoniodegoias.megasofttransparencia.com.br,10,https://www.santoantoniodegoias.megasofttransparencia.com
+5220504,Serranópolis,GO,https://serranopolis.megasofttransparencia.com.br,https://camaraserranopolis.megasofttransparencia.com.br,22,https://www.serranopolis.go.gov.br/
+5220603,Silvânia,GO,https://silvania.megasofttransparencia.com.br,https://camarasilvania.megasofttransparencia.com.br,3,https://silvania.go.gov.br/transparencia/
+5220686,Simolândia,GO,https://simolandia.megasofttransparencia.com.br,,10,http://www.simolandia.go.gov.br
+5220009,São João d'Aliança,GO,https://saojoaodalianca.megasofttransparencia.com.br,https://camarasaojoaodalianca.megasofttransparencia.com.br,1,
+5220058,São João da Paraúna,GO,https://saojoaodaparauna.megasofttransparencia.com.br,https://camarasaojoaodaparauna.megasofttransparencia.com.br,10,http://saojoaodaparauna.go.gov.br/
+5220157,São Luiz do Norte,GO,https://saoluizdonorte.megasofttransparencia.com.br,https://camarasaoluizdonorte.megasofttransparencia.com.br,10,https://saoluizdonorte.go.gov.br
+5220264,São Miguel do Passa Quatro,GO,https://saomigueldopassaquatro.megasofttransparencia.com.br,https://camarasaomigueldopassaquatro.megasofttransparencia.com.br,3,
+5220280,São Patrício,GO,https://camarasaopatricio.megasofttransparencia.com.br,https://camarasaopatricio.megasofttransparencia.com.br,0,
+5220702,Sítio d'Abadia,GO,https://sitiodabadia.megasofttransparencia.com.br,https://camarasitiodabadia.megasofttransparencia.com.br,2,https://www.sitiodabadia.go.gov.br
+5221007,Taquaral de Goiás,GO,https://camarataquaraldegoias.megasofttransparencia.com.br,https://camarataquaraldegoias.megasofttransparencia.com.br,0,
+5221080,Teresina de Goiás,GO,https://teresinadegoias.megasofttransparencia.com.br,https://camarateresinadegoias.megasofttransparencia.com.br,10,
+5221197,Terezópolis de Goiás,GO,https://terezopolisdegoias.megasofttransparencia.com.br,https://camaraterezopolisdegoias.megasofttransparencia.com.br,10,https://terezopolisdegoias.megasofttransparencia.com.br/
+5221452,Trombas,GO,https://transparencia.trombas.go.gov.br,https://camaratrombas.megasofttransparencia.com.br,3,https://www.trombas.go.gov.br
+5221304,Três Ranchos,GO,https://tresranchos.megasofttransparencia.com.br,https://camaratresranchos.megasofttransparencia.com.br,1,
+5221551,Turvelândia,GO,https://turvelandia.megasofttransparencia.com.br,https://camaraturvelandia.megasofttransparencia.com.br,10,https://acessoainformacao.turvelandia.go.gov.br
+5221502,Turvânia,GO,https://turvania.megasofttransparencia.com.br,https://camaraturvania.megasofttransparencia.com.br,2,
+5221700,Uruana,GO,https://uruana.megasofttransparencia.com.br,https://camarauruana.megasofttransparencia.com.br,1,https://uruana.go.gov.br
+5221601,Uruaçu,GO,https://uruacu.megasofttransparencia.com.br,https://camarauruacu.megasofttransparencia.com.br,3,https://www.uruacu.go.gov.br
+5221809,Urutaí,GO,https://urutai.megasofttransparencia.com.br,https://camaraurutai.megasofttransparencia.com.br,4,https://www.urutai.go.gov.br/
+5222005,Vianópolis,GO,https://vianopolis.megasofttransparencia.com.br,https://camaravianopolis.megasofttransparencia.com.br,3,
+5222054,Vicentinópolis,GO,https://vicentinopolis.megasofttransparencia.com.br,https://camaravicentinopolis.megasofttransparencia.com.br,3,https://vicentinopolis.go.gov.br/
+5222203,Vila Boa,GO,https://vilaboa.megasofttransparencia.com.br,https://camaravilaboa.megasofttransparencia.com.br,10,
+5222302,Vila Propício,GO,https://vilapropicio.megasofttransparencia.com.br,https://camaravilapropicio.megasofttransparencia.com.br,13,
+5200175,Água Fria de Goiás,GO,https://aguafriadegoias.megasofttransparencia.com.br,https://camaraaguafriadegoias.megasofttransparencia.com.br,1,https://www.aguafriadegoias.go.gov.br/
+5200209,Água Limpa,GO,https://agualimpa.megasofttransparencia.com.br,https://camaraagualimpa.megasofttransparencia.com.br,3,
+5200258,Águas Lindas de Goiás,GO,https://camaraaguaslindasdegoias.megasofttransparencia.com.br,https://camaraaguaslindasdegoias.megasofttransparencia.com.br,0,
+2102358,Buritirana,MA,https://buritirana.megasofttransparencia.com.br,,2,
+2107001,Montes Altos,MA,https://montesaltos.megasofttransparencia.com.br,,2,
+2111607,São Raimundo das Mangabeiras,MA,https://saoraimundodasmangabeiras.megasofttransparencia.com.br,,1,
+2112001,Tasso Fragoso,MA,https://tassofragoso.megasofttransparencia.com.br,,1,
+5000708,Anastácio,MS,https://anastacio.megasofttransparencia.com.br,https://camaraanastacio.megasofttransparencia.com.br,5,http://www.anastacio.ms.gov.br/
+5007950,Tacuru,MS,https://tacuru.megasofttransparencia.com.br,https://camaratacuru.megasofttransparencia.com.br,2,https://tacuru.ms.gov.br
+1505064,Novo Repartimento,PA,https://novorepartimento.megasofttransparencia.com.br,,1,
+1507458,São Geraldo do Araguaia,PA,https://saogeraldodoaraguaia.megasofttransparencia.com.br,https://camarasaogeraldodoaraguaia.megasofttransparencia.com.br,10,
+1700251,Abreulândia,TO,https://abreulandia.megasofttransparencia.com.br,https://camaraabreulandia.megasofttransparencia.com.br,3,http://abreulandia.to.gov.br/
+1700301,Aguiarnópolis,TO,https://aguiarnopolis.megasofttransparencia.com.br,https://camaraaguiarnopolis.megasofttransparencia.com.br,10,https://www.aguiarnopolis.to.gov.br/
+1700400,Almas,TO,https://almas.megasofttransparencia.com.br,https://camaraalmas.megasofttransparencia.com.br,3,https://almas.to.go.br
+1701002,Ananás,TO,https://ananas.megasofttransparencia.com.br,https://camaraananas.megasofttransparencia.com.br,10,
+1701051,Angico,TO,https://angico.megasofttransparencia.com.br,https://camaraangico.megasofttransparencia.com.br,10,https://angico.to.gov.br
+1701101,Aparecida do Rio Negro,TO,https://aparecidadorionegro.megasofttransparencia.com.br,https://camaraaparecidadorionegro.megasofttransparencia.com.br,2,
+1702158,Araguanã,TO,https://araguana.megasofttransparencia.com.br,https://camaraaraguana.megasofttransparencia.com.br,10,
+1702208,Araguatins,TO,https://araguatins.megasofttransparencia.com.br,,3,https://www.araguatins.to.gov.br/
+1702109,Araguaína,TO,https://camaraaraguaina.megasofttransparencia.com.br,https://camaraaraguaina.megasofttransparencia.com.br,0,
+1702307,Arapoema,TO,https://arapoema.megasofttransparencia.com.br,https://camaraarapoema.megasofttransparencia.com.br,10,
+1702406,Arraias,TO,https://transparencia.arraias.to.gov.br,https://camaraarraias.megasofttransparencia.com.br,3,https://arraias.to.gov.br/
+1702554,Augustinópolis,TO,https://augustinopolis.megasofttransparencia.com.br,https://camaraaugustinopolis.megasofttransparencia.com.br,3,https://www.augustinopolis.to.gov.br/
+1703008,Babaçulândia,TO,https://babaculandia.megasofttransparencia.com.br,https://camarababaculandia.megasofttransparencia.com.br,3,https://babaculandia.to.gov.br/
+1703057,Bandeirantes do Tocantins,TO,https://bandeirantesdotocantins.megasofttransparencia.com.br,https://camarabandeirantesdotocantins.megasofttransparencia.com.br,2,
+1703073,Barra do Ouro,TO,https://barradoouro.megasofttransparencia.com.br,https://camarabarradoouro.megasofttransparencia.com.br,3,
+1703107,Barrolândia,TO,https://barrolandia.megasofttransparencia.com.br,https://camarabarrolandia.megasofttransparencia.com.br,3,https://www.barrolandia.to.gov.br/
+1703206,Bernardo Sayão,TO,https://camarabernardosayao.megasofttransparencia.com.br,https://camarabernardosayao.megasofttransparencia.com.br,0,
+1703305,Bom Jesus do Tocantins,TO,https://bomjesusdotocantins.megasofttransparencia.com.br,https://camarabomjesusdotocantins.megasofttransparencia.com.br,3,https://www.bomjesus.to.gov.br
+1703701,Brejinho de Nazaré,TO,https://brejinhodenazare.megasofttransparencia.com.br,https://camarabrejinhodenazare.megasofttransparencia.com.br,3,https://brejinhodenazare.megasoftservicos.com.br
+1703800,Buriti do Tocantins,TO,https://camaraburitidotocantins.megasofttransparencia.com.br,https://camaraburitidotocantins.megasofttransparencia.com.br,0,
+1703826,Cachoeirinha,TO,https://cachoeirinha.megasofttransparencia.com.br,https://camaracachoeirinha.megasofttransparencia.com.br,3,
+1703842,Campos Lindos,TO,https://camposlindos.megasofttransparencia.com.br,,3,
+1703883,Carmolândia,TO,https://carmolandia.megasofttransparencia.com.br,https://camaracarmolandia.megasofttransparencia.com.br,10,
+1703909,Caseara,TO,https://caseara.megasofttransparencia.com.br,https://camaracaseara.megasofttransparencia.com.br,3,https://caseara.to.gov.br/
+1704105,Centenário,TO,https://camaracentenario.megasofttransparencia.com.br,https://camaracentenario.megasofttransparencia.com.br,0,
+1705102,Chapada da Natividade,TO,https://chapadadanatividade.megasofttransparencia.com.br,https://camarachapadadanatividade.megasofttransparencia.com.br,3,
+1705508,Colinas do Tocantins,TO,https://colinasdotocantins.megasofttransparencia.com.br,https://camaracolinasdotocantins.megasofttransparencia.com.br,3,https://colinas.to.gov.br
+1716703,Colméia,TO,https://colmeia.megasofttransparencia.com.br,https://camaracolmeia.megasofttransparencia.com.br,3,https://www.colmeia.to.gov.br/
+1705557,Combinado,TO,https://combinado.megasofttransparencia.com.br,https://camaracombinado.megasofttransparencia.com.br,1,http://combinado.to.gov.br
+1705607,Conceição do Tocantins,TO,https://transparencia.conceicaodotocantins.to.gov.br,https://camaraconceicaodotocantins.megasofttransparencia.com.br,3,https://www.conceicaodotocantins.to.gov.br/
+1706001,Couto Magalhães,TO,https://coutomagalhaes.megasofttransparencia.com.br,https://camaracoutomagalhaes.megasofttransparencia.com.br,3,https://www.coutomagalhaes.to.gov.br
+1706100,Cristalândia,TO,https://cristalandia.megasofttransparencia.com.br,https://camaracristalandia.megasofttransparencia.com.br,10,https://cristalandia.to.gov.br/
+1706506,Darcinópolis,TO,https://darcinopolis.megasofttransparencia.com.br,https://camaradarcinopolis.megasofttransparencia.com.br,3,
+1707009,Dianópolis,TO,https://dianopolis.megasofttransparencia.com.br,https://camaradianopolis.megasofttransparencia.com.br,10,http://dianopolis.to.gov.br/
+1707108,Divinópolis do Tocantins,TO,https://divinopolisdotocantins.megasofttransparencia.com.br,https://camaradivinopolisdotocantins.megasofttransparencia.com.br,10,
+1707207,Dois Irmãos do Tocantins,TO,https://doisirmaosdotocantins.megasofttransparencia.com.br,https://camaradoisirmaosdotocantins.megasofttransparencia.com.br,3,http://www.doisirmaos.to.gov.br/
+1707405,Esperantina,TO,https://esperantina.megasofttransparencia.com.br,https://camaraesperantina.megasofttransparencia.com.br,1,https://www.esperantina.to.gov.br/
+1708205,Formoso do Araguaia,TO,https://formosodoaraguaia.megasofttransparencia.com.br,,3,
+1708254,Fortaleza do Tabocão,TO,https://transparencia.fortalezadotabocao.to.gov.br,,3,
+1707553,Fátima,TO,https://fatima.megasofttransparencia.com.br,https://camarafatima.megasofttransparencia.com.br,3,https://www.fatima.to.gov.br/
+1708304,Goianorte,TO,https://goianorte.megasofttransparencia.com.br,https://camaragoianorte.megasofttransparencia.com.br,3,
+1709005,Goiatins,TO,https://goiatins.megasofttransparencia.com.br,https://camaragoiatins.megasofttransparencia.com.br,10,https://goiatins.to.gov.br
+1709302,Guaraí,TO,https://transparencia.guarai.to.gov.br,https://camaraguarai.megasofttransparencia.com.br,1,http://guarai.to.gov.br/portal/
+1710508,Itacajá,TO,https://itacaja.megasofttransparencia.com.br,https://camaraitacaja.megasofttransparencia.com.br,3,
+1710706,Itaguatins,TO,https://itaguatins.megasofttransparencia.com.br,https://camaraitaguatins.megasofttransparencia.com.br,3,https://www.itaguatins.to.gov.br
+1710904,Itapiratins,TO,https://itapiratins.megasofttransparencia.com.br,https://camaraitapiratins.megasofttransparencia.com.br,2,https://itapiratins.to.gov.br
+1711100,Itaporã do Tocantins,TO,https://itaporadotocantins.megasofttransparencia.com.br,https://camaraitaporadotocantins.megasofttransparencia.com.br,3,https://www.itapora.to.gov.br/
+1711803,Juarina,TO,https://juarina.megasofttransparencia.com.br,https://camarajuarina.megasofttransparencia.com.br,1,
+1711902,Lagoa da Confusão,TO,https://lagoadaconfusao.megasofttransparencia.com.br,https://camaralagoadaconfusao.megasofttransparencia.com.br,3,https://lagoadaconfusao.to.gov.br/
+1712009,Lajeado,TO,https://lajeado.megasofttransparencia.com.br,https://camaralajeado.megasofttransparencia.com.br,3,https://lajeado.to.gov.br/
+1712157,Lavandeira,TO,https://lavandeira.megasofttransparencia.com.br,https://camaralavandeira.megasofttransparencia.com.br,10,http://www.lavandeira.to.gov.br
+1712405,Lizarda,TO,https://lizarda.megasofttransparencia.com.br,https://camaralizarda.megasofttransparencia.com.br,3,https://lizarda.megasofttransparencia.com.br/
+1712504,Marianópolis do Tocantins,TO,https://marianopolisdotocantins.megasofttransparencia.com.br,,3,http://www.marianopolis.to.gov.br
+1712702,Mateiros,TO,https://mateiros.megasofttransparencia.com.br,https://camaramateiros.megasofttransparencia.com.br,2,https://www.mateiros.to.gov.br/
+1712801,Maurilândia do Tocantins,TO,https://maurilandiadotocantins.megasofttransparencia.com.br,https://camaramaurilandiadotocantins.megasofttransparencia.com.br,3,https://maurilandia.to.gov.br
+1713205,Miracema do Tocantins,TO,https://miracemadotocantins.megasofttransparencia.com.br,https://camaramiracemadotocantins.megasofttransparencia.com.br,10,https://www.miracema.to.gov.br/
+1713304,Miranorte,TO,https://miranorte.megasofttransparencia.com.br,https://camaramiranorte.megasofttransparencia.com.br,3,https://miranorte.to.gov.br/
+1713700,Monte Santo do Tocantins,TO,https://montesantodotocantins.megasofttransparencia.com.br,https://camaramontesantodotocantins.megasofttransparencia.com.br,3,https://montesanto.to.gov.br/
+1713601,Monte do Carmo,TO,https://montedocarmo.megasofttransparencia.com.br,https://camaramontedocarmo.megasofttransparencia.com.br,3,
+1713957,Muricilândia,TO,https://muricilandia.megasofttransparencia.com.br,https://camaramuricilandia.megasofttransparencia.com.br,10,https://muricilandia.to.gov.br/
+1714203,Natividade,TO,https://natividade.megasofttransparencia.com.br,https://camaranatividade.megasofttransparencia.com.br,4,https://natividade.to.gov.br/portal/
+1714302,Nazaré,TO,https://transparencia.nazare.to.gov.br,https://camaranazare.megasofttransparencia.com.br,3,
+1714880,Nova Olinda,TO,https://novaolinda.megasofttransparencia.com.br,https://camaranovaolinda.megasofttransparencia.com.br,3,https://novaolinda.megasoftservicos.com.br/
+1715002,Nova Rosalândia,TO,https://novarosalandia.megasofttransparencia.com.br,https://camaranovarosalandia.megasofttransparencia.com.br,3,https://novarosalandia.to.gov.br/
+1715101,Novo Acordo,TO,https://novoacordo.megasofttransparencia.com.br,https://camaranovoacordo.megasofttransparencia.com.br,2,https://novoacordo.to.gov.br/
+1715259,Novo Jardim,TO,https://novojardim.megasofttransparencia.com.br,https://camaranovojardim.megasofttransparencia.com.br,3,http://novojardim.to.gov.br
+1715705,Palmeirante,TO,https://palmeirante.megasofttransparencia.com.br,https://camarapalmeirante.megasofttransparencia.com.br,3,https://www.palmeirante.to.gov.br/
+1713809,Palmeiras do Tocantins,TO,https://palmeirasdotocantins.megasofttransparencia.com.br,https://camarapalmeirasdotocantins.megasofttransparencia.com.br,3,https://www.palmeirasdotocantins.to.gov.br/
+1715754,Palmeirópolis,TO,https://palmeiropolis.megasofttransparencia.com.br,https://camarapalmeiropolis.megasofttransparencia.com.br,3,https://www.palmeiropolis.to.gov.br/
+1716208,Paranã,TO,https://camaraparana.megasofttransparencia.com.br,https://camaraparana.megasofttransparencia.com.br,0,
+1716307,Pau D'Arco,TO,https://paudarco.megasofttransparencia.com.br,https://camarapaudarco.megasofttransparencia.com.br,3,https://www.paudarco.to.gov.br/
+1716505,Pedro Afonso,TO,https://pedroafonso.megasofttransparencia.com.br,https://camarapedroafonso.megasofttransparencia.com.br,2,http://pedroafonso.to.gov.br/
+1716604,Peixe,TO,https://peixe.megasofttransparencia.com.br,https://camarapeixe.megasofttransparencia.com.br,3,
+1716653,Pequizeiro,TO,https://pequizeiro.megasofttransparencia.com.br,https://camarapequizeiro.megasofttransparencia.com.br,2,https://pequizeiro.to.gov.br/
+1717206,Piraquê,TO,https://piraque.megasofttransparencia.com.br,https://camarapiraque.megasofttransparencia.com.br,10,https://www.piraque.to.gov.br/
+1717503,Pium,TO,https://pium.megasofttransparencia.com.br,,3,
+1717909,Ponte Alta do Tocantins,TO,https://pontealtadotocantins.megasofttransparencia.com.br,https://camarapontealtadotocantins.megasofttransparencia.com.br,3,
+1718006,Porto Alegre do Tocantins,TO,https://portoalegredotocantins.megasofttransparencia.com.br,https://camaraportoalegredotocantins.megasofttransparencia.com.br,2,https://www.portoalegre.to.gov.br
+1718303,Praia Norte,TO,https://praianorte.megasofttransparencia.com.br,https://camarapraianorte.megasofttransparencia.com.br,2,
+1718402,Presidente Kennedy,TO,https://presidentekennedy.megasofttransparencia.com.br,https://camarapresidentekennedy.megasofttransparencia.com.br,2,https://presidentekennedy.to.gov.br/
+1718501,Recursolândia,TO,https://recursolandia.megasofttransparencia.com.br,https://camararecursolandia.megasofttransparencia.com.br,3,https://www.recursolandia.to.gov.br/
+1718758,Rio Sono,TO,https://riosono.megasofttransparencia.com.br,https://camarariosono.megasofttransparencia.com.br,3,
+1718659,Rio da Conceição,TO,https://riodaconceicao.megasofttransparencia.com.br,https://camarariodaconceicao.megasofttransparencia.com.br,2,https://riodacaonceicao.to.gov.br
+1718808,Sampaio,TO,https://camarasampaio.megasofttransparencia.com.br,https://camarasampaio.megasofttransparencia.com.br,0,
+1718865,Santa Fé do Araguaia,TO,https://santafedoaraguaia.megasofttransparencia.com.br,https://camarasantafedoaraguaia.megasofttransparencia.com.br,3,https://www.santafedoaraguaia.to.gov.br
+1718881,Santa Maria do Tocantins,TO,https://santamariadotocantins.megasofttransparencia.com.br,https://camarasantamariadotocantins.megasofttransparencia.com.br,3,https://santamariadotocantins.to.gov.br/
+1718899,Santa Rita do Tocantins,TO,https://santaritadotocantins.megasofttransparencia.com.br,https://camarasantaritadotocantins.megasofttransparencia.com.br,3,https://www.santarita.to.gov.br/
+1718907,Santa Rosa do Tocantins,TO,https://santarosadotocantins.megasofttransparencia.com.br,https://camarasantarosadotocantins.megasofttransparencia.com.br,3,https://www.santarosa.to.gov.br/
+1720002,Santa Terezinha do Tocantins,TO,https://santaterezinhadotocantins.megasofttransparencia.com.br,https://camarasantaterezinhadotocantins.megasofttransparencia.com.br,10,
+1720655,Silvanópolis,TO,https://transparencia.silvanopolis.to.gov.br,https://camarasilvanopolis.megasofttransparencia.com.br,3,
+1720150,São Félix do Tocantins,TO,https://saofelixdotocantins.megasofttransparencia.com.br,https://camarasaofelixdotocantins.megasofttransparencia.com.br,3,
+1720259,São Salvador do Tocantins,TO,https://saosalvadordotocantins.megasofttransparencia.com.br,https://camarasaosalvadordotocantins.megasofttransparencia.com.br,4,
+1720309,São Sebastião do Tocantins,TO,https://saosebastiaodotocantins.megasofttransparencia.com.br,https://camarasaosebastiaodotocantins.megasofttransparencia.com.br,3,
+1720903,Taguatinga,TO,https://taguatinga.megasofttransparencia.com.br,https://camarataguatinga.megasofttransparencia.com.br,10,https://www.taguatinga.to.gov.br/
+1720937,Taipas do Tocantins,TO,https://taipasdotocantins.megasofttransparencia.com.br,https://camarataipasdotocantins.megasofttransparencia.com.br,2,https://taipas.to.gov.br
+1721208,Tocantinópolis,TO,https://transparencia.tocantinopolis.to.gov.br,https://camaratocantinopolis.megasofttransparencia.com.br,10,
+1721109,Tocantínia,TO,https://tocantinia.megasofttransparencia.com.br,https://camaratocantinia.megasofttransparencia.com.br,3,https://tocantinia.to.gov.br/
+1721307,Tupiratins,TO,https://tupiratins.megasofttransparencia.com.br,https://camaratupiratins.megasofttransparencia.com.br,3,
+1722081,Wanderlândia,TO,https://wanderlandia.megasofttransparencia.com.br,https://camarawanderlandia.megasofttransparencia.com.br,10,https://wanderlandia.to.gov.br/
+1722107,Xambioá,TO,https://xambioa.megasofttransparencia.com.br,,10,

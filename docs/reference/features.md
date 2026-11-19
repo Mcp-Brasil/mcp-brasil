@@ -237,6 +237,41 @@ Emendas parlamentares PIX (transferencias especiais).
 
 ---
 
+### `transparencia_municipios` — Transparencia Municipal e Estadual (24 tools)
+
+Descoberta dinamica e consulta unificada para os 5.571 municipios brasileiros e 27 UFs (30 conectores nativos de APIs municipais + extrator HTML sem browser cobrindo 4.789 portais municipais / 85,96%, com fallback via TCEs, SICONFI e PNCP via motor Go stdlib).
+
+| Tool | Descricao |
+|------|-----------|
+| `transparencia_municipios_buscar_municipios` | Busca municipios por nome, UF ou codigo IBGE |
+| `transparencia_municipios_buscar_por_cnpj` | Localiza municipio pelo CNPJ da prefeitura |
+| `transparencia_municipios_listar_estados` | Lista UFs, portais estaduais e TCEs |
+| `transparencia_municipios_conectar_municipio` | Dossie completo de transparencia do municipio |
+| `transparencia_municipios_conectar_estado` | Dossie de transparencia e TCE do estado |
+| `transparencia_municipios_descobrir_portal_municipio` | Descobre plataforma e URL ativa do portal municipal |
+| `transparencia_municipios_consultar_servidores_municipio` | Servidores e remuneracao com CPF mascarado (LGPD) |
+| `transparencia_municipios_consultar_despesas_municipio` | Despesas, empenhos, liquidacoes e pagamentos |
+| `transparencia_municipios_consultar_receitas_municipio` | Receitas previstas e arrecadadas |
+| `transparencia_municipios_consultar_licitacoes_municipio` | Editais e processos licitatorios |
+| `transparencia_municipios_consultar_contratos_municipio` | Contratos administrativos vigentes e historicos |
+| `transparencia_municipios_consultar_diarias_municipio` | Diarias e passagens concedidas |
+| `transparencia_municipios_consultar_obras_municipio` | Obras publicas, situacao e valores |
+| `transparencia_municipios_consultar_convenios_municipio` | Convenios e repasses firmados |
+| `transparencia_municipios_consultar_legislacao_municipio` | Leis, decretos e atos normativos municipais |
+| `transparencia_municipios_consultar_concursos_municipio` | Concursos publicos e processos seletivos |
+| `transparencia_municipios_consultar_detalhe_servidor_municipio` | Holerite e verbas detalhadas de servidor |
+| `transparencia_municipios_consultar_transparencia_completa` | Auditoria completa multi-modulo do municipio |
+| `transparencia_municipios_consultar_fiscal` | Dados fiscais SICONFI (DCA, RREO, RGF) |
+| `transparencia_municipios_consultar_entregas` | Extrato de entregas da LRF no SICONFI |
+| `transparencia_municipios_pesquisar_transparencia` | Pesquisa textual em bases municipais |
+| `transparencia_municipios_comparar_transparencia` | Comparativo fiscal e de portais entre municipios |
+| `transparencia_municipios_estatisticas_nacionais` | Estatisticas de cobertura nacional e por plataforma |
+| `transparencia_municipios_listar_municipios_megasoft` | Lista municipios integrados via Megasoft |
+
+**Chave:** Nenhuma
+
+---
+
 ## Judiciario
 
 ### `datajud` — DataJud / CNJ (7 tools)

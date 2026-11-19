@@ -27,3 +27,12 @@ AGENTS.md
 .idea/
 .vscode/
 *.swp
+
+# Go binaries
+bin/
+*.exe
+
+# Local DuckDB databases
+*.duckdb
+*.duckdb.wal
+

@@ -31,7 +31,23 @@ test: ## Run all tests
 test-feature: ## Run tests for a specific feature (usage: make test-feature F=ibge)
 	uv run pytest tests/data/$(F)/ -v 2>/dev/null || uv run pytest tests/agentes/$(F)/ -v
 
-ci: lint types test ## Full CI pipeline: lint + types + test
+test-go: ## Run Go tests
+	go test -v ./...
+
+test-go-portals: ## Run Go all-city portal integrity & matrix test suite with -race
+	go test -v -count=1 -race -run "TestAll5571CitiesCatalogIntegrity|TestAll4789CatalogedPortalsOfflineDiscovery|TestAll22HTMLPortalFamiliesAll10ModulesMatrix|TestHTMLPortalEncodingIframeAndSafetyRegressions|TestHubConcurrentTransparenciaCompletaRaceRegression|TestHubDespesasReceitasUnavailableFallbackChain|TestAll30APIPlatformsHubDispatchAndResilience|TestLGPDCPFMaskingAllConnectorsRegression|TestLiveAuditRunnerWithMockPortals" ./pkg/transparencia/...
+
+audit-portals-live: ## Run opt-in live audit against municipal transparency portals
+	TRANSPARENCIA_LIVE_TEST=1 go test -v -count=1 -timeout 30m -run TestLiveAllCityPortalsAudit ./pkg/transparencia/...
+
+bench-go: ## Run Go benchmarks
+	go test -bench=. ./pkg/transparencia/...
+
+build-go: ## Build native Go engine binary
+	mkdir -p bin && go build -o bin/transparencia-go ./cmd/transparencia-go
+
+ci: lint types test-go test ## Full CI pipeline: lint + types + test-go + test
+
 
 ## —— Server ——
 
