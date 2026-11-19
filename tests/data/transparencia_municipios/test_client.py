@@ -94,19 +94,81 @@ async def test_buscar_por_cnpj() -> None:
 
 
 @pytest.mark.asyncio
-async def test_consultar_fiscal_dca() -> None:
-    items = await client.consultar_fiscal("3550308", ano=2023, tipo="dca")
-    assert len(items) > 0
-    ativo = next((it for it in items if "Ativo" in it.conta), None)
-    assert ativo is not None
-    assert ativo.valor > 0
+async def test_consultar_fiscal_dca(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pytest.TempPathFactory
+) -> None:
+    from pathlib import Path
+
+    import respx
+    from httpx import Response
+
+    monkeypatch.setattr(client, "GO_BINARY_PATH", Path(str(tmp_path)) / "missing-go")
+    with respx.mock(assert_all_called=False) as router:
+        router.get(url__startswith="https://apidatalake.tesouro.gov.br/ords/siconfi/tt/dca").mock(
+            return_value=Response(
+                200,
+                json={
+                    "items": [
+                        {
+                            "exercicio": 2023,
+                            "instituicao": "Prefeitura Municipal de São Paulo - SP",
+                            "cod_ibge": 3550308,
+                            "populacao": 11451999,
+                            "anexo": "DCA-Anexo I-AB",
+                            "conta": "Ativo Total",
+                            "cod_conta": "1.0.0.0.00.0.0",
+                            "coluna": "Saldo Final",
+                            "valor": 123456789.10,
+                        }
+                    ]
+                },
+            )
+        )
+        items = await client.consultar_fiscal("3550308", ano=2023, tipo="dca")
+        assert len(items) > 0
+        ativo = next((it for it in items if "Ativo" in it.conta), None)
+        assert ativo is not None
+        assert ativo.valor > 0
 
 
 @pytest.mark.asyncio
-async def test_consultar_entregas() -> None:
-    entregas = await client.consultar_entregas("3550308", ano=2024)
-    assert len(entregas) > 0
-    assert any("MSC" in it.entregavel for it in entregas)
+async def test_consultar_entregas(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pytest.TempPathFactory
+) -> None:
+    from pathlib import Path
+
+    import respx
+    from httpx import Response
+
+    monkeypatch.setattr(client, "GO_BINARY_PATH", Path(str(tmp_path)) / "missing-go")
+    with respx.mock(assert_all_called=False) as router:
+        router.get(
+            url__startswith="https://apidatalake.tesouro.gov.br/ords/siconfi/tt/extrato_entregas"
+        ).mock(
+            return_value=Response(
+                200,
+                json={
+                    "items": [
+                        {
+                            "exercicio": 2024,
+                            "cod_ibge": 3550308,
+                            "instituicao": "Prefeitura Municipal de São Paulo - SP",
+                            "populacao": 11451999,
+                            "entregavel": "MSC Agregada",
+                            "periodo": 12,
+                            "periodicidade": "M",
+                            "status_relatorio": "HO",
+                            "data_status": "2025-01-30T10:00:00Z",
+                            "forma_envio": "I",
+                            "tipo_relatorio": "M",
+                        }
+                    ]
+                },
+            )
+        )
+        entregas = await client.consultar_entregas("3550308", ano=2024)
+        assert len(entregas) > 0
+        assert any("MSC" in it.entregavel for it in entregas)
 
 
 @pytest.mark.asyncio

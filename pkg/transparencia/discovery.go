@@ -31,11 +31,33 @@ type QuasarEntidade struct {
 }
 
 var (
-	hrefRegex         = regexp.MustCompile(`(?i)(?:href|src)\s*=\s*["']([^"']+)["']`)
-	antiBotMarkers    = []string{"cf-turnstile", "g-recaptcha", "hcaptcha", "challenge-platform", "just a moment..."}
-	quasarVersaoRegex = regexp.MustCompile(`^v?\d+\.\d+`)
-	bethaHashRegex    = regexp.MustCompile(`(?i)https?://transparencia\.betha\.cloud/#/([a-zA-Z0-9_-]{6,})`)
+	hrefRegex                  = regexp.MustCompile(`(?i)(?:href|src)\s*=\s*["']([^"']+)["']`)
+	antiBotMarkers             = []string{"cf-turnstile", "g-recaptcha", "h-captcha", "hcaptcha", "challenge-platform", "just a moment...", "checking your browser", "safeline", "sl-challenge"}
+	antiBotInterstitialMarkers = []string{"challenge-platform", "just a moment...", "checking your browser", "cf-turnstile", "sl-challenge", "safeline"}
+	quasarVersaoRegex          = regexp.MustCompile(`^v?\d+\.\d+`)
+	bethaHashRegex             = regexp.MustCompile(`(?i)https?://transparencia\.betha\.cloud/#/([a-zA-Z0-9_=-]{6,})`)
 )
+
+func isAntiBotResponse(statusCode int, bodyLow string) bool {
+	if statusCode == http.StatusForbidden ||
+		statusCode == http.StatusTooManyRequests ||
+		statusCode == 468 ||
+		statusCode == http.StatusServiceUnavailable {
+		for _, m := range antiBotMarkers {
+			if strings.Contains(bodyLow, m) {
+				return true
+			}
+		}
+	}
+	if statusCode == http.StatusOK && !strings.Contains(bodyLow, "<table") {
+		for _, m := range antiBotInterstitialMarkers {
+			if strings.Contains(bodyLow, m) {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 func supportsServidoresForPlatform(plataforma string) bool {
 	switch strings.TrimSpace(plataforma) {
@@ -240,21 +262,8 @@ func DiscoverPortal(ctx context.Context, m *Municipio, opts DiscoverOptions) *Po
 		}
 	}
 
-	// Orçamento máximo de descoberta automática para não bloquear fallbacks (TCE/SICONFI/PNCP)
-	discCtx, discCancel := context.WithTimeout(ctx, timeout*2)
-	defer discCancel()
-
-	// 1c. Descoberta paralela em diretórios SaaS multi-tenant (Betha, Ágili, e-Pública, Equiplano Cloud)
-	saasCtx, saasCancel := context.WithTimeout(discCtx, timeout)
-	saasHit := probeSaaSDirectoriesConcurrently(saasCtx, client, m)
-	saasCancel()
-	if saasHit != nil {
-		saasHit.Municipio = m
-		saasHit.TempoMs = time.Since(start).Milliseconds()
-		return saasHit
-	}
-
-	// 1d. Catálogo nacional de portais municipais HTML (sem API JSON/XML estruturada).
+	// 1c. Catálogo nacional de portais municipais HTML (sem API JSON/XML estruturada).
+	// Executado antes de sondas SaaS remotas para resposta instantânea offline.
 	if !hasActiveSaaSTestOverride() {
 		if htmlCat, ok := LookupPortalHTMLByIBGE(m.CodigoIBGE); ok && htmlCat.PortalURL != "" {
 			obs := strings.TrimSpace(htmlCat.Observacoes)
@@ -274,6 +283,20 @@ func DiscoverPortal(ctx context.Context, m *Municipio, opts DiscoverOptions) *Po
 				Observacoes:         obs,
 			}
 		}
+	}
+
+	// Orçamento máximo de descoberta automática para não bloquear fallbacks (TCE/SICONFI/PNCP)
+	discCtx, discCancel := context.WithTimeout(ctx, timeout*2)
+	defer discCancel()
+
+	// 1d. Descoberta paralela em diretórios SaaS multi-tenant (Betha, Ágili, e-Pública, Equiplano Cloud)
+	saasCtx, saasCancel := context.WithTimeout(discCtx, timeout)
+	saasHit := probeSaaSDirectoriesConcurrently(saasCtx, client, m)
+	saasCancel()
+	if saasHit != nil {
+		saasHit.Municipio = m
+		saasHit.TempoMs = time.Since(start).Milliseconds()
+		return saasHit
 	}
 
 	// 2. Candidatos de URL + enriquecimento com TCE-PI para municípios do Piauí.
@@ -743,14 +766,10 @@ func inspectPortalURL(ctx context.Context, client *http.Client, baseURL string, 
 	bodyStr := string(bodyBytes)
 	bodyLow := strings.ToLower(bodyStr)
 
-	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusServiceUnavailable {
-		for _, m := range antiBotMarkers {
-			if strings.Contains(bodyLow, m) {
-				det.Plataforma = "anti_bot_protegido"
-				det.Observacoes = fmt.Sprintf("Portal protegido por verificação anti-bot/WAF (HTTP %d).", resp.StatusCode)
-				return det, true
-			}
-		}
+	if isAntiBotResponse(resp.StatusCode, bodyLow) {
+		det.Plataforma = "anti_bot_protegido"
+		det.Observacoes = fmt.Sprintf("Portal protegido por verificação anti-bot/WAF (HTTP %d).", resp.StatusCode)
+		return det, true
 	}
 
 	if resp.StatusCode < 400 {

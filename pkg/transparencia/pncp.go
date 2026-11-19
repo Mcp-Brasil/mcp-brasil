@@ -269,7 +269,7 @@ func (c *PNCPClient) FetchContratosByCNPJ(ctx context.Context, m *Municipio, ini
 			Numero:              r.NumeroContratoEmpenho,
 			Ano:                 r.AnoContrato,
 			Fornecedor:          forn,
-			DocumentoFornecedor: doc,
+			DocumentoFornecedor: maskIfCPF(doc),
 			Objeto:              r.ObjetoContrato,
 			Situacao:            r.NomeStatus,
 			DataAssinatura:      r.DataAssinatura,

@@ -94,15 +94,11 @@ func fetchRawResource(ctx context.Context, client *http.Client, targetURL, refer
 	if readErr != nil {
 		return finalURL, "", "", readErr
 	}
-	bodyStr := string(raw)
+	bodyStr := decodeWebBody(raw, resp.Header.Get("Content-Type"))
 	bodyLow := strings.ToLower(bodyStr)
 
-	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusServiceUnavailable {
-		for _, marker := range antiBotMarkers {
-			if strings.Contains(bodyLow, marker) {
-				return finalURL, "", "", fmt.Errorf("%w (HTTP %d)", errHTMLAntiBotBlocked, resp.StatusCode)
-			}
-		}
+	if isAntiBotResponse(resp.StatusCode, bodyLow) {
+		return finalURL, "", "", fmt.Errorf("%w (HTTP %d)", errHTMLAntiBotBlocked, resp.StatusCode)
 	}
 	if resp.StatusCode >= 400 {
 		return finalURL, "", "", fmt.Errorf("recurso retornou HTTP %d", resp.StatusCode)
@@ -760,13 +756,15 @@ func pickSelectOptionValue(selectBody, fieldName string, targetAno int) string {
 	return opts[0].val
 }
 
+var htmlPasswordTypeRegex = regexp.MustCompile(`(?i)\btype\s*=\s*["']?password["']?`)
+
 func isUnsafeOrLoginForm(formAttrs, formBody string) bool {
 	lowBody := strings.ToLower(formBody)
 	lowAttrs := strings.ToLower(formAttrs)
-	if strings.Contains(lowBody, `type="password"`) || strings.Contains(lowBody, `type='password'`) {
+	if htmlPasswordTypeRegex.MatchString(lowBody) {
 		return true
 	}
-	for _, marker := range []string{"g-recaptcha", "h-captcha", "hcaptcha", "cf-turnstile", "recaptcha", "captcha"} {
+	for _, marker := range []string{"g-recaptcha", "h-captcha", "hcaptcha", "cf-turnstile", "recaptcha", "captcha", "sl-challenge", "safeline"} {
 		if strings.Contains(lowBody, marker) {
 			return true
 		}
@@ -976,14 +974,10 @@ func submitBestDomainForm(ctx context.Context, client *http.Client, baseURL, bod
 	if readErr != nil {
 		return finalURL, nil, readErr
 	}
-	respBody := string(raw)
+	respBody := decodeWebBody(raw, resp.Header.Get("Content-Type"))
 	bodyLow := strings.ToLower(respBody)
-	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusServiceUnavailable {
-		for _, marker := range antiBotMarkers {
-			if strings.Contains(bodyLow, marker) {
-				return finalURL, nil, fmt.Errorf("%w (HTTP %d)", errHTMLAntiBotBlocked, resp.StatusCode)
-			}
-		}
+	if isAntiBotResponse(resp.StatusCode, bodyLow) {
+		return finalURL, nil, fmt.Errorf("%w (HTTP %d)", errHTMLAntiBotBlocked, resp.StatusCode)
 	}
 	if resp.StatusCode >= 400 {
 		return finalURL, nil, fmt.Errorf("submissão de formulário retornou HTTP %d", resp.StatusCode)

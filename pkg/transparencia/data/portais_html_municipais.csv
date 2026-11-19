@@ -2393,7 +2393,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 4313086,Nova Pádua,RS,aspec_assesi_html,https://novapadua.rs.gov.br,https://novapadua.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 4313102,Nova Palma,RS,modernizacao_html,https://www.novapalma.rs.gov.br/home,https://www.novapalma.rs.gov.br/home,Portal municipal HTML sem API JSON/XML estruturada.
 4313300,Nova Prata,RS,aspec_assesi_html,https://www.novaprata.rs.gov.br,https://www.novaprata.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
-4313359,Nova Roma do Sul,RS,html_portal,https:// www.novaromadosul.rs.gov.br,https:// www.novaromadosul.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+4313359,Nova Roma do Sul,RS,html_portal,https://www.novaromadosul.rs.gov.br,https://www.novaromadosul.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 4313425,Novo Machado,RS,ipm_html,https://novomachado.atende.net,,Portal municipal HTML sem API JSON/XML estruturada.
 4313466,Novo Xingu,RS,govbr_html,https://www.novoxingu.rs.gov.br/transparencia,https://www.novoxingu.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 4314027,Paraíso do Sul,RS,ipm_html,https://paraisodosul.atende.net,,Portal municipal HTML sem API JSON/XML estruturada.
@@ -2451,7 +2451,7 @@ codigo_ibge,nome,uf,plataforma,portal_url,site_prefeitura,observacoes
 4317954,Santo Expedito do Sul,RS,html_portal,https://www.santoexpeditodosul.rs.gov.br,https://www.santoexpeditodosul.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 4318002,São Borja,RS,html_portal,https://www.saoborja.rs.gov.br,https://www.saoborja.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 4318051,São Domingos do Sul,RS,html_portal,https://www.saodomingosdosul.rs.gov.br,https://www.saodomingosdosul.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
-4318101,São Francisco de Assis,RS,html_portal,https://saofranciscodeassis.govbr.cloud/pronimtb/ https:// www.saofranciscodeassis.rs.gov.br,https://saofranciscodeassis.govbr.cloud/pronimtb/ https:// www.saofranciscodeassis.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
+4318101,São Francisco de Assis,RS,html_portal,https://saofranciscodeassis.govbr.cloud/pronimtb/,https://www.saofranciscodeassis.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 4318200,São Francisco de Paula,RS,betha_html,https://www.saofranciscodepaula.rs.gov.br,https://www.saofranciscodepaula.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 4318309,São Gabriel,RS,el_gpi_html,https://www.saogabriel.rs.gov.br,https://www.saogabriel.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.
 4318457,São José das Missões,RS,aspec_assesi_html,https://saojosedasmissoes.rs.gov.br,https://saojosedasmissoes.rs.gov.br,Portal municipal HTML sem API JSON/XML estruturada.

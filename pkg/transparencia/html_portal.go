@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 // ---------------------------------------------------------------------------
@@ -264,6 +265,47 @@ var (
 	htmlPageCache   = make(map[string]*htmlPageCacheEntry)
 )
 
+var win1252Table = [32]rune{
+	0x20AC, 0x0081, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021,
+	0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, 0x008D, 0x017D, 0x008F,
+	0x0090, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
+	0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x009D, 0x017E, 0x0178,
+}
+
+// decodeWebBody converte respostas legadas ISO-8859-1 / Windows-1252 para UTF-8 válido.
+func decodeWebBody(raw []byte, contentType string) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	// Remove UTF-8 BOM se presente
+	if len(raw) >= 3 && raw[0] == 0xEF && raw[1] == 0xBB && raw[2] == 0xBF {
+		raw = raw[3:]
+	}
+	ctLow := strings.ToLower(contentType)
+	explicitLatin := strings.Contains(ctLow, "iso-8859-1") ||
+		strings.Contains(ctLow, "latin1") ||
+		strings.Contains(ctLow, "latin-1") ||
+		strings.Contains(ctLow, "windows-1252") ||
+		strings.Contains(ctLow, "cp1252")
+
+	if !explicitLatin && utf8.Valid(raw) {
+		return string(raw)
+	}
+	var b strings.Builder
+	b.Grow(len(raw) + len(raw)/8)
+	for _, c := range raw {
+		switch {
+		case c < 0x80:
+			b.WriteByte(c)
+		case c >= 0x80 && c <= 0x9F:
+			b.WriteRune(win1252Table[c-0x80])
+		default:
+			b.WriteRune(rune(c))
+		}
+	}
+	return b.String()
+}
+
 func fetchHTMLPageUncached(ctx context.Context, client *http.Client, targetURL string) (finalURL string, body string, err error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
 	if err != nil {
@@ -288,15 +330,11 @@ func fetchHTMLPageUncached(ctx context.Context, client *http.Client, targetURL s
 	if readErr != nil {
 		return finalURL, "", readErr
 	}
-	bodyStr := string(raw)
+	bodyStr := decodeWebBody(raw, resp.Header.Get("Content-Type"))
 	bodyLow := strings.ToLower(bodyStr)
 
-	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusServiceUnavailable {
-		for _, marker := range antiBotMarkers {
-			if strings.Contains(bodyLow, marker) {
-				return finalURL, "", fmt.Errorf("%w (HTTP %d)", errHTMLAntiBotBlocked, resp.StatusCode)
-			}
-		}
+	if isAntiBotResponse(resp.StatusCode, bodyLow) {
+		return finalURL, "", fmt.Errorf("%w (HTTP %d)", errHTMLAntiBotBlocked, resp.StatusCode)
 	}
 	if resp.StatusCode >= 400 {
 		return finalURL, "", fmt.Errorf("portal HTML retornou HTTP %d", resp.StatusCode)
@@ -412,7 +450,7 @@ func scoreHTMLLink(link htmlLink, baseHost string, keywords []string) int {
 			score += (len(keywords) - i) * 10
 		}
 	}
-	if link.Label == "iframe" {
+	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(link.Label)), "iframe") {
 		if score > 0 {
 			score += 25
 		} else {
@@ -729,6 +767,7 @@ func QueryHTMLPortalServidores(ctx context.Context, client *http.Client, m *Muni
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
 	var items []ServidorItem
+	matchedTotal := 0
 
 	for _, tb := range tables {
 		nh := normalizeHTMLTableHeaders(tb.Headers)
@@ -764,6 +803,10 @@ func QueryHTMLPortalServidores(ctx context.Context, client *http.Client, m *Muni
 			if filtro != "" && !strings.Contains(strings.ToLower(nome+" "+cargo), filtro) {
 				continue
 			}
+			matchedTotal++
+			if len(items) >= limit {
+				continue
+			}
 			rawCPF := cellAt(row, idxCPF)
 			items = append(items, ServidorItem{
 				Nome:           nome,
@@ -784,12 +827,6 @@ func QueryHTMLPortalServidores(ctx context.Context, client *http.Client, m *Muni
 				Fonte:          fonte,
 				PortalURL:      usedURL,
 			})
-			if len(items) >= limit {
-				break
-			}
-		}
-		if len(items) >= limit {
-			break
 		}
 	}
 
@@ -818,7 +855,7 @@ func QueryHTMLPortalServidores(ctx context.Context, client *http.Client, m *Muni
 		Fonte:          fonte,
 		Plataforma:     plataforma,
 		PortalURL:      usedURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Servidores:     items,
 		Disponivel:     true,
 	}, nil
@@ -835,6 +872,7 @@ func QueryHTMLPortalDespesas(ctx context.Context, client *http.Client, m *Munici
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
 	var items []DespesaItem
+	matchedTotal := 0
 
 	for _, tb := range tables {
 		nh := normalizeHTMLTableHeaders(tb.Headers)
@@ -864,6 +902,10 @@ func QueryHTMLPortalDespesas(ctx context.Context, client *http.Client, m *Munici
 			if filtro != "" && !strings.Contains(strings.ToLower(forn+" "+hist+" "+numEmp), filtro) {
 				continue
 			}
+			matchedTotal++
+			if len(items) >= limit {
+				continue
+			}
 			items = append(items, DespesaItem{
 				NumeroEmpenho:       numEmp,
 				Ano:                 p.Ano,
@@ -880,12 +922,6 @@ func QueryHTMLPortalDespesas(ctx context.Context, client *http.Client, m *Munici
 				ValorPago:           parseHTMLBRFloat(cellAt(row, idxPago)),
 				Fonte:               fonte,
 			})
-			if len(items) >= limit {
-				break
-			}
-		}
-		if len(items) >= limit {
-			break
 		}
 	}
 
@@ -914,7 +950,7 @@ func QueryHTMLPortalDespesas(ctx context.Context, client *http.Client, m *Munici
 		Fonte:          fonte,
 		Plataforma:     plataforma,
 		PortalURL:      usedURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Despesas:       items,
 		Disponivel:     true,
 	}, nil
@@ -931,6 +967,7 @@ func QueryHTMLPortalReceitas(ctx context.Context, client *http.Client, m *Munici
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
 	var items []ReceitaItem
+	matchedTotal := 0
 
 	for _, tb := range tables {
 		nh := normalizeHTMLTableHeaders(tb.Headers)
@@ -953,6 +990,10 @@ func QueryHTMLPortalReceitas(ctx context.Context, client *http.Client, m *Munici
 			if filtro != "" && !strings.Contains(strings.ToLower(desc+" "+cod), filtro) {
 				continue
 			}
+			matchedTotal++
+			if len(items) >= limit {
+				continue
+			}
 			items = append(items, ReceitaItem{
 				Codigo:          cod,
 				Descricao:       desc,
@@ -962,12 +1003,6 @@ func QueryHTMLPortalReceitas(ctx context.Context, client *http.Client, m *Munici
 				ValorArrecadado: parseHTMLBRFloat(cellAt(row, idxArr)),
 				Fonte:           fonte,
 			})
-			if len(items) >= limit {
-				break
-			}
-		}
-		if len(items) >= limit {
-			break
 		}
 	}
 
@@ -996,7 +1031,7 @@ func QueryHTMLPortalReceitas(ctx context.Context, client *http.Client, m *Munici
 		Fonte:          fonte,
 		Plataforma:     plataforma,
 		PortalURL:      usedURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Receitas:       items,
 		Disponivel:     true,
 	}, nil
@@ -1013,6 +1048,7 @@ func QueryHTMLPortalLicitacoes(ctx context.Context, client *http.Client, m *Muni
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
 	var items []LicitacaoItem
+	matchedTotal := 0
 
 	for _, tb := range tables {
 		nh := normalizeHTMLTableHeaders(tb.Headers)
@@ -1037,6 +1073,10 @@ func QueryHTMLPortalLicitacoes(ctx context.Context, client *http.Client, m *Muni
 			if filtro != "" && !strings.Contains(strings.ToLower(obj+" "+num+" "+mod), filtro) {
 				continue
 			}
+			matchedTotal++
+			if len(items) >= limit {
+				continue
+			}
 			link := ""
 			if rIdx < len(tb.Links) {
 				for _, l := range tb.Links[rIdx] {
@@ -1058,12 +1098,6 @@ func QueryHTMLPortalLicitacoes(ctx context.Context, client *http.Client, m *Muni
 				Link:            link,
 				Fonte:           fonte,
 			})
-			if len(items) >= limit {
-				break
-			}
-		}
-		if len(items) >= limit {
-			break
 		}
 	}
 
@@ -1092,7 +1126,7 @@ func QueryHTMLPortalLicitacoes(ctx context.Context, client *http.Client, m *Muni
 		Fonte:          fonte,
 		Plataforma:     plataforma,
 		PortalURL:      usedURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Licitacoes:     items,
 		Disponivel:     true,
 	}, nil
@@ -1109,6 +1143,7 @@ func QueryHTMLPortalContratos(ctx context.Context, client *http.Client, m *Munic
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
 	var items []ContratoItem
+	matchedTotal := 0
 
 	for _, tb := range tables {
 		nh := normalizeHTMLTableHeaders(tb.Headers)
@@ -1135,6 +1170,10 @@ func QueryHTMLPortalContratos(ctx context.Context, client *http.Client, m *Munic
 			if filtro != "" && !strings.Contains(strings.ToLower(forn+" "+num+" "+obj), filtro) {
 				continue
 			}
+			matchedTotal++
+			if len(items) >= limit {
+				continue
+			}
 			items = append(items, ContratoItem{
 				Numero:              num,
 				Ano:                 p.Ano,
@@ -1148,12 +1187,6 @@ func QueryHTMLPortalContratos(ctx context.Context, client *http.Client, m *Munic
 				Valor:               parseHTMLBRFloat(cellAt(row, idxVal)),
 				Fonte:               fonte,
 			})
-			if len(items) >= limit {
-				break
-			}
-		}
-		if len(items) >= limit {
-			break
 		}
 	}
 
@@ -1182,7 +1215,7 @@ func QueryHTMLPortalContratos(ctx context.Context, client *http.Client, m *Munic
 		Fonte:          fonte,
 		Plataforma:     plataforma,
 		PortalURL:      usedURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Contratos:      items,
 		Disponivel:     true,
 	}, nil
@@ -1199,6 +1232,7 @@ func QueryHTMLPortalDiarias(ctx context.Context, client *http.Client, m *Municip
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
 	var items []DiariaItem
+	matchedTotal := 0
 
 	for _, tb := range tables {
 		nh := normalizeHTMLTableHeaders(tb.Headers)
@@ -1222,6 +1256,10 @@ func QueryHTMLPortalDiarias(ctx context.Context, client *http.Client, m *Municip
 			if filtro != "" && !strings.Contains(strings.ToLower(ben+" "+dest+" "+mot), filtro) {
 				continue
 			}
+			matchedTotal++
+			if len(items) >= limit {
+				continue
+			}
 			items = append(items, DiariaItem{
 				Beneficiario: ben,
 				Cargo:        cellAt(row, idxCargo),
@@ -1231,12 +1269,6 @@ func QueryHTMLPortalDiarias(ctx context.Context, client *http.Client, m *Municip
 				Valor:        parseHTMLBRFloat(cellAt(row, idxVal)),
 				Fonte:        fonte,
 			})
-			if len(items) >= limit {
-				break
-			}
-		}
-		if len(items) >= limit {
-			break
 		}
 	}
 
@@ -1265,7 +1297,7 @@ func QueryHTMLPortalDiarias(ctx context.Context, client *http.Client, m *Municip
 		Fonte:          fonte,
 		Plataforma:     plataforma,
 		PortalURL:      usedURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Diarias:        items,
 		Disponivel:     true,
 	}, nil
@@ -1282,6 +1314,7 @@ func QueryHTMLPortalObras(ctx context.Context, client *http.Client, m *Municipio
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
 	var items []ObraItem
+	matchedTotal := 0
 
 	for _, tb := range tables {
 		nh := normalizeHTMLTableHeaders(tb.Headers)
@@ -1315,6 +1348,10 @@ func QueryHTMLPortalObras(ctx context.Context, client *http.Client, m *Municipio
 			if filtro != "" && !strings.Contains(strings.ToLower(tit+" "+obj+" "+cod), filtro) {
 				continue
 			}
+			matchedTotal++
+			if len(items) >= limit {
+				continue
+			}
 			items = append(items, ObraItem{
 				Codigo:      cod,
 				Titulo:      tit,
@@ -1328,12 +1365,6 @@ func QueryHTMLPortalObras(ctx context.Context, client *http.Client, m *Municipio
 				Valor:       parseHTMLBRFloat(cellAt(row, idxVal)),
 				Fonte:       fonte,
 			})
-			if len(items) >= limit {
-				break
-			}
-		}
-		if len(items) >= limit {
-			break
 		}
 	}
 
@@ -1362,7 +1393,7 @@ func QueryHTMLPortalObras(ctx context.Context, client *http.Client, m *Municipio
 		Fonte:          fonte,
 		Plataforma:     plataforma,
 		PortalURL:      usedURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Obras:          items,
 		Disponivel:     true,
 	}, nil
@@ -1379,6 +1410,7 @@ func QueryHTMLPortalConvenios(ctx context.Context, client *http.Client, m *Munic
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
 	var items []ConvenioItem
+	matchedTotal := 0
 
 	for _, tb := range tables {
 		nh := normalizeHTMLTableHeaders(tb.Headers)
@@ -1408,6 +1440,10 @@ func QueryHTMLPortalConvenios(ctx context.Context, client *http.Client, m *Munic
 			if filtro != "" && !strings.Contains(strings.ToLower(num+" "+conc+" "+conv+" "+desc), filtro) {
 				continue
 			}
+			matchedTotal++
+			if len(items) >= limit {
+				continue
+			}
 			items = append(items, ConvenioItem{
 				Numero:        num,
 				Concedente:    conc,
@@ -1422,12 +1458,6 @@ func QueryHTMLPortalConvenios(ctx context.Context, client *http.Client, m *Munic
 				ValorLiberado: parseHTMLBRFloat(cellAt(row, idxLib)),
 				Fonte:         fonte,
 			})
-			if len(items) >= limit {
-				break
-			}
-		}
-		if len(items) >= limit {
-			break
 		}
 	}
 
@@ -1456,7 +1486,7 @@ func QueryHTMLPortalConvenios(ctx context.Context, client *http.Client, m *Munic
 		Fonte:          fonte,
 		Plataforma:     plataforma,
 		PortalURL:      usedURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Convenios:      items,
 		Disponivel:     true,
 	}, nil
@@ -1473,6 +1503,7 @@ func QueryHTMLPortalLegislacao(ctx context.Context, client *http.Client, m *Muni
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
 	var items []LegislacaoItem
+	matchedTotal := 0
 
 	for _, tb := range tables {
 		nh := normalizeHTMLTableHeaders(tb.Headers)
@@ -1502,6 +1533,10 @@ func QueryHTMLPortalLegislacao(ctx context.Context, client *http.Client, m *Muni
 			if filtro != "" && !strings.Contains(strings.ToLower(tipo+" "+num+" "+desc+" "+nome), filtro) {
 				continue
 			}
+			matchedTotal++
+			if len(items) >= limit {
+				continue
+			}
 			items = append(items, LegislacaoItem{
 				Codigo:         cellAt(row, idxCod),
 				TipoDocumento:  tipo,
@@ -1513,12 +1548,6 @@ func QueryHTMLPortalLegislacao(ctx context.Context, client *http.Client, m *Muni
 				Descricao:      desc,
 				Fonte:          fonte,
 			})
-			if len(items) >= limit {
-				break
-			}
-		}
-		if len(items) >= limit {
-			break
 		}
 	}
 
@@ -1539,7 +1568,7 @@ func QueryHTMLPortalLegislacao(ctx context.Context, client *http.Client, m *Muni
 		Fonte:          fonte,
 		Plataforma:     plataforma,
 		PortalURL:      usedURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Atos:           items,
 		Disponivel:     true,
 	}, nil
@@ -1556,6 +1585,7 @@ func QueryHTMLPortalConcursos(ctx context.Context, client *http.Client, m *Munic
 	filtro := strings.ToLower(strings.TrimSpace(p.NomeFiltro))
 	fonte := fmt.Sprintf("Portal Municipal HTML (%s)", htmlPlatformLabel(plataforma))
 	var items []ConcursoItem
+	matchedTotal := 0
 
 	for _, tb := range tables {
 		nh := normalizeHTMLTableHeaders(tb.Headers)
@@ -1581,6 +1611,10 @@ func QueryHTMLPortalConcursos(ctx context.Context, client *http.Client, m *Munic
 			if filtro != "" && !strings.Contains(strings.ToLower(nome+" "+edital+" "+cargo), filtro) {
 				continue
 			}
+			matchedTotal++
+			if len(items) >= limit {
+				continue
+			}
 			classif := int(parseHTMLBRFloat(cellAt(row, idxClass)))
 			items = append(items, ConcursoItem{
 				Edital:         edital,
@@ -1592,12 +1626,6 @@ func QueryHTMLPortalConcursos(ctx context.Context, client *http.Client, m *Munic
 				Situacao:       cellAt(row, idxSit),
 				Fonte:          fonte,
 			})
-			if len(items) >= limit {
-				break
-			}
-		}
-		if len(items) >= limit {
-			break
 		}
 	}
 
@@ -1618,7 +1646,7 @@ func QueryHTMLPortalConcursos(ctx context.Context, client *http.Client, m *Munic
 		Fonte:          fonte,
 		Plataforma:     plataforma,
 		PortalURL:      usedURL,
-		TotalRegistros: len(items),
+		TotalRegistros: matchedTotal,
 		Aprovados:      items,
 		Disponivel:     true,
 	}, nil

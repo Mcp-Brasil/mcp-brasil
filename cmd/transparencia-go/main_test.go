@@ -3,22 +3,40 @@ package main_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
 var binPath string
 
 func TestMain(m *testing.M) {
-	// Build binary for tests
-	tmpDir, err := filepath.Abs("../../bin")
-	if err == nil {
-		binPath = filepath.Join(tmpDir, "transparencia-go")
+	tmpDir, err := os.MkdirTemp("", "transparencia-go-test-*")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "falha ao criar diretório temporário de teste: %v\n", err)
+		os.Exit(1)
 	}
-	m.Run()
+	binName := "transparencia-go"
+	if runtime.GOOS == "windows" {
+		binName += ".exe"
+	}
+	binPath = filepath.Join(tmpDir, binName)
+
+	buildCmd := exec.Command("go", "build", "-o", binPath, ".")
+	if out, err := buildCmd.CombinedOutput(); err != nil {
+		_ = os.RemoveAll(tmpDir)
+		fmt.Fprintf(os.Stderr, "falha ao compilar transparencia-go para testes: %v\n%s\n", err, string(out))
+		os.Exit(1)
+	}
+
+	code := m.Run()
+	_ = os.RemoveAll(tmpDir)
+	os.Exit(code)
 }
 
 func runCLI(t *testing.T, args ...string) []byte {

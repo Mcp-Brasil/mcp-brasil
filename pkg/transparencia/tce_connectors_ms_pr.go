@@ -490,7 +490,7 @@ func (c *TCEClient) FetchTCEMSServidores(ctx context.Context, m *Municipio, ano,
 			items = append(items, ServidorItem{
 				Nome:           strings.TrimSpace(r.Nome),
 				Matricula:      strconv.Itoa(r.Matricula),
-				CPFParcial:     strings.TrimSpace(r.CPF),
+				CPFParcial:     maskCPF("", r.CPF),
 				Cargo:          strings.TrimSpace(r.CargoDescr),
 				Lotacao:        strings.TrimSpace(r.LotacaoDescr),
 				Competencia:    strings.TrimSpace(r.MesAno),

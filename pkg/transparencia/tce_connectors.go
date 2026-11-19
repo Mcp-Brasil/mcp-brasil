@@ -166,7 +166,7 @@ func (c *TCEClient) FetchTCEPIServidores(ctx context.Context, m *Municipio, ano 
 		for _, r := range raw {
 			items = append(items, ServidorItem{
 				Nome:        strings.TrimSpace(r.Nome),
-				CPFParcial:  strings.TrimSpace(r.CPF),
+				CPFParcial:  maskCPF("", r.CPF),
 				Cargo:       strings.TrimSpace(r.Cargo),
 				Lotacao:     strings.TrimSpace(r.Lotacao),
 				Vinculo:     strings.TrimSpace(r.Vinculo),
@@ -615,7 +615,7 @@ func (c *TCEClient) FetchTCESPDespesas(ctx context.Context, m *Municipio, ano, m
 				Ano:                 y,
 				Data:                strings.TrimSpace(r.DataEmissao),
 				Fornecedor:          strings.TrimSpace(r.NmFornec),
-				DocumentoFornecedor: strings.TrimSpace(r.IDFornec),
+				DocumentoFornecedor: maskIfCPF(r.IDFornec),
 				Orgao:               strings.TrimSpace(r.Orgao),
 				Historico:           strings.TrimSpace(r.Evento),
 				Fonte:               "TCE-SP Transparência",

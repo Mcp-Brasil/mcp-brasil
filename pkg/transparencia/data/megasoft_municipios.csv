@@ -43,7 +43,7 @@ codigo_ibge,nome,uf,portal_url,portal_camara,codigo_orgao,site_prefeitura
 5205307,Cavalcante,GO,https://cavalcante.megasofttransparencia.com.br,https://camaracavalcante.megasofttransparencia.com.br,3,https://cavalcante.go.gov.br/
 5205455,Cezarina,GO,https://cezarina.megasofttransparencia.com.br,https://camaracezarina.megasofttransparencia.com.br,3,https://cezarina.megasofttransparencia.com.br/
 5205513,Cocalzinho de Goiás,GO,https://cocalzinhodegoias.megasofttransparencia.com.br,https://camaracocalzinho.megasofttransparencia.com.br,3,
-5205521,Colinas do Sul,GO,https://colinasdosul.megasofttransparencia.com.br,https://camaracolinasdosul.megasofttransparencia.com.br,40,https://http://acessoainformacao.colinasdosul.go.gov.br
+5205521,Colinas do Sul,GO,https://colinasdosul.megasofttransparencia.com.br,https://camaracolinasdosul.megasofttransparencia.com.br,40,http://acessoainformacao.colinasdosul.go.gov.br
 5205901,Corumbaíba,GO,https://corumbaiba.megasofttransparencia.com.br,https://camaracorumbaiba.megasofttransparencia.com.br,3,
 5205802,Corumbá de Goiás,GO,https://corumbadegoias.megasofttransparencia.com.br,https://camaracorumbadegoias.megasofttransparencia.com.br,1,http://corumbadegoias.go.gov.br/
 5206206,Cristalina,GO,https://camaracristalina.megasofttransparencia.com.br,https://camaracristalina.megasofttransparencia.com.br,0,
@@ -72,7 +72,7 @@ codigo_ibge,nome,uf,portal_url,portal_camara,codigo_orgao,site_prefeitura
 5209804,Hidrolina,GO,https://hidrolina.megasofttransparencia.com.br,https://camarahidrolina.megasofttransparencia.com.br,3,
 5210158,Ipiranga de Goiás,GO,https://ipirangadegoias.megasofttransparencia.com.br,https://camaraipirangadegoias.megasofttransparencia.com.br,3,
 5210208,Iporá,GO,https://camaraipora.megasofttransparencia.com.br,https://camaraipora.megasofttransparencia.com.br,0,
-5210307,Israelândia,GO,https://israelandia.megasofttransparencia.com.br,https://camaraisraelandia.megasofttransparencia.com.br,2,israelandia.go.gov.br
+5210307,Israelândia,GO,https://israelandia.megasofttransparencia.com.br,https://camaraisraelandia.megasofttransparencia.com.br,2,https://israelandia.go.gov.br
 5210562,Itaguari,GO,https://itaguari.megasofttransparencia.com.br,https://camaraitaguari.megasofttransparencia.com.br,2,
 5210604,Itaguaru,GO,https://itaguaru.megasofttransparencia.com.br,https://camaraitaguaru.megasofttransparencia.com.br,3,
 5210901,Itapaci,GO,https://itapaci.megasofttransparencia.com.br,https://camaraitapaci.megasofttransparencia.com.br,3,https://itapaci.megasoftservicos.com.br/
@@ -102,14 +102,14 @@ codigo_ibge,nome,uf,portal_url,portal_camara,codigo_orgao,site_prefeitura
 5214606,Niquelândia,GO,https://camaraniquelandia.megasofttransparencia.com.br,https://camaraniquelandia.megasofttransparencia.com.br,0,
 5214705,Nova América,GO,https://novaamerica.megasofttransparencia.com.br,https://camaranovaamerica.megasofttransparencia.com.br,3,
 5214804,Nova Aurora,GO,https://novaaurora.megasofttransparencia.com.br,https://camaranovaaurora.megasofttransparencia.com.br,3,
-5214861,Nova Glória,GO,https://novagloria.megasofttransparencia.com.br,https://camaranovagloria.megasofttransparencia.com.br,3,https:novagloria.go.gov.br/
+5214861,Nova Glória,GO,https://novagloria.megasofttransparencia.com.br,https://camaranovagloria.megasofttransparencia.com.br,3,https://novagloria.go.gov.br/
 5214879,Nova Iguaçu de Goiás,GO,https://novaiguacudegoias.megasofttransparencia.com.br,https://camaranovaiguacudegoias.megasofttransparencia.com.br,3,
 5214903,Nova Roma,GO,https://novaroma.megasofttransparencia.com.br,https://camaranovaroma.megasofttransparencia.com.br,10,
 5215009,Nova Veneza,GO,https://novaveneza.megasofttransparencia.com.br,https://camaranovaveneza.megasofttransparencia.com.br,3,
 5215207,Novo Brasil,GO,https://novobrasil.megasofttransparencia.com.br,https://camaranovobrasil.megasofttransparencia.com.br,4,
 5215231,Novo Gama,GO,https://novogama.megasofttransparencia.com.br,https://camaranovogama.megasofttransparencia.com.br,2,https://novogama.go.gov.br
 5215256,Novo Planalto,GO,https://novoplanalto.megasofttransparencia.com.br,https://camaranovoplanalto.megasofttransparencia.com.br,10,
-5215405,Ouro Verde de Goiás,GO,https://ouroverdedegoias.megasofttransparencia.com.br,https://camaraouroverde.megasofttransparencia.com.br,2,https://https://ouroverdegoias.go.gov.br/
+5215405,Ouro Verde de Goiás,GO,https://ouroverdedegoias.megasofttransparencia.com.br,https://camaraouroverde.megasofttransparencia.com.br,2,https://ouroverdegoias.go.gov.br/
 5215504,Ouvidor,GO,https://ouvidor.megasofttransparencia.com.br,https://camaraouvidor.megasofttransparencia.com.br,1,http://ouvidor.megasofttransparencia.com.br
 5215603,Padre Bernardo,GO,https://padrebernardo.megasofttransparencia.com.br,,3,https://www.padrebernardo.go.gov.br/portal
 5215652,Palestina de Goiás,GO,https://palestinadegoias.megasofttransparencia.com.br,https://camarapalestinadegoias.megasofttransparencia.com.br,2,
@@ -119,7 +119,7 @@ codigo_ibge,nome,uf,portal_url,portal_camara,codigo_orgao,site_prefeitura
 5216809,Petrolina de Goiás,GO,https://petrolinadegoias.megasofttransparencia.com.br,https://camarapetrolinadegoias.megasofttransparencia.com.br,1,
 5217203,Piranhas,GO,https://camarapiranhas.megasofttransparencia.com.br,https://camarapiranhas.megasofttransparencia.com.br,0,
 5217708,Pontalina,GO,https://pontalina.megasofttransparencia.com.br,https://camarapontalina.megasofttransparencia.com.br,1,https://pontalina.go.gov.br
-5218003,Porangatu,GO,https://porangatu.megasofttransparencia.com.br,,10,https://https://porangatu.go.gov.br/
+5218003,Porangatu,GO,https://porangatu.megasofttransparencia.com.br,,10,https://porangatu.go.gov.br/
 5218052,Porteirão,GO,https://camaraporteirao.megasofttransparencia.com.br,https://camaraporteirao.megasofttransparencia.com.br,0,
 5218391,Professor Jamil,GO,https://professorjamil.megasofttransparencia.com.br,https://camaraprofessorjamil.megasofttransparencia.com.br,3,http://professorjamil.go.gov.br
 5218607,Rialma,GO,https://rialma.megasofttransparencia.com.br,https://camararialma.megasofttransparencia.com.br,10,
@@ -132,7 +132,7 @@ codigo_ibge,nome,uf,portal_url,portal_camara,codigo_orgao,site_prefeitura
 5219407,Santa Rita do Araguaia,GO,https://santaritadoaraguaia.megasofttransparencia.com.br,https://camarasantaritadoaraguaia.megasofttransparencia.com.br,3,https://santaritadoaraguaia.go.gov.br/
 5219456,Santa Rita do Novo Destino,GO,https://santaritadonovodestino.megasofttransparencia.com.br,https://camarasantaritadonovodestino.megasofttransparencia.com.br,10,https://acessoainformacao.santaritadonovodestino.go.gov.br/
 5219712,Santo Antônio da Barra,GO,https://santoantoniodabarra.megasofttransparencia.com.br,https://camarasantoantoniodabarra.megasofttransparencia.com.br,2,
-5219738,Santo Antônio de Goiás,GO,https://santoantoniodegoias.megasofttransparencia.com.br,https://camarasantoantoniodegoias.megasofttransparencia.com.br,10,www.santoantoniodegoias.megasofttransparencia.com
+5219738,Santo Antônio de Goiás,GO,https://santoantoniodegoias.megasofttransparencia.com.br,https://camarasantoantoniodegoias.megasofttransparencia.com.br,10,https://www.santoantoniodegoias.megasofttransparencia.com
 5220504,Serranópolis,GO,https://serranopolis.megasofttransparencia.com.br,https://camaraserranopolis.megasofttransparencia.com.br,22,https://www.serranopolis.go.gov.br/
 5220603,Silvânia,GO,https://silvania.megasofttransparencia.com.br,https://camarasilvania.megasofttransparencia.com.br,3,https://silvania.go.gov.br/transparencia/
 5220686,Simolândia,GO,https://simolandia.megasofttransparencia.com.br,,10,http://www.simolandia.go.gov.br
@@ -153,10 +153,10 @@ codigo_ibge,nome,uf,portal_url,portal_camara,codigo_orgao,site_prefeitura
 5221601,Uruaçu,GO,https://uruacu.megasofttransparencia.com.br,https://camarauruacu.megasofttransparencia.com.br,3,https://www.uruacu.go.gov.br
 5221809,Urutaí,GO,https://urutai.megasofttransparencia.com.br,https://camaraurutai.megasofttransparencia.com.br,4,https://www.urutai.go.gov.br/
 5222005,Vianópolis,GO,https://vianopolis.megasofttransparencia.com.br,https://camaravianopolis.megasofttransparencia.com.br,3,
-5222054,Vicentinópolis,GO,https://vicentinopolis.megasofttransparencia.com.br,https://camaravicentinopolis.megasofttransparencia.com.br,3,https://https://vicentinopolis.go.gov.br/
+5222054,Vicentinópolis,GO,https://vicentinopolis.megasofttransparencia.com.br,https://camaravicentinopolis.megasofttransparencia.com.br,3,https://vicentinopolis.go.gov.br/
 5222203,Vila Boa,GO,https://vilaboa.megasofttransparencia.com.br,https://camaravilaboa.megasofttransparencia.com.br,10,
 5222302,Vila Propício,GO,https://vilapropicio.megasofttransparencia.com.br,https://camaravilapropicio.megasofttransparencia.com.br,13,
-5200175,Água Fria de Goiás,GO,https://aguafriadegoias.megasofttransparencia.com.br,https://camaraaguafriadegoias.megasofttransparencia.com.br,1,https://https://www.aguafriadegoias.go.gov.br/
+5200175,Água Fria de Goiás,GO,https://aguafriadegoias.megasofttransparencia.com.br,https://camaraaguafriadegoias.megasofttransparencia.com.br,1,https://www.aguafriadegoias.go.gov.br/
 5200209,Água Limpa,GO,https://agualimpa.megasofttransparencia.com.br,https://camaraagualimpa.megasofttransparencia.com.br,3,
 5200258,Águas Lindas de Goiás,GO,https://camaraaguaslindasdegoias.megasofttransparencia.com.br,https://camaraaguaslindasdegoias.megasofttransparencia.com.br,0,
 2102358,Buritirana,MA,https://buritirana.megasofttransparencia.com.br,,2,
@@ -244,16 +244,16 @@ codigo_ibge,nome,uf,portal_url,portal_camara,codigo_orgao,site_prefeitura
 1717206,Piraquê,TO,https://piraque.megasofttransparencia.com.br,https://camarapiraque.megasofttransparencia.com.br,10,https://www.piraque.to.gov.br/
 1717503,Pium,TO,https://pium.megasofttransparencia.com.br,,3,
 1717909,Ponte Alta do Tocantins,TO,https://pontealtadotocantins.megasofttransparencia.com.br,https://camarapontealtadotocantins.megasofttransparencia.com.br,3,
-1718006,Porto Alegre do Tocantins,TO,https://portoalegredotocantins.megasofttransparencia.com.br,https://camaraportoalegredotocantins.megasofttransparencia.com.br,2,www.portoalegre.to.gov.br
+1718006,Porto Alegre do Tocantins,TO,https://portoalegredotocantins.megasofttransparencia.com.br,https://camaraportoalegredotocantins.megasofttransparencia.com.br,2,https://www.portoalegre.to.gov.br
 1718303,Praia Norte,TO,https://praianorte.megasofttransparencia.com.br,https://camarapraianorte.megasofttransparencia.com.br,2,
 1718402,Presidente Kennedy,TO,https://presidentekennedy.megasofttransparencia.com.br,https://camarapresidentekennedy.megasofttransparencia.com.br,2,https://presidentekennedy.to.gov.br/
 1718501,Recursolândia,TO,https://recursolandia.megasofttransparencia.com.br,https://camararecursolandia.megasofttransparencia.com.br,3,https://www.recursolandia.to.gov.br/
 1718758,Rio Sono,TO,https://riosono.megasofttransparencia.com.br,https://camarariosono.megasofttransparencia.com.br,3,
 1718659,Rio da Conceição,TO,https://riodaconceicao.megasofttransparencia.com.br,https://camarariodaconceicao.megasofttransparencia.com.br,2,https://riodacaonceicao.to.gov.br
 1718808,Sampaio,TO,https://camarasampaio.megasofttransparencia.com.br,https://camarasampaio.megasofttransparencia.com.br,0,
-1718865,Santa Fé do Araguaia,TO,https://santafedoaraguaia.megasofttransparencia.com.br,https://camarasantafedoaraguaia.megasofttransparencia.com.br,3,www.santafedoaraguaia.to.gov.br
+1718865,Santa Fé do Araguaia,TO,https://santafedoaraguaia.megasofttransparencia.com.br,https://camarasantafedoaraguaia.megasofttransparencia.com.br,3,https://www.santafedoaraguaia.to.gov.br
 1718881,Santa Maria do Tocantins,TO,https://santamariadotocantins.megasofttransparencia.com.br,https://camarasantamariadotocantins.megasofttransparencia.com.br,3,https://santamariadotocantins.to.gov.br/
-1718899,Santa Rita do Tocantins,TO,https://santaritadotocantins.megasofttransparencia.com.br,https://camarasantaritadotocantins.megasofttransparencia.com.br,3,https://https://www.santarita.to.gov.br/
+1718899,Santa Rita do Tocantins,TO,https://santaritadotocantins.megasofttransparencia.com.br,https://camarasantaritadotocantins.megasofttransparencia.com.br,3,https://www.santarita.to.gov.br/
 1718907,Santa Rosa do Tocantins,TO,https://santarosadotocantins.megasofttransparencia.com.br,https://camarasantarosadotocantins.megasofttransparencia.com.br,3,https://www.santarosa.to.gov.br/
 1720002,Santa Terezinha do Tocantins,TO,https://santaterezinhadotocantins.megasofttransparencia.com.br,https://camarasantaterezinhadotocantins.megasofttransparencia.com.br,10,
 1720655,Silvanópolis,TO,https://transparencia.silvanopolis.to.gov.br,https://camarasilvanopolis.megasofttransparencia.com.br,3,
@@ -261,7 +261,7 @@ codigo_ibge,nome,uf,portal_url,portal_camara,codigo_orgao,site_prefeitura
 1720259,São Salvador do Tocantins,TO,https://saosalvadordotocantins.megasofttransparencia.com.br,https://camarasaosalvadordotocantins.megasofttransparencia.com.br,4,
 1720309,São Sebastião do Tocantins,TO,https://saosebastiaodotocantins.megasofttransparencia.com.br,https://camarasaosebastiaodotocantins.megasofttransparencia.com.br,3,
 1720903,Taguatinga,TO,https://taguatinga.megasofttransparencia.com.br,https://camarataguatinga.megasofttransparencia.com.br,10,https://www.taguatinga.to.gov.br/
-1720937,Taipas do Tocantins,TO,https://taipasdotocantins.megasofttransparencia.com.br,https://camarataipasdotocantins.megasofttransparencia.com.br,2,taipas.to.gov.br
+1720937,Taipas do Tocantins,TO,https://taipasdotocantins.megasofttransparencia.com.br,https://camarataipasdotocantins.megasofttransparencia.com.br,2,https://taipas.to.gov.br
 1721208,Tocantinópolis,TO,https://transparencia.tocantinopolis.to.gov.br,https://camaratocantinopolis.megasofttransparencia.com.br,10,
 1721109,Tocantínia,TO,https://tocantinia.megasofttransparencia.com.br,https://camaratocantinia.megasofttransparencia.com.br,3,https://tocantinia.to.gov.br/
 1721307,Tupiratins,TO,https://tupiratins.megasofttransparencia.com.br,https://camaratupiratins.megasofttransparencia.com.br,3,
