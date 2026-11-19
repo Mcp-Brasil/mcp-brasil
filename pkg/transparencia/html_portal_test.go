@@ -518,3 +518,110 @@ func TestHTMLPortalObrasConveniosLegislacaoConcursosAndIframeMock(t *testing.T) 
 		t.Fatalf("Hub.QueryConcursos HTML inesperado: err=%v res=%+v", err, res)
 	}
 }
+
+func TestHTMLPortalJSFViewStateAndDocumentListSynthesisMock(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client := &http.Client{Timeout: 3 * time.Second}
+	m := &transparencia.Municipio{CodigoIBGE: "3157807", Nome: "Santa Luzia", UF: "MG"}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/jsf-despesas":
+			if r.Method == http.MethodGet {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				_, _ = w.Write([]byte(`<html><body>
+					<form method="POST" action="/jsf-despesas">
+						<input type="hidden" name="javax.faces.ViewState" value="-445566:778899" />
+						<select name="formFiltro:exercicio"><option value="2025" selected>2025</option></select>
+						<input type="submit" name="formFiltro:btnPesquisar" value="Consultar Despesas" />
+					</form>
+				</body></html>`))
+				return
+			}
+			_ = r.ParseForm()
+			if r.FormValue("javax.faces.ViewState") != "-445566:778899" || r.Header.Get("Faces-Request") != "partial/ajax" {
+				http.Error(w, "invalid JSF partial ajax postback", http.StatusBadRequest)
+				return
+			}
+			w.Header().Set("Content-Type", "text/xml; charset=utf-8")
+			_, _ = w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
+				<partial-response><changes><update id="formFiltro:tabela"><![CDATA[
+					<table>
+						<tr><th>Empenho</th><th>Data</th><th>Fornecedor</th><th>CPF/CNPJ</th><th>Valor Empenhado</th><th>Valor Pago</th></tr>
+						<tr><td>2025/888</td><td>20/03/2025</td><td>FORNECEDOR JSF PRIMEFACES</td><td>12.345.678/0001-99</td><td>R$ 33.400,00</td><td>R$ 33.400,00</td></tr>
+					</table>
+				]]></update></changes></partial-response>`))
+		case "/redirect-onclick":
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			_, _ = w.Write([]byte(`<html><body>
+				<div onclick="location.href='/wp-legislacao'">Portal de Leis e Decretos</div>
+			</body></html>`))
+		case "/wp-legislacao":
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			_, _ = w.Write([]byte(`<html><body>
+				<h1>Legislação Municipal</h1>
+				<ul>
+					<li><a href="/uploads/2025/02/Lei_Municipal_1450_2025.pdf">Lei Municipal nº 1450/2025 - Plano Diretor (10/02/2025)</a></li>
+					<li><a href="/uploads/2025/03/Decreto_88_2025.pdf">Decreto nº 88/2025 - Regulamenta Licitações (15/03/2025)</a></li>
+				</ul>
+			</body></html>`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	// 1. Submissão automática JSF / PrimeFaces com ViewState + CDATA partial-response
+	desp, err := transparencia.QueryHTMLPortalDespesas(ctx, client, m, transparencia.PortalQueryParams{BaseURL: srv.URL + "/jsf-despesas", Ano: 2025, Limit: 5}, "fiorilli_html")
+	if err != nil || !desp.Disponivel || len(desp.Despesas) != 1 || desp.Despesas[0].Fornecedor != "FORNECEDOR JSF PRIMEFACES" || desp.Despesas[0].ValorPago != 33400.00 {
+		t.Fatalf("JSF ViewState partial-response despesas inesperado: err=%v res=%+v", err, desp)
+	}
+
+	// 2. Navegação onclick="location.href=..." + síntese estruturada de anexos PDF em WordPress
+	leg, err := transparencia.QueryHTMLPortalLegislacao(ctx, client, m, transparencia.PortalQueryParams{BaseURL: srv.URL + "/redirect-onclick", Ano: 2025, Limit: 5}, "cms_wordpress_html")
+	if err != nil || !leg.Disponivel || len(leg.Atos) != 2 || leg.Atos[0].TipoDocumento != "Lei Municipal" {
+		t.Fatalf("Onclick + PDF document list synthesis legislação inesperado: err=%v res=%+v", err, leg)
+	}
+}
+
+func TestHubSiconfiStructuredFallbackWhenPortalBlocked(t *testing.T) {
+	eng, err := transparencia.NewEngine()
+	if err != nil {
+		t.Fatalf("NewEngine erro: %v", err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/waf-portal":
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(`<html><title>Attention Required! | Cloudflare</title></html>`))
+		case "/dca":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"items":[
+				{"exercicio":2024,"instituicao":"Prefeitura Municipal de Santa Luzia - MG","anexo":"DCA-Anexo I-D","coluna":"Despesas Empenhadas","cod_conta":"3.3.90.30.00","conta":"Material de Consumo","valor":1450000.50},
+				{"exercicio":2024,"instituicao":"Prefeitura Municipal de Santa Luzia - MG","anexo":"DCA-Anexo I-C","coluna":"Receitas Brutas Realizadas","cod_conta":"1.1.1.2.50.0.0","conta":"IPTU","valor":3200000.75}
+			]}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	hub := newTestHub(eng, srv.Client())
+	hub.Siconfi = transparencia.NewSiconfiClientWithBaseURL(srv.URL, srv.Client())
+	opts := transparencia.QueryOptions{UF: "MG", OverrideURL: srv.URL + "/waf-portal", Ano: 2024, Limit: 5}
+
+	desp, err := hub.QueryDespesas(ctx, "Santa Luzia", opts)
+	if err != nil || !desp.Disponivel || len(desp.Despesas) != 1 || desp.Despesas[0].ValorEmpenhado != 1450000.50 {
+		t.Fatalf("Hub SICONFI DCA despesas fallback inesperado: err=%v res=%+v", err, desp)
+	}
+
+	rec, err := hub.QueryReceitas(ctx, "Santa Luzia", opts)
+	if err != nil || !rec.Disponivel || len(rec.Receitas) != 1 || rec.Receitas[0].ValorArrecadado != 3200000.75 {
+		t.Fatalf("Hub SICONFI DCA receitas fallback inesperado: err=%v res=%+v", err, rec)
+	}
+}
+

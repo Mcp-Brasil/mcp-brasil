@@ -164,6 +164,181 @@ func (h *Hub) htmlFallbackTargets(ctx context.Context, m *Municipio, disc *Porta
 	return targets
 }
 
+// detectEmbeddedSaaSDiscovery verifica se uma URL descoberta dentro de um portal HTML
+// (via iframe, redirect JS ou link externo) corresponde a uma plataforma SaaS estruturada.
+func detectEmbeddedSaaSDiscovery(candidateURL string) (plataforma, resolvedURL, tenantID string, ok bool) {
+	u := strings.TrimSpace(candidateURL)
+	if u == "" {
+		return "", "", "", false
+	}
+	low := strings.ToLower(u)
+	if m := bethaHashRegex.FindStringSubmatch(u); len(m) >= 2 {
+		return "betha_cloud", "https://transparencia.betha.cloud/#/" + m[1], m[1], true
+	}
+	if strings.Contains(low, ".portaltp.com.br") {
+		return "el_portaltp", strings.TrimRight(u, "/"), "", true
+	}
+	if code := ExtractAspecEntityCode(u); code != "" && strings.Contains(low, "governotransparente.com.br") {
+		return "aspec_gt", "https://www.governotransparente.com.br/" + code, code, true
+	}
+	if t, ent := ExtractMemoryTenant(u); t != "" {
+		tid := t
+		if ent != "" {
+			tid = t + "/" + ent
+		}
+		return "memory_openknowledge", u, tid, true
+	}
+	return "", "", "", false
+}
+
+// fetchSiconfiDespesasFallback converte demonstrativos fiscais oficiais do SICONFI (DCA / RREO)
+// em itens estruturados de DespesasResult quando o portal municipal está sob WAF ou sem tabelas diretas.
+func (h *Hub) fetchSiconfiDespesasFallback(ctx context.Context, m *Municipio, disc *PortalDiscoveryResult, opts QueryOptions) (*DespesasResult, bool) {
+	if h.Siconfi == nil {
+		return nil, false
+	}
+	if strings.Contains(disc.URLResolvida, "127.0.0.1") || strings.Contains(disc.URLResolvida, "localhost") || hasActiveSaaSTestOverride() {
+		if !strings.Contains(h.Siconfi.baseURL, "127.0.0.1") && !strings.Contains(h.Siconfi.baseURL, "localhost") {
+			return nil, false
+		}
+	}
+	ano := opts.Ano
+	if ano <= 0 {
+		ano = time.Now().Year() - 1
+	}
+	dca, err := h.Siconfi.FetchDCA(ctx, m.CodigoIBGE, ano)
+	if (err != nil || len(dca) == 0) && opts.Ano <= 0 {
+		ano--
+		dca, err = h.Siconfi.FetchDCA(ctx, m.CodigoIBGE, ano)
+	}
+	if err != nil || len(dca) == 0 {
+		return nil, false
+	}
+
+	limit := normalizeLimit(opts.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(opts.NomeFiltro))
+	var items []DespesaItem
+	for _, f := range dca {
+		if f.Valor <= 0 {
+			continue
+		}
+		hay := strings.ToLower(f.Conta + " " + f.Coluna + " " + f.Anexo)
+		isExpense := strings.Contains(hay, "despesa") || strings.Contains(hay, "empenhad") || strings.Contains(hay, "liquidad") || strings.Contains(hay, "pag") || strings.Contains(hay, "dca-ab") || strings.Contains(hay, "anexo i-d") || strings.Contains(hay, "anexo i-e")
+		if !isExpense {
+			continue
+		}
+		if filtro != "" && !strings.Contains(hay, filtro) {
+			continue
+		}
+		emp := f.Valor
+		liq := 0.0
+		pago := 0.0
+		colLow := strings.ToLower(f.Coluna)
+		if strings.Contains(colLow, "pago") || strings.Contains(colLow, "paga") {
+			pago = f.Valor
+		} else if strings.Contains(colLow, "liquidad") {
+			liq = f.Valor
+		}
+		items = append(items, DespesaItem{
+			NumeroEmpenho:  fmt.Sprintf("SICONFI-%d", f.Exercicio),
+			Ano:            f.Exercicio,
+			Data:           fmt.Sprintf("31/12/%d", f.Exercicio),
+			Fornecedor:     "Execução Orçamentária Municipal (SICONFI)",
+			Orgao:          f.Instituicao,
+			Elemento:       f.CodConta,
+			Historico:      strings.TrimSpace(f.Conta + " — " + f.Coluna),
+			ValorEmpenhado: emp,
+			ValorLiquidado: liq,
+			ValorPago:      pago,
+			Fonte:          "SICONFI DCA (Tesouro Nacional)",
+		})
+		if len(items) >= limit {
+			break
+		}
+	}
+	if len(items) == 0 {
+		return nil, false
+	}
+	res := &DespesasResult{
+		Municipio:      m,
+		Fonte:          "SICONFI DCA (Tesouro Nacional — Contingência Estruturada)",
+		Plataforma:     disc.Plataforma,
+		PortalURL:      disc.URLResolvida,
+		TotalRegistros: len(items),
+		Despesas:       items,
+		Disponivel:     true,
+		Mensagem:       "Dados extraídos automaticamente do SICONFI (Tesouro Nacional) como contingência estruturada para o portal municipal.",
+	}
+	h.applyDespesasPostProcess(res, opts)
+	return res, true
+}
+
+// fetchSiconfiReceitasFallback converte demonstrativos fiscais oficiais do SICONFI (DCA)
+// em itens estruturados de ReceitasResult quando o portal municipal está sob WAF ou sem tabelas diretas.
+func (h *Hub) fetchSiconfiReceitasFallback(ctx context.Context, m *Municipio, disc *PortalDiscoveryResult, opts QueryOptions) (*ReceitasResult, bool) {
+	if h.Siconfi == nil {
+		return nil, false
+	}
+	if strings.Contains(disc.URLResolvida, "127.0.0.1") || strings.Contains(disc.URLResolvida, "localhost") || hasActiveSaaSTestOverride() {
+		if !strings.Contains(h.Siconfi.baseURL, "127.0.0.1") && !strings.Contains(h.Siconfi.baseURL, "localhost") {
+			return nil, false
+		}
+	}
+	ano := opts.Ano
+	if ano <= 0 {
+		ano = time.Now().Year() - 1
+	}
+	dca, err := h.Siconfi.FetchDCA(ctx, m.CodigoIBGE, ano)
+	if (err != nil || len(dca) == 0) && opts.Ano <= 0 {
+		ano--
+		dca, err = h.Siconfi.FetchDCA(ctx, m.CodigoIBGE, ano)
+	}
+	if err != nil || len(dca) == 0 {
+		return nil, false
+	}
+
+	limit := normalizeLimit(opts.Limit)
+	filtro := strings.ToLower(strings.TrimSpace(opts.NomeFiltro))
+	var items []ReceitaItem
+	for _, f := range dca {
+		if f.Valor <= 0 {
+			continue
+		}
+		hay := strings.ToLower(f.Conta + " " + f.Coluna + " " + f.Anexo)
+		isRev := strings.Contains(hay, "receita") || strings.Contains(hay, "arrecadad") || strings.Contains(hay, "tribut") || strings.Contains(hay, "transferencia") || strings.Contains(hay, "anexo i-c")
+		if !isRev {
+			continue
+		}
+		if filtro != "" && !strings.Contains(hay, filtro) {
+			continue
+		}
+		items = append(items, ReceitaItem{
+			Codigo:          f.CodConta,
+			Descricao:       strings.TrimSpace(f.Conta + " — " + f.Coluna),
+			Categoria:       f.Anexo,
+			Data:            fmt.Sprintf("31/12/%d", f.Exercicio),
+			ValorArrecadado: f.Valor,
+			Fonte:           "SICONFI DCA (Tesouro Nacional)",
+		})
+		if len(items) >= limit {
+			break
+		}
+	}
+	if len(items) == 0 {
+		return nil, false
+	}
+	return &ReceitasResult{
+		Municipio:      m,
+		Fonte:          "SICONFI DCA (Tesouro Nacional — Contingência Estruturada)",
+		Plataforma:     disc.Plataforma,
+		PortalURL:      disc.URLResolvida,
+		TotalRegistros: len(items),
+		Receitas:       items,
+		Disponivel:     true,
+		Mensagem:       "Dados extraídos automaticamente do SICONFI (Tesouro Nacional) como contingência estruturada para o portal municipal.",
+	}, true
+}
+
 func (h *Hub) queryServidoresWithDiscovery(ctx context.Context, m *Municipio, disc *PortalDiscoveryResult, opts QueryOptions) (*ServidoresResult, error) {
 	resolvedURL := disc.URLResolvida
 	discObs := disc.Observacoes
@@ -581,6 +756,10 @@ func (h *Hub) queryDespesasWithDiscovery(ctx context.Context, m *Municipio, disc
 		}
 	}
 
+	if res, ok := h.fetchSiconfiDespesasFallback(ctx, m, disc, opts); ok {
+		return res, nil
+	}
+
 	if unavailableRes != nil {
 		return unavailableRes, nil
 	}
@@ -867,6 +1046,10 @@ func (h *Hub) queryReceitasWithDiscovery(ctx context.Context, m *Municipio, disc
 		if res, err := h.TCE.FetchTCEPRReceitas(ctx, m, opts.Ano, 0, opts.Limit); err == nil {
 			return res, nil
 		}
+	}
+
+	if res, ok := h.fetchSiconfiReceitasFallback(ctx, m, disc, opts); ok {
+		return res, nil
 	}
 
 	if unavailableRes != nil {

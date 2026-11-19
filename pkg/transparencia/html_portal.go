@@ -29,11 +29,16 @@ var (
 	htmlTRRegex          = regexp.MustCompile(`(?is)<tr\b[^>]*>(.*?)</tr>`)
 	htmlCellRegex        = regexp.MustCompile(`(?is)<(t[hd])\b([^>]*)>(.*?)</t[hd]>`)
 	htmlAnchorFullRegex  = regexp.MustCompile(`(?is)<a\b([^>]*)>(.*?)</a>`)
-	htmlIframeRegex      = regexp.MustCompile(`(?is)<iframe\b([^>]*)>`)
-	htmlAttrHrefRegex    = regexp.MustCompile(`(?is)\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))`)
-	htmlAttrSrcRegex     = regexp.MustCompile(`(?is)\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))`)
-	htmlAnyTagRegex      = regexp.MustCompile(`(?s)<[^>]+>`)
-	htmlSpaceRegex       = regexp.MustCompile(`\s+`)
+	htmlIframeRegex         = regexp.MustCompile(`(?is)<iframe\b([^>]*)>`)
+	htmlAttrHrefRegex       = regexp.MustCompile(`(?is)\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))`)
+	htmlAttrSrcRegex        = regexp.MustCompile(`(?is)\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))`)
+	htmlAttrDataHrefRegex   = regexp.MustCompile(`(?is)\bdata-(?:href|link|target-url)\s*=\s*(?:"([^"]+)"|'([^']+)')`)
+	htmlMetaRefreshRegex    = regexp.MustCompile(`(?is)<meta\b[^>]*http-equiv\s*=\s*["']?refresh["']?[^>]*content\s*=\s*["'][^"']*?url\s*=\s*([^"'\s>;]+)`)
+	htmlOnclickURLRegex     = regexp.MustCompile(`(?is)\bonclick\s*=\s*["'][^"']*?(?:location(?:\.href)?\s*=|window\.open\s*\()\s*['"]([^'"]+)['"]`)
+	htmlJSRedirectRegex     = regexp.MustCompile(`(?is)(?:window\.location(?:\.href)?|document\.location(?:\.href)?|location\.replace)\s*(?:=|\()\s*["'](https?://[^"'\s]+|/[^"'\s]+)["']`)
+	htmlOptionURLValueRegex = regexp.MustCompile(`(?is)<option\b[^>]*\bvalue\s*=\s*["'](https?://[^"'\s]+|/transparencia[^"'\s]*|/portal[^"'\s]*)["'][^>]*>(.*?)</option>`)
+	htmlAnyTagRegex         = regexp.MustCompile(`(?s)<[^>]+>`)
+	htmlSpaceRegex          = regexp.MustCompile(`\s+`)
 )
 
 // IsHTMLPortalPlatform indica se a plataforma corresponde a um portal municipal HTML sem API estruturada.
@@ -119,24 +124,34 @@ func extractHTMLAnchorLinks(baseURL, htmlBody string) []htmlLink {
 	cleaned := htmlScriptStyleRegex.ReplaceAllString(htmlBody, " ")
 	seen := make(map[string]struct{})
 	var links []htmlLink
+	addLink := func(rawRef, label string) {
+		resolved := resolveRelativeHTTPURL(baseParsed, rawRef)
+		if resolved == "" {
+			return
+		}
+		if _, exists := seen[resolved]; exists {
+			return
+		}
+		seen[resolved] = struct{}{}
+		links = append(links, htmlLink{
+			URL:   resolved,
+			Label: cleanHTMLText(label),
+		})
+	}
 
 	for _, m := range htmlAnchorFullRegex.FindAllStringSubmatch(cleaned, -1) {
 		if len(m) < 3 {
 			continue
 		}
 		href := extractAttrValue(m[1], htmlAttrHrefRegex)
-		resolved := resolveRelativeHTTPURL(baseParsed, href)
-		if resolved == "" {
-			continue
+		if href == "" || strings.HasPrefix(strings.ToLower(strings.TrimSpace(href)), "javascript:") || strings.HasPrefix(strings.TrimSpace(href), "#") {
+			if oc := extractAttrValue(m[1], htmlOnclickURLRegex); oc != "" {
+				href = oc
+			} else if dh := extractAttrValue(m[1], htmlAttrDataHrefRegex); dh != "" {
+				href = dh
+			}
 		}
-		if _, exists := seen[resolved]; exists {
-			continue
-		}
-		seen[resolved] = struct{}{}
-		links = append(links, htmlLink{
-			URL:   resolved,
-			Label: cleanHTMLText(m[2]),
-		})
+		addLink(href, m[2])
 	}
 
 	for _, m := range htmlIframeRegex.FindAllStringSubmatch(cleaned, -1) {
@@ -144,18 +159,35 @@ func extractHTMLAnchorLinks(baseURL, htmlBody string) []htmlLink {
 			continue
 		}
 		src := extractAttrValue(m[1], htmlAttrSrcRegex)
-		resolved := resolveRelativeHTTPURL(baseParsed, src)
-		if resolved == "" {
-			continue
+		addLink(src, "iframe transparência")
+	}
+
+	// Meta http-equiv="refresh" redirects (muito comum em subdomínios de transparência)
+	for _, m := range htmlMetaRefreshRegex.FindAllStringSubmatch(htmlBody, -1) {
+		if len(m) >= 2 {
+			addLink(m[1], "iframe redirecionamento transparência")
 		}
-		if _, exists := seen[resolved]; exists {
-			continue
+	}
+
+	// Handlers onclick="location.href='...'" ou window.open('...') em botões/cards/divs
+	for _, m := range htmlOnclickURLRegex.FindAllStringSubmatch(cleaned, -1) {
+		if len(m) >= 2 {
+			addLink(m[1], "portal transparência "+m[1])
 		}
-		seen[resolved] = struct{}{}
-		links = append(links, htmlLink{
-			URL:   resolved,
-			Label: "iframe transparência",
-		})
+	}
+
+	// Menus <select><option value="https://.../transparencia/...">
+	for _, m := range htmlOptionURLValueRegex.FindAllStringSubmatch(cleaned, -1) {
+		if len(m) >= 3 {
+			addLink(m[1], m[2])
+		}
+	}
+
+	// Redirecionamentos explícitos em <script>: window.location.href = "..."
+	for _, m := range htmlJSRedirectRegex.FindAllStringSubmatch(htmlBody, 4) {
+		if len(m) >= 2 {
+			addLink(m[1], "iframe redirecionamento transparência")
+		}
 	}
 
 	return links
@@ -702,6 +734,16 @@ func findEmbeddedPublicsoftURL(usedURL string, topLinks []string) string {
 	return ""
 }
 
+func findEmbeddedSaaSCandidate(usedURL string, topLinks []string) (plat, resolvedURL, tenantID string, ok bool) {
+	cands := append([]string{usedURL}, topLinks...)
+	for _, u := range cands {
+		if p, r, t, found := detectEmbeddedSaaSDiscovery(u); found {
+			return p, r, t, true
+		}
+	}
+	return "", "", "", false
+}
+
 func findColIdx(normHeaders []string, candidates ...string) int {
 	for _, cand := range candidates {
 		for idx, h := range normHeaders {
@@ -839,6 +881,25 @@ func QueryHTMLPortalServidores(ctx context.Context, client *http.Client, m *Muni
 				return psRes, nil
 			}
 		}
+		if sPlat, sURL, sTenant, ok := findEmbeddedSaaSCandidate(usedURL, topLinks); ok {
+			sp := p
+			sp.BaseURL = sURL
+			sp.TenantID = sTenant
+			switch sPlat {
+			case "betha_cloud":
+				if res, sErr := QueryBethaServidores(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "el_portaltp":
+				if res, sErr := QueryPortalTPServidores(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "memory_openknowledge":
+				if res, sErr := QueryMemoryServidores(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			}
+		}
 		return &ServidoresResult{
 			Municipio:  m,
 			Fonte:      fonte,
@@ -934,6 +995,29 @@ func QueryHTMLPortalDespesas(ctx context.Context, client *http.Client, m *Munici
 				return psRes, nil
 			}
 		}
+		if sPlat, sURL, sTenant, ok := findEmbeddedSaaSCandidate(usedURL, topLinks); ok {
+			sp := p
+			sp.BaseURL = sURL
+			sp.TenantID = sTenant
+			switch sPlat {
+			case "betha_cloud":
+				if res, sErr := QueryBethaDespesas(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "el_portaltp":
+				if res, sErr := QueryPortalTPDespesas(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "aspec_gt":
+				if res, sErr := QueryAspecDespesas(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "memory_openknowledge":
+				if res, sErr := QueryMemoryDespesas(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			}
+		}
 		return &DespesasResult{
 			Municipio:  m,
 			Fonte:      fonte,
@@ -1013,6 +1097,29 @@ func QueryHTMLPortalReceitas(ctx context.Context, client *http.Client, m *Munici
 			psParams.TenantID = ""
 			if psRes, psErr := QueryPublicsoftReceitas(ctx, client, m, psParams); psErr == nil && psRes != nil && psRes.Disponivel {
 				return psRes, nil
+			}
+		}
+		if sPlat, sURL, sTenant, ok := findEmbeddedSaaSCandidate(usedURL, topLinks); ok {
+			sp := p
+			sp.BaseURL = sURL
+			sp.TenantID = sTenant
+			switch sPlat {
+			case "betha_cloud":
+				if res, sErr := QueryBethaReceitas(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "el_portaltp":
+				if res, sErr := QueryPortalTPReceitas(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "aspec_gt":
+				if res, sErr := QueryAspecReceitas(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "memory_openknowledge":
+				if res, sErr := QueryMemoryReceitas(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
 			}
 		}
 		return &ReceitasResult{
@@ -1110,6 +1217,29 @@ func QueryHTMLPortalLicitacoes(ctx context.Context, client *http.Client, m *Muni
 				return psRes, nil
 			}
 		}
+		if sPlat, sURL, sTenant, ok := findEmbeddedSaaSCandidate(usedURL, topLinks); ok {
+			sp := p
+			sp.BaseURL = sURL
+			sp.TenantID = sTenant
+			switch sPlat {
+			case "betha_cloud":
+				if res, sErr := QueryBethaLicitacoes(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "el_portaltp":
+				if res, sErr := QueryPortalTPLicitacoes(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "aspec_gt":
+				if res, sErr := QueryAspecLicitacoes(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "memory_openknowledge":
+				if res, sErr := QueryMemoryLicitacoes(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			}
+		}
 		return &LicitacoesResult{
 			Municipio:  m,
 			Fonte:      fonte,
@@ -1197,6 +1327,29 @@ func QueryHTMLPortalContratos(ctx context.Context, client *http.Client, m *Munic
 			psParams.TenantID = ""
 			if psRes, psErr := QueryPublicsoftContratos(ctx, client, m, psParams); psErr == nil && psRes != nil && psRes.Disponivel {
 				return psRes, nil
+			}
+		}
+		if sPlat, sURL, sTenant, ok := findEmbeddedSaaSCandidate(usedURL, topLinks); ok {
+			sp := p
+			sp.BaseURL = sURL
+			sp.TenantID = sTenant
+			switch sPlat {
+			case "betha_cloud":
+				if res, sErr := QueryBethaContratos(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "el_portaltp":
+				if res, sErr := QueryPortalTPContratos(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "aspec_gt":
+				if res, sErr := QueryAspecContratos(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
+			case "memory_openknowledge":
+				if res, sErr := QueryMemoryContratos(ctx, client, m, sp); sErr == nil && res != nil && res.Disponivel {
+					return res, nil
+				}
 			}
 		}
 		return &ContratosResult{

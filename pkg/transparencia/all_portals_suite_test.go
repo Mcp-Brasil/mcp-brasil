@@ -302,7 +302,11 @@ func TestAll5571CitiesCatalogIntegrity(t *testing.T) {
 		}
 	}
 
-	t.Logf("Validated 5571 cities, 27 UFs, %d API portals (%d platforms, %d betha_cloud with %d padded hashes), %d HTML portals (%d families), %d Megasoft portals",
+	if len(apiCatalog)+len(htmlCatalog) != 5571 {
+		t.Fatalf("expected 100%% catalog coverage (5571/5571 cities), got %d (%d API + %d HTML)",
+			len(apiCatalog)+len(htmlCatalog), len(apiCatalog), len(htmlCatalog))
+	}
+	t.Logf("Validated 5571 cities (100%% coverage), 27 UFs, %d API portals (%d platforms, %d betha_cloud with %d padded hashes), %d HTML portals (%d families), %d Megasoft portals",
 		len(apiCatalog), len(apiPlatformCounts), bethaTotal, bethaWithPadding, len(htmlCatalog), len(htmlPlatformCounts), len(megaCatalog))
 }
 
@@ -321,7 +325,7 @@ func TestAll4789CatalogedPortalsOfflineDiscovery(t *testing.T) {
 	ctx := context.Background()
 	start := time.Now()
 
-	// 1. Todas as 2.183 cidades do catálogo de APIs estruturadas
+	// 1. Todas as cidades do catálogo de APIs estruturadas
 	apiCatalog := eng.ListPortaisCatalogMunicipios("")
 	seenAPIPlatforms := make(map[string]int)
 	for _, rec := range apiCatalog {
@@ -346,7 +350,7 @@ func TestAll4789CatalogedPortalsOfflineDiscovery(t *testing.T) {
 		seenAPIPlatforms[disc.Plataforma]++
 	}
 
-	// 2. Todas as 2.606 cidades do catálogo HTML (regressão: NÃO pode disparar probes SaaS antes do catálogo!)
+	// 2. Todas as cidades do catálogo HTML (regressão: NÃO pode disparar probes SaaS antes do catálogo!)
 	htmlCatalog := eng.ListPortaisHTMLMunicipios("")
 	seenHTMLPlatforms := make(map[string]int)
 	for _, rec := range htmlCatalog {
@@ -377,6 +381,9 @@ func TestAll4789CatalogedPortalsOfflineDiscovery(t *testing.T) {
 	elapsed := time.Since(start)
 	if calls := rt.calls.Load(); calls != 0 {
 		t.Fatalf("expected 0 outbound HTTP calls for all %d cataloged cities, got %d", len(apiCatalog)+len(htmlCatalog), calls)
+	}
+	if len(apiCatalog)+len(htmlCatalog) != 5571 {
+		t.Fatalf("expected all 5571 cities resolved offline, got %d", len(apiCatalog)+len(htmlCatalog))
 	}
 	if len(seenAPIPlatforms) < 28 {
 		t.Errorf("expected >= 28 API platforms resolved offline, got %d", len(seenAPIPlatforms))

@@ -931,6 +931,22 @@ func submitBestDomainForm(ctx context.Context, client *http.Client, baseURL, bod
 		}
 	}
 
+	if strings.Contains(best.body, "javax.faces.ViewState") || strings.Contains(best.body, "jakarta.faces.ViewState") {
+		var ajaxSource string
+		for k := range formVals {
+			if k != "javax.faces.ViewState" && k != "jakarta.faces.ViewState" && !strings.HasSuffix(k, "_SUBMIT") {
+				ajaxSource = k
+				break
+			}
+		}
+		if ajaxSource != "" {
+			formVals.Set("javax.faces.partial.ajax", "true")
+			formVals.Set("javax.faces.source", ajaxSource)
+			formVals.Set("javax.faces.partial.execute", "@all")
+			formVals.Set("javax.faces.partial.render", "@all")
+		}
+	}
+
 	var req *http.Request
 	if best.method == http.MethodPost {
 		req, err = http.NewRequestWithContext(ctx, http.MethodPost, best.action, strings.NewReader(formVals.Encode()))
@@ -938,6 +954,10 @@ func submitBestDomainForm(ctx context.Context, client *http.Client, baseURL, bod
 			return "", nil, err
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		if formVals.Get("javax.faces.partial.ajax") == "true" {
+			req.Header.Set("Faces-Request", "partial/ajax")
+			req.Header.Set("X-Requested-With", "XMLHttpRequest")
+		}
 	} else {
 		u, uErr := url.Parse(best.action)
 		if uErr != nil {
@@ -956,7 +976,7 @@ func submitBestDomainForm(ctx context.Context, client *http.Client, baseURL, bod
 		}
 	}
 	req.Header.Set("User-Agent", "mcp-brasil/1.0 (transparencia-go)")
-	req.Header.Set("Accept", "text/html,application/json,text/csv,*/*;q=0.8")
+	req.Header.Set("Accept", "text/html,application/json,text/csv,application/xml,*/*;q=0.8")
 	req.Header.Set("Accept-Language", "pt-BR,pt;q=0.9,en;q=0.8")
 	req.Header.Set("Referer", baseURL)
 
@@ -983,6 +1003,12 @@ func submitBestDomainForm(ctx context.Context, client *http.Client, baseURL, bod
 		return finalURL, nil, fmt.Errorf("submissão de formulário retornou HTTP %d", resp.StatusCode)
 	}
 
+	// Desempacota CDATA de respostas JSF / PrimeFaces (<partial-response><changes><update>...)
+	if strings.Contains(respBody, "<partial-response") && strings.Contains(respBody, "<![CDATA[") {
+		respBody = strings.ReplaceAll(respBody, "<![CDATA[", " ")
+		respBody = strings.ReplaceAll(respBody, "]]>", " ")
+	}
+
 	ctype := strings.ToLower(resp.Header.Get("Content-Type"))
 	headersHint := extractTableSkeletonHeaders(respBody)
 	tbs := parseStructuredResponseToTables(finalURL, ctype, respBody, headersHint)
@@ -992,12 +1018,223 @@ func submitBestDomainForm(ctx context.Context, client *http.Client, baseURL, bod
 	return finalURL, tbs, nil
 }
 
+var (
+	htmlDocDateRegex   = regexp.MustCompile(`\b(\d{2}/\d{2}/(?:19|20)\d{2}|(?:19|20)\d{2}-\d{2}-\d{2})\b`)
+	htmlDocYearRegex   = regexp.MustCompile(`\b((?:19|20)\d{2})\b`)
+	htmlDocNumberRegex = regexp.MustCompile(`(?i)(?:n[º°o.]?\s*|edital\s+|lei\s+|decreto\s+|portaria\s+|contrato\s+|processo\s+)(\d[\d./-]*)`)
+)
+
+func isAttachmentDocLink(rawURL string) (ext string, ok bool) {
+	low := strings.ToLower(rawURL)
+	if idx := strings.Index(low, "?"); idx >= 0 {
+		low = low[:idx]
+	}
+	for _, e := range []string{".pdf", ".xls", ".xlsx", ".csv", ".ods", ".doc", ".docx", ".rtf", ".zip"} {
+		if strings.HasSuffix(low, e) {
+			return strings.TrimPrefix(e, "."), true
+		}
+	}
+	return "", false
+}
+
+// extractDocumentListTables sintetiza tabelas estruturadas a partir de listas de documentos/anexos
+// (PDF, XLS, XLSX, DOC, CSV, ZIP) publicados em portais CMS/WordPress quando não há <table> HTML.
+func extractDocumentListTables(pageURL, body, domain string) []htmlTable {
+	links := extractHTMLAnchorLinks(pageURL, body)
+	if len(links) == 0 {
+		return nil
+	}
+	kws := htmlDomainKeywords(domain)
+	pageHay := RemoveAccents(pageURL)
+	pageMatchesDomain := false
+	for _, kw := range kws {
+		if strings.Contains(pageHay, kw) {
+			pageMatchesDomain = true
+			break
+		}
+	}
+
+	type docEntry struct {
+		num   string
+		title string
+		date  string
+		year  string
+		ext   string
+		url   string
+	}
+	var docs []docEntry
+	for _, lk := range links {
+		ext, isDoc := isAttachmentDocLink(lk.URL)
+		if !isDoc {
+			continue
+		}
+		u, err := url.Parse(lk.URL)
+		if err != nil {
+			continue
+		}
+		baseName := u.Path
+		if idx := strings.LastIndex(baseName, "/"); idx >= 0 {
+			baseName = baseName[idx+1:]
+		}
+		label := strings.TrimSpace(lk.Label)
+		if label == "" || strings.EqualFold(label, "baixar") || strings.EqualFold(label, "download") || strings.EqualFold(label, "visualizar") || strings.EqualFold(label, "abrir") {
+			label = strings.TrimSuffix(baseName, "."+ext)
+			label = strings.ReplaceAll(label, "_", " ")
+			label = strings.ReplaceAll(label, "-", " ")
+		}
+		hay := RemoveAccents(label + " " + u.Path)
+		matches := pageMatchesDomain
+		if !matches {
+			for _, kw := range kws {
+				if strings.Contains(hay, kw) {
+					matches = true
+					break
+				}
+			}
+		}
+		if !matches {
+			continue
+		}
+
+		dateStr := ""
+		if m := htmlDocDateRegex.FindStringSubmatch(label + " " + u.Path); len(m) >= 2 {
+			dateStr = m[1]
+		}
+		yearStr := ""
+		if m := htmlDocYearRegex.FindStringSubmatch(label + " " + u.Path); len(m) >= 2 {
+			yearStr = m[1]
+		}
+		numStr := ""
+		if m := htmlDocNumberRegex.FindStringSubmatch(label); len(m) >= 2 {
+			numStr = m[1]
+		} else if yearStr != "" {
+			numStr = yearStr
+		} else {
+			numStr = fmt.Sprintf("DOC-%d", len(docs)+1)
+		}
+
+		docs = append(docs, docEntry{
+			num:   numStr,
+			title: label,
+			date:  dateStr,
+			year:  yearStr,
+			ext:   strings.ToUpper(ext),
+			url:   lk.URL,
+		})
+	}
+	if len(docs) == 0 {
+		return nil
+	}
+
+	var headers []string
+	var rows [][]string
+	var rowLinks [][]string
+
+	switch domain {
+	case "legislacao":
+		headers = []string{"Tipo", "Número", "Ano", "Data Publicação", "Ementa"}
+		for _, d := range docs {
+			tipo := "Ato Normativo (" + d.ext + ")"
+			lowT := RemoveAccents(d.title)
+			switch {
+			case strings.Contains(lowT, "decreto"):
+				tipo = "Decreto"
+			case strings.Contains(lowT, "portaria"):
+				tipo = "Portaria"
+			case strings.Contains(lowT, "lei"):
+				tipo = "Lei Municipal"
+			}
+			rows = append(rows, []string{tipo, d.num, d.year, d.date, d.title})
+			rowLinks = append(rowLinks, []string{d.url, "", "", "", d.url})
+		}
+	case "licitacoes":
+		headers = []string{"Número", "Modalidade", "Objeto", "Data Abertura", "Situação"}
+		for _, d := range docs {
+			mod := "Edital / Documento (" + d.ext + ")"
+			lowT := RemoveAccents(d.title)
+			switch {
+			case strings.Contains(lowT, "pregao"):
+				mod = "Pregão"
+			case strings.Contains(lowT, "dispensa"):
+				mod = "Dispensa"
+			case strings.Contains(lowT, "inexigibilidade"):
+				mod = "Inexigibilidade"
+			case strings.Contains(lowT, "chamamento"):
+				mod = "Chamamento Público"
+			}
+			rows = append(rows, []string{d.num, mod, d.title, d.date, "Publicado"})
+			rowLinks = append(rowLinks, []string{d.url, "", d.url, "", ""})
+		}
+	case "contratos":
+		headers = []string{"Contrato", "Fornecedor", "Objeto", "Data Assinatura", "Situação"}
+		for _, d := range docs {
+			rows = append(rows, []string{d.num, "Documento Anexo (" + d.ext + ")", d.title, d.date, "Publicado"})
+			rowLinks = append(rowLinks, []string{d.url, "", d.url, "", ""})
+		}
+	case "concursos":
+		headers = []string{"Edital", "Cargo", "Candidato", "Data Publicação", "Situação"}
+		for _, d := range docs {
+			rows = append(rows, []string{d.num, "Edital / Publicação (" + d.ext + ")", d.title, d.date, "Publicado"})
+			rowLinks = append(rowLinks, []string{d.url, "", d.url, "", ""})
+		}
+	case "obras":
+		headers = []string{"Código", "Obra", "Objeto", "Data Inicial", "Situação"}
+		for _, d := range docs {
+			rows = append(rows, []string{d.num, d.title, d.title + " (" + d.ext + ")", d.date, "Publicado"})
+			rowLinks = append(rowLinks, []string{d.url, d.url, "", "", ""})
+		}
+	case "convenios":
+		headers = []string{"Convênio", "Concedente", "Objeto", "Data", "Situação"}
+		for _, d := range docs {
+			rows = append(rows, []string{d.num, "Documento (" + d.ext + ")", d.title, d.date, "Publicado"})
+			rowLinks = append(rowLinks, []string{d.url, "", d.url, "", ""})
+		}
+	case "diarias":
+		headers = []string{"Beneficiário", "Destino", "Motivo", "Período", "Cargo"}
+		for _, d := range docs {
+			rows = append(rows, []string{d.title, "Relatório (" + d.ext + ")", d.title, d.date, d.num})
+			rowLinks = append(rowLinks, []string{d.url, "", "", "", ""})
+		}
+	case "servidores":
+		headers = []string{"Servidor", "Cargo", "Lotação", "Competência", "Situação"}
+		for _, d := range docs {
+			comp := d.date
+			if comp == "" {
+				comp = d.year
+			}
+			rows = append(rows, []string{d.title, "Quadros / Folha (" + d.ext + ")", d.url, comp, "Publicado"})
+			rowLinks = append(rowLinks, []string{d.url, "", d.url, "", ""})
+		}
+	case "despesas":
+		headers = []string{"Empenho", "Data", "Fornecedor", "Histórico", "Órgão"}
+		for _, d := range docs {
+			rows = append(rows, []string{d.num, d.date, "Demonstrativo (" + d.ext + ")", d.title, d.year})
+			rowLinks = append(rowLinks, []string{d.url, "", "", d.url, ""})
+		}
+	case "receitas":
+		headers = []string{"Código", "Descrição", "Categoria", "Data", "Valor Arrecadado"}
+		for _, d := range docs {
+			rows = append(rows, []string{d.num, d.title, "Demonstrativo (" + d.ext + ")", d.date, "0"})
+			rowLinks = append(rowLinks, []string{d.url, d.url, "", "", ""})
+		}
+	default:
+		return nil
+	}
+
+	return []htmlTable{{
+		Headers: headers,
+		Rows:    rows,
+		Links:   rowLinks,
+	}}
+}
+
 // extractPageAllTables tenta extrair tabelas de uma página HTML combinando:
 //   - tabelas HTML estáticas (<table>)
 //   - JSON embutido em <script> (__NEXT_DATA__, __INITIAL_STATE__, var dados = [...])
 //   - endpoints XHR / DataTables ajax / Bootstrap-Table data-url
 //   - links diretos de exportação CSV / JSON
-//   - submissão automática do <form> padrão da página quando necessário
+//   - submissão automática do <form> padrão da página (incluindo JSF/PrimeFaces ViewState) quando necessário
+//   - síntese estruturada de listas de documentos/anexos (PDF/XLS/DOC) quando o portal publica arquivos
 func extractPageAllTables(ctx context.Context, client *http.Client, pageURL, body, domain string, headerKWs []string, params PortalQueryParams) (usedURL string, matchedTables []htmlTable, fallbackTables []htmlTable) {
 	usedURL = pageURL
 	headersHint := extractTableSkeletonHeaders(body)
@@ -1061,6 +1298,15 @@ func extractPageAllTables(ctx context.Context, client *http.Client, pageURL, bod
 			usedURL = formURL
 		}
 		fallbackTables = append(fallbackTables, aForm...)
+	}
+
+	// 5. Síntese de listas de documentos/anexos oficiais (PDF/XLS/DOC) em páginas do módulo
+	if docTables := extractDocumentListTables(pageURL, body, domain); len(docTables) > 0 {
+		mDoc, aDoc := filterMatching(docTables)
+		if len(mDoc) > 0 {
+			return pageURL, mDoc, aDoc
+		}
+		fallbackTables = append(fallbackTables, aDoc...)
 	}
 
 	return usedURL, nil, fallbackTables
